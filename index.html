@@ -1,34 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>FlipHawk</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 5%;
-      background: #f8f9fa;
-    }
-    h1 {
-      font-size: 3em;
-      color: #1a1a1a;
-    }
-    input {
-      padding: 10px;
-      width: 300px;
-      font-size: 1em;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 1em;
-      margin-top: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlipHawk</title>
+    <style>
+        /* Global styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #3a8d99;
+        }
+
+        p {
+            font-size: 1rem;
+            color: #555;
+        }
+
+        .button {
+            background-color: #3a8d99;
+            color: white;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 50px; /* Rounded corners */
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            width: 200px;
+        }
+
+        .button:hover {
+            background-color: #2a6f7a;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .container {
+                padding: 20px;
+            }
+            .button {
+                width: 100%;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>🔍 FlipHawk</h1>
-  <p>What would you like to search for arbitrage?</p>
-  <input type="text" placeholder="e.g. Pokémon cards, cameras..." />
-  <br><button>Search</button>
+
+    <div class="container">
+        <h1>Welcome to FlipHawk</h1>
+        <p>What would you like to arbitrage search for today?</p>
+        <button class="button">Start Search</button>
+    </div>
+
 </body>
 </html>
