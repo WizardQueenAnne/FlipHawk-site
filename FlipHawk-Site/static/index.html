@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlipHawk</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #111827;
+            margin-bottom: 20px;
+        }
+
+        select, button {
+            padding: 12px 20px;
+            font-size: 1em;
+            border-radius: 999px;
+            border: none;
+            margin: 10px;
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            select, button {
+                width: 90%;
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>FlipHawk</h1>
+    <form method="POST" action="/search">
+        <label for="category">What would you like to search for?</label><br />
+        <select id="category" name="category">
+            <option value="trading cards">Trading Cards</option>
+            <option value="collectibles">Collectibles</option>
+            <option value="antiques">Antiques</option>
+            <option value="tech">Tech</option>
+            <option value="books">Books</option>
+            <option value="tools">Tools</option>
+            <option value="gaming">Gaming</option>
+        </select><br />
+        <button type="submit">Start Search</button>
+    </form>
+</body>
+</html>
