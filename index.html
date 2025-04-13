@@ -1,84 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlipHawk</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* Adding some basic styling for layout */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7fc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+  <meta charset="UTF-8">
+  <title>FlipHawk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2em;
+      background-color: #f5f5f5;
+    }
 
-        .container {
-            text-align: center;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
+    h1 {
+      font-size: 3em;
+      margin-bottom: 1em;
+      color: #333;
+    }
 
-        h1 {
-            color: #333;
-            font-size: 2em;
-        }
+    select, button {
+      padding: 0.8em 1.2em;
+      font-size: 1.1em;
+      border-radius: 10px;
+      border: none;
+      margin: 1em 0.5em;
+      background-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
 
-        p {
-            font-size: 1.2em;
-            color: #555;
-        }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      cursor: pointer;
+    }
 
-        select {
-            padding: 10px;
-            font-size: 1em;
-            margin-top: 10px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            width: 100%;
-            max-width: 250px;
-        }
+    button:hover {
+      background-color: #2563eb;
+    }
 
-        button {
-            padding: 12px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 1.2em;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 100%;
-            max-width: 250px;
-        }
+    #results {
+      margin-top: 2em;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+    .deal {
+      background: white;
+      padding: 1em;
+      margin-bottom: 1em;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to FlipHawk</h1>
-        <p>Select a category to start arbitrage searching:</p>
-        <form action="/search" method="POST">
-            <select name="category" id="category" required>
-                <option value="trading_cards">Trading Cards</option>
-                <option value="collectibles">Collectibles</option>
-                <option value="antiques">Antiques</option>
-                <option value="tech">Tech</option>
-                <!-- Add more categories here if needed -->
-            </select>
-            <button type="submit" class="btn">Start Search</button>
-        </form>
-    </div>
+  <h1>FlipHawk</h1>
+  <label for="category">What would you like to search?</label>
+  <br>
+  <select id="category">
+    <option>trading cards</option>
+    <option>tech</option>
+    <option>collectibles</option>
+    <option>antiques</option>
+  </select>
+  <button onclick="startSearch()">Start Search</button>
+
+  <div id="results"></div>
+
+  <script>
+    async function startSearch() {
+      const category = document.getElementById("category").value;
+      const res = await fetch("/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category })
+      });
+
+      const data = await res.json();
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      if (!data || data.length === 0) {
+        resultsDiv.innerHTML = "<p>No deals found. Try another category!</p>";
+        return;
+      }
+
+      data.forEach(deal => {
+        resultsDiv.innerHTML += `
+          <div class="deal">
+            <h3>${deal.keyword.toUpperCase()}</h3>
+            <p><strong>Listing 1:</strong> <a href="${deal.listing1.url}" target="_blank">${deal.listing1.title}</a> ($${deal.listing1.price})</p>
+            <p><strong>Listing 2:</strong> <a href="${deal.listing2.url}" target="_blank">${deal.listing2.title}</a> ($${deal.listing2.price})</p>
+            <p><strong>Profit:</strong> $${deal.profit} — Accuracy: ${deal.confidence}%</p>
+          </div>
+        `;
+      });
+    }
+  </script>
 </body>
 </html>
