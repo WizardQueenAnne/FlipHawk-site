@@ -1,76 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FlipHawk</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #f3f4f6;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlipHawk - Arbitrage Bot</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 30px 20px;
+      box-sizing: border-box;
+    }
 
-        h1 {
-            font-size: 2.5em;
-            color: #111827;
-            margin-bottom: 20px;
-        }
+    h1 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+      text-align: center;
+    }
 
-        select, button {
-            padding: 12px 20px;
-            font-size: 1em;
-            border-radius: 999px;
-            border: none;
-            margin: 10px;
-            background: #ffffff;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease-in-out;
-        }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 15px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      box-sizing: border-box;
+    }
 
-        button {
-            background-color: #3b82f6;
-            color: white;
-            cursor: pointer;
-        }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 10px;
+    }
 
-        button:hover {
-            background-color: #2563eb;
-        }
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
 
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2em;
-            }
+    button {
+      background: #1abc9c;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.3s ease;
+    }
 
-            select, button {
-                width: 90%;
-                font-size: 1.1em;
-            }
-        }
-    </style>
+    button:hover {
+      background: #16a085;
+    }
+
+    .output-box {
+      margin-top: 25px;
+      padding: 15px;
+      background: #ecf0f1;
+      border-radius: 12px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 500px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+
+    @media screen and (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>FlipHawk</h1>
-    <form method="POST" action="/search">
-        <label for="category">What would you like to search for?</label><br />
-        <select id="category" name="category">
-            <option value="trading cards">Trading Cards</option>
-            <option value="collectibles">Collectibles</option>
-            <option value="antiques">Antiques</option>
-            <option value="tech">Tech</option>
-            <option value="books">Books</option>
-            <option value="tools">Tools</option>
-            <option value="gaming">Gaming</option>
-        </select><br />
-        <button type="submit">Start Search</button>
-    </form>
+  <h1>🔍 FlipHawk Arbitrage Finder</h1>
+
+  <div class="container">
+    <label for="category">Select a category:</label>
+    <select id="category">
+      <option value="trading cards">Trading Cards</option>
+      <option value="collectibles">Collectibles</option>
+      <option value="antiques">Antiques</option>
+      <option value="tech">Tech</option>
+    </select>
+
+    <button onclick="startSearch()">Start Search</button>
+
+    <div id="output" class="output-box"></div>
+  </div>
+
+  <script>
+    function startSearch() {
+      const category = document.getElementById("category").value;
+
+      document.getElementById("output").textContent = "⏳ Searching for deals in " + category + "...";
+
+      fetch("/start-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: category })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const outputDiv = document.getElementById("output");
+        if (data.status === "success") {
+          outputDiv.textContent = data.output;
+        } else {
+          outputDiv.textContent = "❌ Error: " + data.message;
+        }
+      })
+      .catch(err => {
+        document.getElementById("output").textContent = "⚠️ Error connecting to server.";
+      });
+    }
+  </script>
 </body>
 </html>
