@@ -1,20 +1,17 @@
 import time
+import sys
 import urllib.request
 from urllib.parse import quote
 from bs4 import BeautifulSoup
 
-CATEGORY_KEYWORDS = {
-    "trading cards": ["yugioh", "magic the gathering", "pokemon cards", "baseball cards", "football cards", "soccer cards"],
-    "tech": ["laptop", "tablet", "smartphone", "headphones", "camera"],
-    "collectibles": ["funko pop", "vintage toy", "rare coin", "signed memorabilia"],
-    "antiques": ["antique clock", "vintage lamp", "old radio"],
-}
+SCAN_DURATION = 60
+CHECK_INTERVAL = 10
 
 def fetch_html(url):
     try:
         with urllib.request.urlopen(url) as response:
             return response.read()
-    except:
+    except Exception:
         return None
 
 def parse_items(keyword):
@@ -25,59 +22,70 @@ def parse_items(keyword):
 
     soup = BeautifulSoup(html, "html.parser")
     items = []
-
     for listing in soup.select(".s-item"):
         try:
             title_tag = listing.select_one(".s-item__title")
             price_tag = listing.select_one(".s-item__price")
             link_tag = listing.select_one("a.s-item__link")
 
-            if not (title_tag and price_tag and link_tag):
+            if not title_tag or not price_tag or not link_tag:
                 continue
 
             title = title_tag.text
-            price_text = price_tag.text.replace("$", "").replace(",", "").split()[0]
-            price = float(price_text)
-            url = link_tag["href"]
+            price = float(price_tag.text.replace("$", "").replace(",", "").split()[0])
+            link = link_tag["href"]
 
-            items.append({
-                "title": title,
-                "price": price,
-                "url": url
-            })
+            items.append({"title": title, "price": price, "url": link})
         except:
             continue
-
     return items
 
-def find_deals(items_by_keyword):
+def run_scan(keywords):
+    all_items = {kw: parse_items(kw) for kw in keywords}
     seen = set()
     top_deals = []
 
-    for keyword, items in items_by_keyword.items():
-        sorted_items = sorted(items, key=lambda x: x["price"])
+    for kw, items in all_items.items():
+        sorted_items = sorted(items, key=lambda x: x['price'])
         if len(sorted_items) < 2:
             continue
-        low = sorted_items[0]
-        for high in sorted_items[1:]:
-            profit = high["price"] - low["price"]
-            percent = (profit / low["price"]) * 100
-            deal_id = (low["url"], high["url"])
-            if percent > 20 and deal_id not in seen:
-                seen.add(deal_id)
-                top_deals.append({
-                    "keyword": keyword,
-                    "listing1": low,
-                    "listing2": high,
-                    "profit": round(profit, 2),
-                    "confidence": round(percent, 1)
-                })
-                if len(top_deals) >= 10:
-                    break
+
+        for i in range(1, len(sorted_items)):
+            cheap = sorted_items[0]
+            comp = sorted_items[i]
+            diff = comp["price"] - cheap["price"]
+            percent = (diff / cheap["price"]) * 100
+            ids = (cheap["url"], comp["url"])
+
+            if percent > 20 and ids not in seen:
+                seen.add(ids)
+                top_deals.append((kw, cheap, comp, diff, percent))
+
     return top_deals
 
-def run_bot(category):
-    keywords = CATEGORY_KEYWORDS.get(category.lower(), [])
-    all_items = {kw: parse_items(kw) for kw in keywords}
-    top_deals = find_deals(all_items)
-    return top_deals
+def main():
+    keywords = sys.argv[1:]
+    start = time.time()
+    result_output = []
+
+    while time.time() - start < SCAN_DURATION:
+        top_deals = run_scan(keywords)
+        if top_deals:
+            for kw, item1, item2, profit, pct in top_deals:
+                result_output.append(
+                    f"\n📦 Category: {kw.upper()}\n"
+                    f"🔗 1: {item1['title']} (${item1['price']})\n{item1['url']}\n"
+                    f"🔗 2: {item2['title']} (${item2['price']})\n{item2['url']}\n"
+                    f"💰 Profit: ${profit:.2f} ({pct:.1f}% margin)\n"
+                    + "-"*50
+                )
+            break
+        time.sleep(CHECK_INTERVAL)
+
+    if not result_output:
+        print("😕 No deals found right now.")
+    else:
+        print("\n".join(result_output))
+
+if __name__ == "__main__":
+    main()
