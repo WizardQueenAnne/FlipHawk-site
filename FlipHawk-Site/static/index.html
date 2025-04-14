@@ -3,128 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlipHawk - Arbitrage Bot</title>
+  <title>FlipHawk</title>
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 30px 20px;
-      box-sizing: border-box;
-    }
-
-    h1 {
-      margin-bottom: 20px;
-      color: #2c3e50;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f0f2f5;
+      color: #333;
       text-align: center;
     }
 
-    .container {
-      max-width: 500px;
-      width: 100%;
-      background: #ffffff;
-      border-radius: 15px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      padding: 30px;
-      box-sizing: border-box;
+    h1 {
+      font-size: 3em;
+      margin-bottom: 30px;
+      color: #2c3e50;
     }
 
-    label {
-      font-weight: bold;
-      display: block;
-      margin-bottom: 10px;
-    }
-
-    select {
-      width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #ccc;
+    select, button {
+      padding: 12px 20px;
+      margin: 10px;
       font-size: 16px;
-      margin-bottom: 20px;
+      border: none;
+      border-radius: 25px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     button {
-      background: #1abc9c;
+      background-color: #3498db;
       color: white;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 12px;
       cursor: pointer;
-      width: 100%;
-      transition: background 0.3s ease;
     }
 
     button:hover {
-      background: #16a085;
+      background-color: #2980b9;
     }
 
-    .output-box {
-      margin-top: 25px;
-      padding: 15px;
-      background: #ecf0f1;
-      border-radius: 12px;
-      font-family: monospace;
+    #result {
+      margin-top: 30px;
+      max-width: 90%;
+      word-wrap: break-word;
       white-space: pre-wrap;
-      max-height: 500px;
-      overflow-y: auto;
-      font-size: 14px;
-    }
-
-    @media screen and (max-width: 600px) {
-      .container {
-        padding: 20px;
-      }
+      text-align: left;
     }
   </style>
 </head>
 <body>
-  <h1>🔍 FlipHawk Arbitrage Finder</h1>
+  <h1>FlipHawk</h1>
+  <label for="category">What would you like to search for?</label>
+  <select id="category">
+    <option value="trading_cards">Trading Cards</option>
+    <option value="collectibles">Collectibles</option>
+    <option value="antiques">Antiques</option>
+    <option value="tech">Tech</option>
+  </select>
+  <button onclick="startSearch()">Start Search</button>
 
-  <div class="container">
-    <label for="category">Select a category:</label>
-    <select id="category">
-      <option value="trading cards">Trading Cards</option>
-      <option value="collectibles">Collectibles</option>
-      <option value="antiques">Antiques</option>
-      <option value="tech">Tech</option>
-    </select>
-
-    <button onclick="startSearch()">Start Search</button>
-
-    <div id="output" class="output-box"></div>
-  </div>
+  <div id="result"></div>
 
   <script>
-    function startSearch() {
+    async function startSearch() {
       const category = document.getElementById("category").value;
-
-      document.getElementById("output").textContent = "⏳ Searching for deals in " + category + "...";
-
-      fetch("/start-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: category })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const outputDiv = document.getElementById("output");
-        if (data.status === "success") {
-          outputDiv.textContent = data.output;
-        } else {
-          outputDiv.textContent = "❌ Error: " + data.message;
-        }
-      })
-      .catch(err => {
-        document.getElementById("output").textContent = "⚠️ Error connecting to server.";
-      });
+      document.getElementById("result").innerText = "Searching...";
+      const response = await fetch(`/start_search?category=${category}`);
+      const result = await response.text();
+      document.getElementById("result").innerText = result;
     }
   </script>
 </body>
