@@ -1,16 +1,19 @@
-from flask import Flask, request, render_template_string
-from arbitrage_bot import run_arbitrage_bot
+from flask import Flask, request, render_template_string, jsonify
+from arbitrage_bot import run_arbitrage_scan
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
-    deals = []
-    if request.method == "POST":
-        category = request.form.get("category")
-        subcategories = request.form.getlist("subcategories")
-        deals = run_arbitrage_bot(category, subcategories)
-    return render_template_string(open("index.html").read(), deals=deals)
+    return render_template_string(open("index.html").read())
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+@app.route("/run", methods=["POST"])
+def run():
+    data = request.json
+    selected_keywords = data.get("keywords", [])
+    if not selected_keywords:
+        return jsonify({"error": "No keywords provided"}), 400
+    
+    print(f"Running arbitrage bot with keywords: {selected_keywords}")
+    deals = run_arbitrage_scan(selected_keywords)
+    return jsonify(deals)
