@@ -1,30 +1,23 @@
-from flask import Flask, request, jsonify, render_template_string
-from arbitrage_bot import run_arbitrage_scan
+from flask import Flask, render_template, request, jsonify
+from arbitrage_bot import run_arbitrage_scan  # Ensure this function can accept multiple subcategories
 
 app = Flask(__name__)
 
-# Load index.html manually since it's not in a 'templates/' folder
-def get_index_html():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
-
-@app.route("/")
+@app.route('/')
 def home():
-    return render_template_string(get_index_html())
+    return render_template("index.html")
 
-@app.route("/scan", methods=["POST"])
-def scan():
-    data = request.get_json()
-    category = data.get("category")
-    subcategories = data.get("subcategories", [])
+@app.route('/search')
+def search():
+    category = request.args.get('category')
+    subcategories = request.args.getlist('subcategories')
 
     if not category or not subcategories:
-        return jsonify({"error": "Missing category or subcategories"}), 400
+        return jsonify({"error": "No category or subcategories selected."}), 400
 
-    keywords = [category] + subcategories
-    results = run_arbitrage_scan(keywords)
-    return jsonify(results)
+    # Pass the selected subcategories to your arbitrage bot logic
+    deals = run_arbitrage_scan(category, subcategories)
+    return jsonify(deals)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000, debug=True)
-
+if __name__ == '__main__':
+    app.run(debug=True)
