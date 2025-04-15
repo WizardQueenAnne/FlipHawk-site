@@ -1,23 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>FlipHawk</title>
+  <meta charset="UTF-8">
+  <title>FlipHawk - Arbitrage Finder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f7ff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 700px;
+      width: 90%;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #0077cc;
+    }
+    .info {
+      font-size: 0.9em;
+      background: #e9f7ff;
+      padding: 10px;
+      border-left: 4px solid #0077cc;
+      margin-bottom: 20px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    select, input[type="submit"] {
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 1em;
+    }
+    .deals {
+      margin-top: 20px;
+    }
+    .deal {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+    @media (max-width: 600px) {
+      .container {
+        width: 95%;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>FlipHawk Arbitrage Bot</h1>
-  <form action="/run-bot" method="POST">
-    <label for="category">Choose a category:</label>
-    <select name="category" id="category">
-      <option value="trading cards">Trading Cards</option>
-      <option value="collectibles">Collectibles</option>
-      <option value="antiques">Antiques</option>
-      <option value="tech">Tech</option>
-      <option value="video games">Video Games</option>
-      <option value="sports memorabilia">Sports Memorabilia</option>
-    </select>
-    <br><br>
-    <input type="submit" value="Search Deals">
-  </form>
+  <div class="container">
+    <h1>🦅 FlipHawk</h1>
+    <div class="info">
+      <strong>What is Arbitrage?</strong><br>
+      Arbitrage is the practice of buying low and selling high — finding items cheaper on one platform and reselling on another for a profit.
+    </div>
+    <form method="POST">
+      <label>Select Category:</label>
+      <select name="category">
+        <option value="tech">Tech</option>
+        <option value="antiques">Antiques</option>
+        <option value="collectibles">Collectibles</option>
+        <option value="trading cards">Trading Cards</option>
+      </select>
+
+      <label>Choose Subcategories:</label>
+      <select name="subcategories" multiple size="6">
+        <option value="pokemon">Pokemon</option>
+        <option value="magic">Magic: The Gathering</option>
+        <option value="yugioh">Yu-Gi-Oh</option>
+        <option value="baseball">Baseball Cards</option>
+        <option value="football">Football Cards</option>
+        <option value="soccer">Soccer Cards</option>
+      </select>
+
+      <input type="submit" value="Find Arbitrage Deals">
+    </form>
+
+    {% if deals %}
+    <div class="deals">
+      <h2>Top Deals:</h2>
+      {% for deal in deals %}
+        <div class="deal">
+          <strong>{{ deal.title }}</strong><br>
+          <a href="{{ deal.site1 }}" target="_blank">Site 1 Price: {{ deal.price1 }}</a><br>
+          <a href="{{ deal.site2 }}" target="_blank">Site 2 Price: {{ deal.price2 }}</a><br>
+          Profit: {{ deal.profit }}<br>
+          Confidence: {{ deal.confidence }}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
 </body>
 </html>
