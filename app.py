@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request
-from arbitrage_bot.arbitrage_bot import run_arbitrage_bot
+from arbitrage_bot import run_arbitrage_bot
 import os
 
-app = Flask(__name__, static_folder="static", template_folder="static")
+app = Flask(__name__, static_folder=".", template_folder=".")
 
 @app.route("/", methods=["GET"])
 def index():
