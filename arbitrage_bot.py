@@ -4,9 +4,15 @@ from urllib.parse import quote
 from bs4 import BeautifulSoup
 import logging
 
+# --- LOGGER SETUP ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ArbitrageBot")
 
+# --- CONFIG ---
+SCAN_DURATION = 60  # Total scan time (seconds)
+CHECK_INTERVAL = 10  # Time between keyword scans (seconds)
+
+# --- FETCH HTML WITH URLLIB ---
 def fetch_html(url):
     try:
         with urllib.request.urlopen(url) as response:
@@ -15,7 +21,9 @@ def fetch_html(url):
         logger.error(f"Failed to fetch URL {url}: {e}")
         return None
 
-def parse_item_from_ebay(url, keyword):
+# --- PARSE EBAY LISTINGS ---
+def parse_ebay(keyword):
+    url = f"https://www.ebay.com/sch/i.html?_nkw={quote(keyword)}"
     html = fetch_html(url)
     if not html:
         return []
@@ -35,54 +43,58 @@ def parse_item_from_ebay(url, keyword):
             title = title_tag.text
             price_text = price_tag.text.replace("$", "").replace(",", "").split()[0]
             price = float(price_text)
-            link = link_tag["href"]
+            url = link_tag["href"]
 
-            if keyword.lower() in title.lower():
-                items.append({
-                    "title": title,
-                    "price": price,
-                    "url": link,
-                    "platform": "eBay"
-                })
+            items.append({
+                "title": title,
+                "price": price,
+                "url": url,
+                "platform": "eBay"
+            })
+
         except Exception as e:
             logger.warning(f"Error parsing listing: {e}")
     return items
 
-def run_arbitrage_scan(keywords, scan_duration=30):
+# --- COMPARE AND FIND DEALS ---
+def analyze_deals(keyword, items, seen_deals, top_deals):
+    sorted_items = sorted(items, key=lambda x: x["price"])
+    if len(sorted_items) < 2:
+        return
+
+    cheapest = sorted_items[0]
+    for comp in sorted_items[1:]:
+        price_diff = comp["price"] - cheapest["price"]
+        percent_diff = (price_diff / cheapest["price"]) * 100
+        deal_id = (cheapest["url"], comp["url"])
+
+        if percent_diff > 20 and deal_id not in seen_deals:
+            seen_deals.add(deal_id)
+            deal = {
+                "keyword": keyword,
+                "item1": cheapest,
+                "item2": comp,
+                "profit": round(price_diff, 2),
+                "percent": round(percent_diff, 1)
+            }
+            top_deals.append(deal)
+            top_deals.sort(key=lambda d: d["profit"], reverse=True)
+            if len(top_deals) > 10:
+                top_deals.pop()
+
+# --- MAIN FUNCTION ---
+def run_arbitrage_scan(keywords):
+    logger.info(f"🚀 Running arbitrage scan for: {keywords}")
     start_time = time.time()
     seen_deals = set()
     top_deals = []
 
-    logger.info("🚀 Running real-time scan...")
+    while time.time() - start_time < SCAN_DURATION:
+        for kw in keywords:
+            logger.info(f"🔍 Scanning: {kw}")
+            items = parse_ebay(kw)
+            analyze_deals(kw, items, seen_deals, top_deals)
+            time.sleep(CHECK_INTERVAL)
 
-    all_items = {kw: [] for kw in keywords}
-
-    for kw in keywords:
-        ebay_url = f"https://www.ebay.com/sch/i.html?_nkw={quote(kw)}"
-        all_items[kw].extend(parse_item_from_ebay(ebay_url, kw))
-
-    for keyword, items in all_items.items():
-        sorted_items = sorted(items, key=lambda x: x['price'])
-        if len(sorted_items) < 2:
-            continue
-
-        cheapest = sorted_items[0]
-        for comp in sorted_items[1:]:
-            price_diff = comp["price"] - cheapest["price"]
-            percent_diff = (price_diff / cheapest["price"]) * 100
-            deal_id = (cheapest["url"], comp["url"])
-
-            if percent_diff > 20 and deal_id not in seen_deals:
-                seen_deals.add(deal_id)
-                deal_info = {
-                    "keyword": keyword,
-                    "item1": cheapest,
-                    "item2": comp,
-                    "profit": round(price_diff, 2),
-                    "percent": round(percent_diff, 1)
-                }
-                top_deals.append(deal_info)
-                top_deals.sort(key=lambda d: d["profit"], reverse=True)
-                if len(top_deals) > 10:
-                    top_deals.pop()
+    logger.info(f"✅ Finished scanning. {len(top_deals)} top deals found.")
     return top_deals
