@@ -1,139 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FlipHawk Arbitrage Bot</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #f0f8ff, #e6ffe6);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      margin: 0;
-    }
-
-    h1 {
-      color: #2c3e50;
-      margin-bottom: 10px;
-    }
-
-    .info {
-      max-width: 600px;
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 1rem;
-    }
-
-    select, button {
-      margin: 5px;
-      padding: 10px;
-      font-size: 1rem;
-    }
-
-    #results {
-      max-width: 800px;
-      margin-top: 30px;
-      text-align: left;
-    }
-
-    .deal {
-      background: #ffffffdd;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-
-    @media (max-width: 600px) {
-      select, button {
-        width: 100%;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlipHawk Arbitrage Search</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>FlipHawk Arbitrage Bot</h1>
-  <div class="info">
-    Arbitrage is the practice of buying items at a low price and reselling them at a higher price. FlipHawk finds profitable opportunities across online marketplaces in real-time.
-  </div>
+    <div class="container">
+        <h1>FlipHawk Arbitrage Search</h1>
+        <form id="searchForm">
+            <div class="category-container">
+                <label for="category">Select Category:</label>
+                <select id="category" name="category" required>
+                    <option value="">--Choose Category--</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Collectibles">Collectibles</option>
+                    <option value="Vintage Clothing">Vintage Clothing</option>
+                </select>
+            </div>
 
-  <label for="category">Select Category:</label>
-  <select id="category" onchange="updateSubcategories()">
-    <option value="tech">Tech</option>
-    <option value="collectibles">Collectibles</option>
-    <option value="vintage_clothing">Vintage Clothing</option>
-    <option value="trading_cards">Trading Cards</option>
-    <option value="shoes">Shoes</option>
-    <option value="jewelry">Jewelry</option>
-  </select>
+            <div class="subcategory-container">
+                <label for="subcategories">Select Subcategories:</label>
+                <select id="subcategories" name="subcategories" multiple required>
+                    <option value="headphones">Headphones</option>
+                    <option value="smartphones">Smartphones</option>
+                    <option value="comic books">Comic Books</option>
+                    <option value="jordans">Jordans</option>
+                </select>
+            </div>
 
-  <label for="subcategory">Select Subcategories:</label>
-  <select id="subcategory" multiple>
-  </select>
+            <button type="submit" class="submit-button">Start Search</button>
+        </form>
 
-  <button onclick="runBot()">Run Arbitrage Scan</button>
-
-  <div id="results"></div>
-
-  <script>
-    const subcategoryMap = {
-      tech: ["headphones", "airpods", "phones", "tv", "laptop", "tablet", "camera"],
-      collectibles: ["art", "comic books", "coins", "sports memorabilia", "vintage toys", "stamps"],
-      vintage_clothing: ["shoes", "jackets", "dresses", "skirts", "pants", "hats"],
-      trading_cards: ["yugioh", "magic the gathering", "pokemon", "football cards", "baseball cards", "soccer cards"],
-      shoes: ["jordans", "yeezy", "travis scott", "limited edition", "collabs", "nike", "adidas"],
-      jewelry: ["chains", "bracelets", "necklaces", "rings", "earrings", "watches"]
-    };
-
-    function updateSubcategories() {
-      const category = document.getElementById("category").value;
-      const subSelect = document.getElementById("subcategory");
-      subSelect.innerHTML = "";
-      subcategoryMap[category].forEach(item => {
-        const opt = document.createElement("option");
-        opt.value = item;
-        opt.textContent = item;
-        subSelect.appendChild(opt);
-      });
-    }
-
-    async function runBot() {
-      const options = [...document.getElementById("subcategory").selectedOptions];
-      const keywords = options.map(o => o.value);
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "<p>Scanning for deals...</p>";
-
-      const res = await fetch("/run", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({keywords})
-      });
-      const data = await res.json();
-
-      if (data.error) {
-        resultsDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
-        return;
-      }
-
-      if (!data.length) {
-        resultsDiv.innerHTML = "<p>No deals found right now. Try again later!</p>";
-        return;
-      }
-
-      resultsDiv.innerHTML = data.map(deal => `
-        <div class="deal">
-          <strong>${deal.keyword.toUpperCase()}</strong><br>
-          🛒 <a href="${deal.item1.url}" target="_blank">${deal.item1.title}</a> - $${deal.item1.price}<br>
-          🔄 <a href="${deal.item2.url}" target="_blank">${deal.item2.title}</a> - $${deal.item2.price}<br>
-          💰 Profit: $${deal.profit} | Accuracy: ${deal.percent}%
+        <div id="dealResults">
+            <h2>Deals Found:</h2>
+            <ul id="dealList"></ul>
         </div>
-      `).join("");
-    }
+    </div>
 
-    updateSubcategories(); // Load default on page load
-  </script>
+    <script src="script.js"></script>
 </body>
 </html>
