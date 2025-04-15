@@ -2,108 +2,134 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>FlipHawk - Arbitrage Finder</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FlipHawk Arbitrage Bot</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f7ff;
-      margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #f0f8ff, #e6ffe6);
       display: flex;
       flex-direction: column;
       align-items: center;
-    }
-    .container {
-      max-width: 700px;
-      width: 90%;
-      margin: auto;
-      background: #fff;
       padding: 20px;
-      margin-top: 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin: 0;
     }
+
     h1 {
-      text-align: center;
-      color: #0077cc;
-    }
-    .info {
-      font-size: 0.9em;
-      background: #e9f7ff;
-      padding: 10px;
-      border-left: 4px solid #0077cc;
-      margin-bottom: 20px;
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-    }
-    select, input[type="submit"] {
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 1em;
-    }
-    .deals {
-      margin-top: 20px;
-    }
-    .deal {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      padding: 15px;
+      color: #2c3e50;
       margin-bottom: 10px;
-      border-radius: 5px;
     }
+
+    .info {
+      max-width: 600px;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+
+    select, button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 1rem;
+    }
+
+    #results {
+      max-width: 800px;
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .deal {
+      background: #ffffffdd;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
     @media (max-width: 600px) {
-      .container {
-        width: 95%;
+      select, button {
+        width: 100%;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🦅 FlipHawk</h1>
-    <div class="info">
-      <strong>What is Arbitrage?</strong><br>
-      Arbitrage is the practice of buying low and selling high — finding items cheaper on one platform and reselling on another for a profit.
-    </div>
-    <form method="POST">
-      <label>Select Category:</label>
-      <select name="category">
-        <option value="tech">Tech</option>
-        <option value="antiques">Antiques</option>
-        <option value="collectibles">Collectibles</option>
-        <option value="trading cards">Trading Cards</option>
-      </select>
-
-      <label>Choose Subcategories:</label>
-      <select name="subcategories" multiple size="6">
-        <option value="pokemon">Pokemon</option>
-        <option value="magic">Magic: The Gathering</option>
-        <option value="yugioh">Yu-Gi-Oh</option>
-        <option value="baseball">Baseball Cards</option>
-        <option value="football">Football Cards</option>
-        <option value="soccer">Soccer Cards</option>
-      </select>
-
-      <input type="submit" value="Find Arbitrage Deals">
-    </form>
-
-    {% if deals %}
-    <div class="deals">
-      <h2>Top Deals:</h2>
-      {% for deal in deals %}
-        <div class="deal">
-          <strong>{{ deal.title }}</strong><br>
-          <a href="{{ deal.site1 }}" target="_blank">Site 1 Price: {{ deal.price1 }}</a><br>
-          <a href="{{ deal.site2 }}" target="_blank">Site 2 Price: {{ deal.price2 }}</a><br>
-          Profit: {{ deal.profit }}<br>
-          Confidence: {{ deal.confidence }}
-        </div>
-      {% endfor %}
-    </div>
-    {% endif %}
+  <h1>FlipHawk Arbitrage Bot</h1>
+  <div class="info">
+    Arbitrage is the practice of buying items at a low price and reselling them at a higher price. FlipHawk finds profitable opportunities across online marketplaces in real-time.
   </div>
+
+  <label for="category">Select Category:</label>
+  <select id="category" onchange="updateSubcategories()">
+    <option value="tech">Tech</option>
+    <option value="trading_cards">Trading Cards</option>
+    <option value="collectibles">Collectibles</option>
+    <option value="antiques">Antiques</option>
+  </select>
+
+  <label for="subcategory">Select Subcategories:</label>
+  <select id="subcategory" multiple>
+  </select>
+
+  <button onclick="runBot()">Run Arbitrage Scan</button>
+
+  <div id="results"></div>
+
+  <script>
+    const subcategoryMap = {
+      tech: ["laptop", "headphones", "tablet", "phone", "camera"],
+      trading_cards: ["pokemon", "magic the gathering", "yugioh", "baseball cards", "football cards", "soccer cards"],
+      collectibles: ["lego", "funko pop", "model kits", "vintage toys"],
+      antiques: ["typewriter", "vintage clock", "gramophone", "antique jewelry"]
+    };
+
+    function updateSubcategories() {
+      const category = document.getElementById("category").value;
+      const subSelect = document.getElementById("subcategory");
+      subSelect.innerHTML = "";
+      subcategoryMap[category].forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item;
+        opt.textContent = item;
+        subSelect.appendChild(opt);
+      });
+    }
+
+    async function runBot() {
+      const options = [...document.getElementById("subcategory").selectedOptions];
+      const keywords = options.map(o => o.value);
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "<p>Scanning for deals...</p>";
+
+      const res = await fetch("/run", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({keywords})
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        resultsDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
+        return;
+      }
+
+      if (!data.length) {
+        resultsDiv.innerHTML = "<p>No deals found right now. Try again later!</p>";
+        return;
+      }
+
+      resultsDiv.innerHTML = data.map(deal => `
+        <div class="deal">
+          <strong>${deal.keyword.toUpperCase()}</strong><br>
+          🛒 <a href="${deal.item1.url}" target="_blank">${deal.item1.title}</a> - $${deal.item1.price}<br>
+          🔄 <a href="${deal.item2.url}" target="_blank">${deal.item2.title}</a> - $${deal.item2.price}<br>
+          💰 Profit: $${deal.profit} | Accuracy: ${deal.percent}%
+        </div>
+      `).join("");
+    }
+
+    updateSubcategories(); // Load default on page load
+  </script>
 </body>
 </html>
