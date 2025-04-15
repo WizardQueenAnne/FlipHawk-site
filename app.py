@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, jsonify
-from arbitrage_bot import run_arbitrage_scan  # Ensure this function can accept multiple subcategories
+from flask import Flask, request, jsonify, render_template
+import random
 
 app = Flask(__name__)
 
@@ -13,11 +13,16 @@ def search():
     subcategories = request.args.getlist('subcategories')
 
     if not category or not subcategories:
-        return jsonify({"error": "No category or subcategories selected."}), 400
+        return jsonify({'deals': []})
+    
+    # Example mock data, replace with actual scraping logic
+    deals = [
+        {'title': 'Headphones', 'price': 50, 'link': 'https://www.example.com/headphones'},
+        {'title': 'Smartphone', 'price': 200, 'link': 'https://www.example.com/smartphone'},
+    ]
 
-    # Pass the selected subcategories to your arbitrage bot logic
-    deals = run_arbitrage_scan(category, subcategories)
-    return jsonify(deals)
+    # Return some mock data for demonstration
+    return jsonify({'deals': deals})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
