@@ -1,27 +1,27 @@
-from flask import Flask, request, jsonify, send_from_directory
-from arbitrage_bot.arbitrage_bot import run_arbitrage_scan
-import os
+from flask import Flask, request, jsonify, render_template
+from arbitrage_bot import run_arbitrage_scan  # adjusted for flat structure
 
-app = Flask(__name__, static_folder="static")
+app = Flask(__name__, static_folder='static', template_folder='static')
 
 @app.route("/")
-def index():
-    return send_from_directory("static", "index.html")
+def home():
+    return render_template("index.html")
 
-@app.route("/run", methods=["POST"])
-def run_arbitrage():
+@app.route("/scan", methods=["POST"])
+def scan():
     data = request.get_json()
+    category = data.get("category")
+    subcategories = data.get("subcategories", [])
 
-    keywords = data.get("keywords", [])
-    if not keywords:
-        return jsonify({"error": "No keywords provided."}), 400
+    if not category or not subcategories:
+        return jsonify({"error": "Missing category or subcategories"}), 400
 
-    try:
-        deals = run_arbitrage_scan(keywords)
-        return jsonify(deals)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Combine category and subcategories for keyword scanning
+    keywords = [category] + subcategories
+
+    # Run scan and return results
+    results = run_arbitrage_scan(keywords)
+    return jsonify(results)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
