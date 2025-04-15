@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FlipHawk Arbitrage Bot</title>
   <style>
     body {
@@ -63,9 +63,11 @@
   <label for="category">Select Category:</label>
   <select id="category" onchange="updateSubcategories()">
     <option value="tech">Tech</option>
-    <option value="trading_cards">Trading Cards</option>
     <option value="collectibles">Collectibles</option>
-    <option value="antiques">Antiques</option>
+    <option value="vintage_clothing">Vintage Clothing</option>
+    <option value="trading_cards">Trading Cards</option>
+    <option value="shoes">Shoes</option>
+    <option value="jewelry">Jewelry</option>
   </select>
 
   <label for="subcategory">Select Subcategories:</label>
@@ -78,10 +80,12 @@
 
   <script>
     const subcategoryMap = {
-      tech: ["laptop", "headphones", "tablet", "phone", "camera"],
-      trading_cards: ["pokemon", "magic the gathering", "yugioh", "baseball cards", "football cards", "soccer cards"],
-      collectibles: ["lego", "funko pop", "model kits", "vintage toys"],
-      antiques: ["typewriter", "vintage clock", "gramophone", "antique jewelry"]
+      tech: ["headphones", "airpods", "phones", "tv", "laptop", "tablet", "camera"],
+      collectibles: ["art", "comic books", "coins", "sports memorabilia", "vintage toys", "stamps"],
+      vintage_clothing: ["shoes", "jackets", "dresses", "skirts", "pants", "hats"],
+      trading_cards: ["yugioh", "magic the gathering", "pokemon", "football cards", "baseball cards", "soccer cards"],
+      shoes: ["jordans", "yeezy", "travis scott", "limited edition", "collabs", "nike", "adidas"],
+      jewelry: ["chains", "bracelets", "necklaces", "rings", "earrings", "watches"]
     };
 
     function updateSubcategories() {
