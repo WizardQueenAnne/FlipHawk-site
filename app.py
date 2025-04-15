@@ -1,11 +1,16 @@
-from flask import Flask, request, jsonify, render_template
-from arbitrage_bot import run_arbitrage_scan  # adjusted for flat structure
+from flask import Flask, request, jsonify, render_template_string
+from arbitrage_bot import run_arbitrage_scan
 
-app = Flask(__name__, static_folder='static', template_folder='static')
+app = Flask(__name__)
+
+# Load index.html manually since it's not in a 'templates/' folder
+def get_index_html():
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template_string(get_index_html())
 
 @app.route("/scan", methods=["POST"])
 def scan():
@@ -16,10 +21,7 @@ def scan():
     if not category or not subcategories:
         return jsonify({"error": "Missing category or subcategories"}), 400
 
-    # Combine category and subcategories for keyword scanning
     keywords = [category] + subcategories
-
-    # Run scan and return results
     results = run_arbitrage_scan(keywords)
     return jsonify(results)
 
