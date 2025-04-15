@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlipHawk</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f0f2f5;
+      color: #333;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 30px;
+      color: #2c3e50;
+    }
+
+    select, button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 25px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #result {
+      margin-top: 30px;
+      max-width: 90%;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>FlipHawk</h1>
+  <label for="category">What would you like to search for?</label>
+  <select id="category">
+    <option value="trading_cards">Trading Cards</option>
+    <option value="collectibles">Collectibles</option>
+    <option value="antiques">Antiques</option>
+    <option value="tech">Tech</option>
+  </select>
+  <button onclick="startSearch()">Start Search</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function startSearch() {
+      const category = document.getElementById("category").value;
+      document.getElementById("result").innerText = "Searching...";
+      const response = await fetch(`/start_search?category=${category}`);
+      const result = await response.text();
+      document.getElementById("result").innerText = result;
+    }
+  </script>
+</body>
+</html>
