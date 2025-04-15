@@ -1,25 +1,16 @@
-from flask import Flask, render_template, request
+from flask import Flask, request, render_template_string
 from arbitrage_bot import run_arbitrage_bot
-import os
 
-app = Flask(__name__, static_folder=".", template_folder=".")
+app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
 def index():
-    return render_template("index.html")
-
-@app.route("/run-bot", methods=["POST"])
-def run_bot():
-    category = request.form.get("category")
-    if not category:
-        return "No category provided.", 400
-
-    print(f"🔍 Running arbitrage bot for category: {category}")
-    deals = run_arbitrage_bot(category)
-
-    return "<br><br>".join(deals)
+    deals = []
+    if request.method == "POST":
+        category = request.form.get("category")
+        subcategories = request.form.getlist("subcategories")
+        deals = run_arbitrage_bot(category, subcategories)
+    return render_template_string(open("index.html").read(), deals=deals)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print("✅ Flask app is starting...")
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=10000)
