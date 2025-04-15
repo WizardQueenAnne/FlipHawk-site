@@ -3,42 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlipHawk Arbitrage Search</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>FlipHawk - Arbitrage Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 0;
+        }
+        h1 {
+            color: #2C3E50;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        .dropdown-container {
+            margin-bottom: 20px;
+        }
+        select, button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 25px;
+            border: 2px solid #ccc;
+            margin: 10px;
+        }
+        button {
+            background-color: #2ECC71;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #27AE60;
+        }
+        .dropdown-container select {
+            width: 250px;
+        }
+        .output {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .output p {
+            font-size: 18px;
+            color: #34495E;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>FlipHawk Arbitrage Search</h1>
-        <form id="searchForm">
-            <div class="category-container">
-                <label for="category">Select Category:</label>
-                <select id="category" name="category" required>
-                    <option value="">--Choose Category--</option>
-                    <option value="Tech">Tech</option>
-                    <option value="Collectibles">Collectibles</option>
-                    <option value="Vintage Clothing">Vintage Clothing</option>
-                </select>
-            </div>
-
-            <div class="subcategory-container">
-                <label for="subcategories">Select Subcategories:</label>
-                <select id="subcategories" name="subcategories" multiple required>
-                    <option value="headphones">Headphones</option>
-                    <option value="smartphones">Smartphones</option>
-                    <option value="comic books">Comic Books</option>
-                    <option value="jordans">Jordans</option>
-                </select>
-            </div>
-
-            <button type="submit" class="submit-button">Start Search</button>
-        </form>
-
-        <div id="dealResults">
-            <h2>Deals Found:</h2>
-            <ul id="dealList"></ul>
+        <div class="dropdown-container">
+            <select id="category-select">
+                <option value="">Select a category</option>
+                <option value="tech">Tech</option>
+                <option value="collectibles">Collectibles</option>
+                <option value="vintage-clothing">Vintage Clothing</option>
+            </select>
+            <br>
+            <select id="subcategories-select" multiple>
+                <option value="headphones">Headphones</option>
+                <option value="smartphones">Smartphones</option>
+                <option value="comic-books">Comic Books</option>
+                <option value="jordans">Jordans</option>
+            </select>
+            <br>
+            <button onclick="startSearch()">Start Arbitrage Search</button>
+        </div>
+        <div class="output" id="output">
+            <p>No results yet...</p>
         </div>
     </div>
+    <script>
+        function startSearch() {
+            var category = document.getElementById("category-select").value;
+            var subcategories = Array.from(document.getElementById("subcategories-select").selectedOptions).map(option => option.value);
 
-    <script src="script.js"></script>
+            if (category && subcategories.length > 0) {
+                fetch(`/search?category=${category}&subcategories=${subcategories.join(',')}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        let outputDiv = document.getElementById("output");
+                        if (data.deals.length > 0) {
+                            let html = '<ul>';
+                            data.deals.forEach(deal => {
+                                html += `<li><a href="${deal.link}" target="_blank">${deal.title}</a> - $${deal.price}</li>`;
+                            });
+                            html += '</ul>';
+                            outputDiv.innerHTML = html;
+                        } else {
+                            outputDiv.innerHTML = '<p>No deals found.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById("output").innerHTML = '<p>Failed to fetch results.</p>';
+                    });
+            } else {
+                alert("Please select a category and at least one subcategory.");
+            }
+        }
+    </script>
 </body>
 </html>
