@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
-from arbitrage_bot.arbitrage_bot import run_arbitrage_scan
+from arbitrage_bot import run_arbitrage_scan
 from flask_cors import CORS
 import os
 
