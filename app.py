@@ -1,53 +1,22 @@
-from flask import Flask, request, jsonify, send_from_directory
-from arbitrage_bot import run_arbitrage_scan
-from flask_cors import CORS
+from flask import Flask, send_from_directory
 import os
+from arbitrage_bot import run_arbitrage_scan  # Assuming you want to import your arbitrage scan function here
 
-app = Flask(__name__, static_folder='static')
-CORS(app)
+# Initialize Flask app
+app = Flask(__name__)
 
-CATEGORY_KEYWORDS = {
-    "Tech": {
-        "Headphones": ["headphones", "wireless headphones", "Bluetooth headset"],
-        "Laptops": ["laptop", "MacBook", "Chromebook"],
-        "Smartphones": ["iPhone", "Android phone", "smartphone"],
-    },
-    "Collectibles": {
-        "Pokemon Cards": ["pokemon card", "pokemon holo", "rare pokemon"],
-        "MTG Cards": ["mtg card", "magic the gathering", "rare mtg"],
-        "Comic Books": ["comic book", "marvel comic", "dc comic"],
-    },
-    "Vintage Clothing": {
-        "Jordans": ["Air Jordans", "Jordan 1", "retro Jordans"],
-        "Levi's Jeans": ["vintage levis", "levis 501", "levis denim"],
-        "Band Tees": ["vintage band tee", "metallica shirt", "nirvana shirt"]
-    }
-}
-
-@app.route("/")
+# Serve the index.html from the root directory
+@app.route('/')
 def serve_index():
-    return send_from_directory(app.static_folder, "index.html")
+    return send_from_directory(os.getcwd(), 'index.html')
 
-@app.route("/scan", methods=["POST"])
-def scan():
-    data = request.get_json()
-    category = data.get("category")
-    subcategories = data.get("subcategories", [])
+# Additional route for running the arbitrage scan
+@app.route('/run_scan', methods=['POST'])
+def run_scan():
+    # Assuming 'run_arbitrage_scan' is a function from your arbitrage_bot module
+    # You can modify the function to accept parameters if needed
+    result = run_arbitrage_scan()  # This will trigger your arbitrage logic
+    return result  # You can return a JSON response or something more useful here
 
-    if not subcategories:
-        return jsonify({"error": "No subcategories selected."}), 400
-
-    all_keywords = []
-    for sub in subcategories:
-        sub_keywords = CATEGORY_KEYWORDS.get(category, {}).get(sub, [])
-        all_keywords.extend(sub_keywords)
-
-    if not all_keywords:
-        return jsonify({"error": "No valid keywords found for the selected subcategories."}), 400
-
-    results = run_arbitrage_scan(all_keywords)
-    return jsonify(results)
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(debug=True)
