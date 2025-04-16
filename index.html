@@ -2,117 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>FlipHawk Arbitrage Bot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlipHawk - Arbitrage Search</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f0f4f8;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 0;
-        }
-        h1 {
-            color: #2C3E50;
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-        .dropdown-container {
-            margin-bottom: 20px;
+            font-family: Arial, sans-serif;
+            padding: 20px;
         }
         select, button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 25px;
-            border: 2px solid #ccc;
-            margin: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 400px;
         }
-        button {
-            background-color: #2ECC71;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #27AE60;
-        }
-        .dropdown-container select {
-            width: 250px;
-        }
-        .output {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .output p {
-            font-size: 18px;
-            color: #34495E;
+        @media (min-width: 600px) {
+            select, button {
+                width: 50%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>FlipHawk Arbitrage Search</h1>
-        <div class="dropdown-container">
-            <select id="category-select">
-                <option value="">Select a category</option>
-                <option value="tech">Tech</option>
-                <option value="collectibles">Collectibles</option>
-                <option value="vintage-clothing">Vintage Clothing</option>
-            </select>
-            <br>
-            <select id="subcategories-select" multiple>
-                <option value="headphones">Headphones</option>
-                <option value="smartphones">Smartphones</option>
-                <option value="comic-books">Comic Books</option>
-                <option value="jordans">Jordans</option>
-            </select>
-            <br>
-            <button onclick="startSearch()">Start Arbitrage Search</button>
-        </div>
-        <div class="output" id="output">
-            <p>No results yet...</p>
-        </div>
-    </div>
-    <script>
-        function startSearch() {
-            var category = document.getElementById("category-select").value;
-            var subcategories = Array.from(document.getElementById("subcategories-select").selectedOptions).map(option => option.value);
+    <h1>FlipHawk Arbitrage Bot</h1>
+    <label for="category">Select Category:</label>
+    <select id="category">
+        <option value="">--Select Category--</option>
+        {% for category in categories %}
+            <option value="{{ category }}">{{ category }}</option>
+        {% endfor %}
+    </select>
 
-            if (category && subcategories.length > 0) {
-                fetch(`/search?category=${category}&subcategories=${subcategories.join(',')}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        let outputDiv = document.getElementById("output");
-                        if (data.deals.length > 0) {
-                            let html = '<ul>';
-                            data.deals.forEach(deal => {
-                                html += `<li><a href="${deal.link}" target="_blank">${deal.title}</a> - $${deal.price}</li>`;
-                            });
-                            html += '</ul>';
-                            outputDiv.innerHTML = html;
-                        } else {
-                            outputDiv.innerHTML = '<p>No deals found.</p>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        document.getElementById("output").innerHTML = '<p>Failed to fetch results.</p>';
+    <label for="subcategory">Select Subcategory:</label>
+    <select id="subcategory">
+        <option value="">--Select Subcategory--</option>
+    </select>
+
+    <button id="scanBtn">Scan</button>
+
+    <div id="results"></div>
+
+    <script>
+        const categorySelect = document.getElementById('category');
+        const subcategorySelect = document.getElementById('subcategory');
+        const scanBtn = document.getElementById('scanBtn');
+        const resultsDiv = document.getElementById('results');
+
+        categorySelect.addEventListener('change', () => {
+            const category = categorySelect.value;
+            fetch('/get_subcategories', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({category})
+            })
+            .then(response => response.json())
+            .then(data => {
+                subcategorySelect.innerHTML = '<option value="">--Select Subcategory--</option>';
+                data.subcategories.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub;
+                    option.textContent = sub;
+                    subcategorySelect.appendChild(option);
+                });
+            });
+        });
+
+        scanBtn.addEventListener('click', () => {
+            const subcategory = subcategorySelect.value;
+            fetch('/scan', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({subcategory})
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = '';
+                for (const [keyword, items] of Object.entries(data.results)) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `<h2>${keyword}</h2>`;
+                    items.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.textContent = `${item.title} - $${item.price}`;
+                        section.appendChild(itemDiv);
                     });
-            } else {
-                alert("Please select a category and at least one subcategory.");
-            }
-        }
+                    resultsDiv.appendChild(section);
+                }
+            });
+        });
     </script>
 </body>
 </html>
