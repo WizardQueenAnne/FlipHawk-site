@@ -2,90 +2,180 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FlipHawk Arbitrage Bot</title>
+    <title>FlipHawk</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background-color: #f4f6fa;
+            color: #333;
         }
-        select, button {
-            padding: 10px;
-            margin: 10px 0;
-            width: 100%;
-            max-width: 400px;
+        h1 {
+            text-align: center;
+            color: #2c3e50;
         }
-        @media (min-width: 600px) {
-            select, button {
-                width: 50%;
+        .category-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .category {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 1rem;
+            width: 300px;
+            text-align: center;
+        }
+        .category h3 {
+            margin-bottom: 1rem;
+            color: #2980b9;
+        }
+        .subcategories {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .subcategories label {
+            cursor: pointer;
+        }
+        button {
+            display: block;
+            margin: 0 auto;
+            background-color: #2980b9;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #1c5d82;
+        }
+        .results {
+            max-width: 800px;
+            margin: 2rem auto;
+            background-color: #fff;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .deal {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 1rem;
+        }
+        .deal a {
+            display: block;
+            margin-top: 0.25rem;
+            color: #2980b9;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            .category-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .category {
+                width: 90%;
             }
         }
     </style>
 </head>
 <body>
-    <h1>FlipHawk Arbitrage Bot</h1>
-    <label for="category">Select Category:</label>
-    <select id="category">
-        <option value="">--Select Category--</option>
-        {% for category in categories %}
-            <option value="{{ category }}">{{ category }}</option>
-        {% endfor %}
-    </select>
+    <h1>FlipHawk Arbitrage Scanner</h1>
+    <form id="scan-form">
+        <div class="category-container" id="categories"></div>
+        <button type="submit">Scan for Deals</button>
+    </form>
 
-    <label for="subcategory">Select Subcategory:</label>
-    <select id="subcategory">
-        <option value="">--Select Subcategory--</option>
-    </select>
-
-    <button id="scanBtn">Scan</button>
-
-    <div id="results"></div>
+    <div class="results" id="results"></div>
 
     <script>
-        const categorySelect = document.getElementById('category');
-        const subcategorySelect = document.getElementById('subcategory');
-        const scanBtn = document.getElementById('scanBtn');
-        const resultsDiv = document.getElementById('results');
+        const categories = {{ categories | tojson }};
+        const container = document.getElementById("categories");
 
-        categorySelect.addEventListener('change', () => {
-            const category = categorySelect.value;
-            fetch('/get_subcategories', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({category})
-            })
-            .then(response => response.json())
-            .then(data => {
-                subcategorySelect.innerHTML = '<option value="">--Select Subcategory--</option>';
-                data.subcategories.forEach(sub => {
-                    const option = document.createElement('option');
-                    option.value = sub;
-                    option.textContent = sub;
-                    subcategorySelect.appendChild(option);
-                });
+        for (const [mainCategory, subcats] of Object.entries(categories)) {
+            const section = document.createElement("div");
+            section.className = "category";
+
+            const title = document.createElement("h3");
+            title.textContent = mainCategory;
+            section.appendChild(title);
+
+            const list = document.createElement("div");
+            list.className = "subcategories";
+
+            subcats.forEach(sub => {
+                const id = `${mainCategory}-${sub}`.replace(/\s+/g, "-");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.name = "subcategories";
+                checkbox.value = sub;
+                checkbox.id = id;
+
+                const label = document.createElement("label");
+                label.htmlFor = id;
+                label.textContent = sub;
+
+                list.appendChild(checkbox);
+                list.appendChild(label);
             });
-        });
 
-        scanBtn.addEventListener('click', () => {
-            const subcategory = subcategorySelect.value;
-            fetch('/scan', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({subcategory})
-            })
-            .then(response => response.json())
-            .then(data => {
-                resultsDiv.innerHTML = '';
-                for (const [keyword, items] of Object.entries(data.results)) {
-                    const section = document.createElement('div');
-                    section.innerHTML = `<h2>${keyword}</h2>`;
-                    items.forEach(item => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.textContent = `${item.title} - $${item.price}`;
-                        section.appendChild(itemDiv);
-                    });
-                    resultsDiv.appendChild(section);
-                }
+            section.appendChild(list);
+            container.appendChild(section);
+        }
+
+        document.getElementById("scan-form").addEventListener("submit", async e => {
+            e.preventDefault();
+
+            const selected = Array.from(document.querySelectorAll("input[name='subcategories']:checked"))
+                                  .map(cb => cb.value);
+
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "<p>Scanning for deals...</p>";
+
+            if (selected.length === 0) {
+                resultsDiv.innerHTML = "<p>Please select at least one subcategory.</p>";
+                return;
+            }
+
+            const response = await fetch("/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subcategories: selected })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                resultsDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
+                return;
+            }
+
+            if (!data.results || data.results.length === 0) {
+                resultsDiv.innerHTML = "<p>No good deals found. Try different subcategories.</p>";
+                return;
+            }
+
+            resultsDiv.innerHTML = "";
+            data.results.forEach(deal => {
+                const div = document.createElement("div");
+                div.className = "deal";
+                div.innerHTML = `
+                    <strong>Profit:</strong> $${deal.profit} <br>
+                    <strong>Confidence:</strong> ${deal.confidence}% <br>
+                    <a href="${deal.listing1}" target="_blank">Listing 1</a>
+                    <a href="${deal.listing2}" target="_blank">Listing 2</a>
+                `;
+                resultsDiv.appendChild(div);
             });
         });
     </script>
