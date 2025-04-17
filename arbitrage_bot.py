@@ -1,3 +1,5 @@
+import random
+
 def generate_simulated_opportunities(subcategories):
     """
     Generate simulated arbitrage opportunities for demonstration purposes.
@@ -108,6 +110,14 @@ def generate_simulated_opportunities(subcategories):
     
     # Sort by profit percentage and return
     return sorted(simulated, key=lambda x: -x["profitPercentage"])
+
+def run_arbitrage_scan(subcategories):
+    """
+    This is the function that app.py is trying to import and use.
+    Simply calls generate_simulated_opportunities for now.
+    In the future, this could be expanded to do real arbitrage scanning.
+    """
+    return generate_simulated_opportunities(subcategories)
 
 if __name__ == "__main__":
     # Test the function with some subcategories
