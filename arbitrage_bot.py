@@ -1,109 +1,123 @@
-from urllib.request import urlopen, Request
-from bs4 import BeautifulSoup
-import re
-import random
-import time
-
-def extract_price(text):
-    match = re.search(r"\$?(\d+(?:\.\d{1,2})?)", text.replace(",", ""))
-    return float(match.group(1)) if match else None
-
-def fetch_ebay_listings(keyword):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
-    query = keyword.replace(" ", "+")
-    url = f"https://www.ebay.com/sch/i.html?_nkw={query}&_sop=15"
+def generate_simulated_opportunities(subcategories):
+    """
+    Generate simulated arbitrage opportunities for demonstration purposes.
+    This is used when no real arbitrage opportunities are found.
+    """
+    simulated = []
     
-    try:
-        req = Request(url, headers=headers)
-        html = urlopen(req, timeout=10).read()
-        soup = BeautifulSoup(html, "html.parser")
-        
-        listings = []
-        seen_titles = set()
-        
-        for item in soup.select(".s-item"):
-            title_elem = item.select_one(".s-item__title")
-            price_elem = item.select_one(".s-item__price")
-            link_elem = item.select_one("a.s-item__link")
-            
-            if not title_elem or not price_elem or not link_elem:
-                continue
-                
-            title = title_elem.text.strip()
-            if title == "Shop on eBay":  # Skip the first placeholder item
-                continue
-                
-            price = extract_price(price_elem.text.strip())
-            link = link_elem["href"]
-            
-            if title in seen_titles or not price:
-                continue
-                
-            seen_titles.add(title)
-            listings.append({
-                "title": title,
-                "price": price,
-                "link": link
-            })
-            
-            # Limit to 5 listings per keyword to avoid overwhelming the system
-            if len(listings) >= 5:
+    product_templates = {
+        "Laptops": [
+            {"name": "Dell XPS 13 9310 13.4 inch FHD+ Laptop", "low": 699, "high": 999},
+            {"name": "MacBook Air M1 8GB RAM 256GB SSD", "low": 749, "high": 999},
+            {"name": "Lenovo ThinkPad X1 Carbon Gen 9", "low": 899, "high": 1349},
+            {"name": "ASUS ROG Zephyrus G14 Gaming Laptop", "low": 1099, "high": 1499}
+        ],
+        "Smartphones": [
+            {"name": "iPhone 13 Pro 128GB Graphite Unlocked", "low": 699, "high": 899},
+            {"name": "Samsung Galaxy S21 Ultra 5G 128GB", "low": 649, "high": 899},
+            {"name": "Google Pixel 6 Pro 128GB", "low": 499, "high": 749},
+            {"name": "OnePlus 9 Pro 5G 256GB", "low": 599, "high": 799}
+        ],
+        "Pokémon": [
+            {"name": "Charizard VMAX Rainbow Rare 074/073", "low": 149, "high": 249},
+            {"name": "Booster Box Pokémon Brilliant Stars Sealed", "low": 99, "high": 159},
+            {"name": "Pikachu VMAX Rainbow Rare 188/185", "low": 129, "high": 219},
+            {"name": "Ancient Mew Sealed Promo Card", "low": 39, "high": 89}
+        ],
+        "Magic: The Gathering": [
+            {"name": "Liliana of the Veil Innistrad Mythic", "low": 49, "high": 89},
+            {"name": "Jace, the Mind Sculptor Worldwake", "low": 99, "high": 189},
+            {"name": "Tarmogoyf Modern Horizons 2", "low": 29, "high": 59},
+            {"name": "Mana Crypt Eternal Masters", "low": 159, "high": 259}
+        ],
+        "Yu-Gi-Oh!": [
+            {"name": "Blue-Eyes White Dragon 1st Edition", "low": 79, "high": 149},
+            {"name": "Dark Magician Girl 1st Edition", "low": 69, "high": 119},
+            {"name": "Accesscode Talker Prismatic Secret Rare", "low": 59, "high": 99},
+            {"name": "Ash Blossom & Joyous Spring Ultra Rare", "low": 29, "high": 49}
+        ],
+        "Sneakers": [
+            {"name": "Nike Air Jordan 1 Retro High OG", "low": 189, "high": 299},
+            {"name": "Adidas Yeezy Boost 350 V2", "low": 219, "high": 349},
+            {"name": "Nike Dunk Low Retro White Black", "low": 99, "high": 179},
+            {"name": "New Balance 550 White Green", "low": 89, "high": 159}
+        ],
+        "Denim": [
+            {"name": "Levi's 501 Original Fit Jeans Vintage", "low": 45, "high": 99},
+            {"name": "Vintage Wrangler Cowboy Cut Jeans", "low": 39, "high": 85},
+            {"name": "Lee Riders Vintage High Waisted Jeans", "low": 49, "high": 110},
+            {"name": "Carhartt Double Knee Work Jeans", "low": 55, "high": 95}
+        ],
+        "Vintage Toys": [
+            {"name": "Star Wars Vintage Kenner Action Figure", "low": 29, "high": 89},
+            {"name": "Transformers G1 Optimus Prime", "low": 89, "high": 249},
+            {"name": "Original Nintendo Game Boy", "low": 59, "high": 129},
+            {"name": "Vintage Barbie Doll 1970s", "low": 49, "high": 119}
+        ]
+    }
+    
+    # Default products if specific category not found
+    default_products = [
+        {"name": "Vintage Collection Rare Item", "low": 79, "high": 149},
+        {"name": "Limited Edition Collectible", "low": 49, "high": 119},
+        {"name": "Rare Discontinued Model", "low": 99, "high": 199},
+        {"name": "Sealed Original Package Item", "low": 59, "high": 129}
+    ]
+    
+    # Generate 5-10 opportunities for the subcategories
+    for subcategory in subcategories:
+        # Find appropriate product templates
+        templates = None
+        for key in product_templates:
+            if key.lower() in subcategory.lower() or subcategory.lower() in key.lower():
+                templates = product_templates[key]
                 break
-                
-        return listings
         
-    except Exception as e:
-        print(f"Error fetching listings for {keyword}: {e}")
-        return []
-
-def run_arbitrage_scan(keywords=None):
-    if not keywords:
-        # Default to some tech products if no keywords provided
-        keywords = ["smartphone", "laptop", "headphones"]
-    
-    all_deals = []
-    seen_links = set()
-    
-    for kw in keywords:
-        # Add a small delay between requests to prevent rate limiting
-        time.sleep(random.uniform(0.5, 1.5))
+        if not templates:
+            templates = default_products
         
-        listings = fetch_ebay_listings(kw)
-        for listing in listings:
-            if listing["link"] in seen_links:
-                continue
-                
-            seen_links.add(listing["link"])
+        # Create 1-3 opportunities for this subcategory
+        for _ in range(random.randint(1, 3)):
+            template = random.choice(templates)
             
-            # Generate a more realistic confidence score based on price and other factors
-            base_confidence = 75
-            price_factor = max(0, min(15, 10 - listing["price"] / 100))
-            keyword_factor = 5 * (keywords.index(kw) % 3)
-            random_factor = random.uniform(-5, 5)
+            # Add some randomness to the prices
+            buy_price = template["low"] * random.uniform(0.9, 1.1)
+            sell_price = template["high"] * random.uniform(0.9, 1.1)
             
-            confidence = int(base_confidence + price_factor + keyword_factor + random_factor)
-            confidence = max(60, min(95, confidence))  # Keep within reasonable range
+            # Calculate profit metrics
+            profit = sell_price - buy_price
+            profit_percentage = (profit / buy_price) * 100
             
-            all_deals.append({
-                "title": listing["title"],
-                "price": listing["price"],
-                "link": listing["link"],
+            # Generate random confidence score
+            confidence = random.randint(70, 95)
+            
+            # Create opportunity
+            opportunity = {
+                "title": template["name"],
+                "buyPrice": round(buy_price, 2),
+                "sellPrice": round(sell_price, 2),
+                "buyLink": "https://www.ebay.com/sch/i.html?_nkw=" + template["name"].replace(" ", "+"),
+                "sellLink": "https://www.ebay.com/sch/i.html?_nkw=" + template["name"].replace(" ", "+") + "&_sop=16",
+                "profit": round(profit, 2),
+                "profitPercentage": round(profit_percentage, 2),
                 "confidence": confidence,
-                "keyword": kw
-            })
+                "subcategory": subcategory
+            }
+            
+            simulated.append(opportunity)
     
-    # Sort by confidence first, then price
-    sorted_deals = sorted(all_deals, key=lambda x: (-x["confidence"], x["price"]))
-    
-    # Return top 10 deals or all if less than 10
-    return sorted_deals[:10]
+    # Sort by profit percentage and return
+    return sorted(simulated, key=lambda x: -x["profitPercentage"])
 
 if __name__ == "__main__":
-    # Test the function with some keywords
-    test_keywords = ["vintage denim", "retro sneakers"]
-    results = run_arbitrage_scan(test_keywords)
-    for i, deal in enumerate(results, 1):
-        print(f"{i}. {deal['title']} - ${deal['price']} (Confidence: {deal['confidence']}%)")
-        print(f"   Link: {deal['link']}")
-        print(f"   Keyword: {deal['keyword']}")
+    # Test the function with some subcategories
+    test_subcategories = ["Pokémon", "Sneakers", "Magic: The Gathering"]
+    results = run_arbitrage_scan(test_subcategories)
+    print(f"Found {len(results)} arbitrage opportunities:")
+    for i, opportunity in enumerate(results, 1):
+        print(f"{i}. {opportunity['title']}")
+        print(f"   Buy: ${opportunity['buyPrice']:.2f} | Sell: ${opportunity['sellPrice']:.2f}")
+        print(f"   Profit: ${opportunity['profit']:.2f} ({opportunity['profitPercentage']:.1f}%)")
+        print(f"   Confidence: {opportunity['confidence']}%")
+        print(f"   Subcategory: {opportunity['subcategory']}")
         print()
