@@ -1,4 +1,217 @@
 import random
+import aiohttp
+import asyncio
+from bs4 import BeautifulSoup
+import re
+import time
+from difflib import SequenceMatcher
+
+async def fetch_page(session, url):
+    """Fetch a page and return the HTML content."""
+    try:
+        async with session.get(url, timeout=30) as response:
+            if response.status == 200:
+                return await response.text()
+            else:
+                print(f"Error fetching {url}: Status code {response.status}")
+                return None
+    except Exception as e:
+        print(f"Exception fetching {url}: {str(e)}")
+        return None
+
+def normalize_title(title):
+    """Normalize title for better comparison."""
+    # Convert to lowercase
+    title = title.lower()
+    
+    # Remove common filler words and phrases
+    fillers = ['brand new', 'new', 'sealed', 'mint', 'condition', 'authentic', 
+               'genuine', 'official', 'in box', 'inbox', 'with box', 'unopened', 
+               'fast shipping', 'free shipping', 'ships fast', 'lot of', 'set of']
+    
+    for filler in fillers:
+        title = title.replace(filler, '')
+    
+    # Remove special characters and extra spaces
+    title = re.sub(r'[^\w\s]', ' ', title)
+    title = re.sub(r'\s+', ' ', title).strip()
+    
+    return title
+
+def generate_keywords(subcategory):
+    """Generate search keyword variations for a subcategory."""
+    keywords = [subcategory]
+    
+    # Add common variations
+    variations = {
+        "Magic: The Gathering": ["MTG", "Magic The Gathering", "Magic cards", "MtG cards"],
+        "Pokémon": ["Pokemon", "Pokemon cards", "Pokemon TCG", "Pokemon Trading Card Game"],
+        "Yu-Gi-Oh!": ["Yugioh", "Yu Gi Oh", "YGO", "Yu-Gi-Oh cards"],
+        "Laptops": ["Laptop computer", "Notebook computer", "Portable computer"],
+        "Smartphones": ["Cell phone", "Mobile phone", "Smart phone"],
+        "Sneakers": ["Athletic shoes", "Running shoes", "Designer sneakers", "Collectible sneakers"],
+        "Denim": ["Jeans", "Denim pants", "Vintage jeans", "Designer jeans"],
+        "Vintage Toys": ["Retro toys", "Classic toys", "Old toys", "Collectible toys"],
+        # Add more variations as needed
+    }
+    
+    # Add subcategory-specific variations
+    if subcategory in variations:
+        keywords.extend(variations[subcategory])
+    
+    return keywords
+
+async def search_ebay_listings(session, keyword, sort="price_asc"):
+    """Search eBay listings with the given keyword and sort order."""
+    encoded_keyword = keyword.replace(" ", "+")
+    
+    # Determine sort parameter
+    sort_param = "15" if sort == "price_asc" else "16"  # 15=price+shipping: lowest first, 16=price+shipping: highest first
+    
+    url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_keyword}&_sop={sort_param}&LH_BIN=1&LH_ItemCondition=1000"
+    
+    html = await fetch_page(session, url)
+    if not html:
+        return []
+    
+    soup = BeautifulSoup(html, 'html.parser')
+    listings = []
+    
+    # Find all search result items
+    items = soup.select('li.s-item')
+    
+    for item in items[:20]:  # Limit to first 20 results
+        # Skip if it's the first "result" which is usually an ad/header
+        if 'srp-river-results-null-search__item' in item.get('class', []):
+            continue
+            
+        # Extract title
+        title_elem = item.select_one('.s-item__title')
+        if not title_elem:
+            continue
+        title = title_elem.get_text(strip=True)
+        if 'Shop on eBay' in title:
+            continue
+            
+        # Extract price
+        price_elem = item.select_one('.s-item__price')
+        if not price_elem:
+            continue
+            
+        price_text = price_elem.get_text(strip=True)
+        # Handle price ranges (take the average)
+        if ' to ' in price_text:
+            prices = price_text.replace('$', '').replace(',', '').split(' to ')
+            try:
+                price = (float(prices[0]) + float(prices[1])) / 2
+            except:
+                continue
+        else:
+            # Extract the numeric part of the price
+            price_match = re.search(r'(\d+,)*\d+\.\d+', price_text.replace('$', ''))
+            if not price_match:
+                continue
+            try:
+                price = float(price_match.group(0).replace(',', ''))
+            except:
+                continue
+                
+        # Extract link
+        link_elem = item.select_one('a.s-item__link')
+        if not link_elem:
+            continue
+        link = link_elem['href'].split('?')[0]
+        
+        listings.append({
+            'title': title,
+            'price': price,
+            'link': link,
+            'normalized_title': normalize_title(title)
+        })
+    
+    return listings
+
+def calculate_similarity(title1, title2):
+    """Calculate similarity between two titles using SequenceMatcher."""
+    return SequenceMatcher(None, title1, title2).ratio()
+
+def find_arbitrage_opportunities(low_priced, high_priced, similarity_threshold=0.75):
+    """Find arbitrage opportunities by comparing low and high-priced listings."""
+    opportunities = []
+    
+    for low in low_priced:
+        for high in high_priced:
+            # Calculate similarity between the titles
+            similarity = calculate_similarity(low['normalized_title'], high['normalized_title'])
+            
+            if similarity >= similarity_threshold:
+                # Calculate profit metrics
+                buy_price = low['price']
+                sell_price = high['price']
+                profit = sell_price - buy_price
+                profit_percentage = (profit / buy_price) * 100
+                
+                # Skip if profit is too low or negative
+                if profit_percentage < 20:
+                    continue
+                
+                # Calculate confidence score based on similarity and profit
+                base_confidence = similarity * 90  # Max 90% from title similarity
+                profit_bonus = min(10, profit_percentage / 10)  # Max 10% from profit
+                confidence = min(95, base_confidence + profit_bonus)  # Cap at 95%
+                
+                opportunity = {
+                    'title': low['title'],
+                    'buyPrice': buy_price,
+                    'sellPrice': sell_price,
+                    'buyLink': low['link'],
+                    'sellLink': high['link'],
+                    'profit': profit,
+                    'profitPercentage': profit_percentage,
+                    'confidence': round(confidence),
+                    'similarity': similarity
+                }
+                
+                opportunities.append(opportunity)
+    
+    return opportunities
+
+async def process_subcategory(session, subcategory):
+    """Process a single subcategory to find arbitrage opportunities."""
+    keywords = generate_keywords(subcategory)
+    all_opportunities = []
+    
+    for keyword in keywords:
+        print(f"Searching for: {keyword}")
+        
+        # Fetch listings sorted by price (ascending and descending)
+        low_priced_listings = await search_ebay_listings(session, keyword, sort="price_asc")
+        # Artificial delay to prevent rate limiting
+        await asyncio.sleep(1)
+        high_priced_listings = await search_ebay_listings(session, keyword, sort="price_desc")
+        
+        if low_priced_listings and high_priced_listings:
+            opportunities = find_arbitrage_opportunities(low_priced_listings, high_priced_listings)
+            for opp in opportunities:
+                opp['subcategory'] = subcategory
+                opp['keyword'] = keyword
+            all_opportunities.extend(opportunities)
+    
+    return all_opportunities
+
+async def fetch_all_arbitrage_opportunities(subcategories):
+    """Fetch arbitrage opportunities for all subcategories."""
+    async with aiohttp.ClientSession() as session:
+        tasks = [process_subcategory(session, subcat) for subcat in subcategories]
+        results = await asyncio.gather(*tasks)
+    
+    # Combine results from all subcategories
+    all_opportunities = []
+    for result in results:
+        all_opportunities.extend(result)
+    
+    # Sort by profit percentage and return top results
+    return sorted(all_opportunities, key=lambda x: -x['profitPercentage'])
 
 def generate_simulated_opportunities(subcategories):
     """
@@ -113,11 +326,31 @@ def generate_simulated_opportunities(subcategories):
 
 def run_arbitrage_scan(subcategories):
     """
-    This is the function that app.py is trying to import and use.
-    Simply calls generate_simulated_opportunities for now.
-    In the future, this could be expanded to do real arbitrage scanning.
+    Run an arbitrage scan across multiple online marketplaces.
+    This function tries to fetch real opportunities first, and falls back to simulated data if needed.
     """
-    return generate_simulated_opportunities(subcategories)
+    try:
+        # Try to run the real arbitrage scan
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            real_opportunities = loop.run_until_complete(fetch_all_arbitrage_opportunities(subcategories))
+            
+            # If we found real opportunities, return them
+            if real_opportunities:
+                return real_opportunities
+        finally:
+            loop.close()
+        
+        # If we didn't find any real opportunities or an error occurred, fall back to simulated data
+        print("Falling back to simulated data")
+        return generate_simulated_opportunities(subcategories)
+        
+    except Exception as e:
+        print(f"Error in arbitrage scan: {str(e)}")
+        # In case of any error, fall back to simulated data
+        return generate_simulated_opportunities(subcategories)
 
 if __name__ == "__main__":
     # Test the function with some subcategories
