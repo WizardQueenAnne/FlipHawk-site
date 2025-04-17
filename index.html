@@ -2,114 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>FlipHawk</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f2f5f7;
-      margin: 0;
-      padding: 30px;
-      text-align: center;
-    }
-    select, button {
-      padding: 10px;
-      margin: 10px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      background-color: #0077cc;
-      color: white;
-      cursor: pointer;
-    }
-    .results {
-      margin-top: 30px;
-    }
-    .deal {
-      background: white;
-      padding: 15px;
-      margin: 10px auto;
-      border-radius: 10px;
-      max-width: 600px;
-      text-align: left;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlipHawk Arbitrage Finder</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>🔍 FlipHawk Arbitrage Finder</h1>
-  <div>
-    <select id="categorySelect">
-      <option disabled selected>Select a Category</option>
-      <option>Tech</option>
-      <option>Collectibles</option>
-      <option>Vintage Clothing</option>
-    </select>
+  <div class="container">
+    <h1>🔍 FlipHawk Arbitrage Finder</h1>
+    <p class="subtitle">Find profitable arbitrage opportunities across online marketplaces</p>
+    
+    <form id="scanForm">
+      <div class="category-container">
+        <label for="categorySelect">Select a Category</label>
+        <select id="categorySelect" name="category" required>
+          <option value="" disabled selected>Choose a category</option>
+          <option value="Tech">Tech</option>
+          <option value="Collectibles">Collectibles</option>
+          <option value="Vintage Clothing">Vintage Clothing</option>
+        </select>
+      </div>
+      
+      <button type="submit" class="submit-button">Find Deals</button>
+    </form>
 
-    <select id="subcategorySelect" multiple></select>
-    <br>
-    <button onclick="runScan()">Find Deals</button>
+    <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 20px;">
+      <p>Scanning marketplaces for the best deals...</p>
+      <div class="spinner"></div>
+    </div>
+
+    <div id="dealResults">
+      <h2 id="resultsTitle" style="display: none;">Top Arbitrage Opportunities</h2>
+      <ul id="dealList"></ul>
+    </div>
   </div>
 
-  <div class="results" id="results"></div>
-
-  <script>
-    const subcategoryOptions = {
-      "Tech": ["Headphones", "Laptops", "Smartphones"],
-      "Collectibles": ["Pokemon Cards", "MTG Cards", "Comic Books"],
-      "Vintage Clothing": ["Jordans", "Levi's Jeans", "Band Tees"]
-    };
-
-    document.getElementById("categorySelect").addEventListener("change", function() {
-      const selected = this.value;
-      const subcatSelect = document.getElementById("subcategorySelect");
-      subcatSelect.innerHTML = "";
-
-      subcategoryOptions[selected].forEach(sub => {
-        const opt = document.createElement("option");
-        opt.value = sub;
-        opt.innerText = sub;
-        subcatSelect.appendChild(opt);
-      });
-    });
-
-    async function runScan() {
-      const category = document.getElementById("categorySelect").value;
-      const subcategories = Array.from(document.getElementById("subcategorySelect").selectedOptions).map(o => o.value);
-
-      if (!category || subcategories.length === 0) {
-        alert("Please select a category and at least one subcategory.");
-        return;
-      }
-
-      const response = await fetch("/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, subcategories })
-      });
-
-      const data = await response.json();
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "";
-
-      if (data.error) {
-        resultsDiv.innerHTML = `<p>${data.error}</p>`;
-        return;
-      }
-
-      data.forEach(deal => {
-        const div = document.createElement("div");
-        div.className = "deal";
-        div.innerHTML = `
-          <strong>${deal.title}</strong><br>
-          <span>💰 $${deal.price} | 🔍 Keyword: ${deal.keyword}</span><br>
-          <span>✅ Confidence: ${deal.confidence}%</span><br>
-          <a href="${deal.link}" target="_blank">View Listing</a>
-        `;
-        resultsDiv.appendChild(div);
-      });
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
