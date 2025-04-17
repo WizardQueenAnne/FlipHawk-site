@@ -24,20 +24,13 @@ def serve_js():
 def run_scan():
     data = request.get_json()
     category = data.get('category', '')
+    subcategories = data.get('subcategories', [])
     
-    # Map categories to keywords
-    keywords_map = {
-        'Tech': ['laptop', 'smartphone', 'headphones', 'tablet'],
-        'Collectibles': ['pokemon cards', 'vintage toys', 'comic books', 'action figures'],
-        'Vintage Clothing': ['vintage denim', 'retro sneakers', 'vintage jackets', 'band shirts']
-    }
+    if not category or not subcategories:
+        return jsonify({"error": "Category and subcategories are required"}), 400
     
-    keywords = keywords_map.get(category, [])
-    if not keywords:
-        return jsonify({"error": "Invalid category"}), 400
-    
-    # Run the arbitrage scan
-    result = run_arbitrage_scan(keywords)
+    # Run the arbitrage scan with the subcategories as keywords
+    result = run_arbitrage_scan(subcategories)
     return jsonify(result)
 
 if __name__ == '__main__':
