@@ -18,15 +18,25 @@
           <option value="" disabled selected>Choose a category</option>
           <option value="Tech">Tech</option>
           <option value="Collectibles">Collectibles</option>
+          <option value="Antiques">Antiques</option>
+          <option value="Trading Cards">Trading Cards</option>
           <option value="Vintage Clothing">Vintage Clothing</option>
+          <option value="Shoes">Shoes</option>
         </select>
       </div>
       
-      <button type="submit" class="submit-button">Find Deals</button>
+      <div id="subcategoryContainer" class="subcategory-container" style="display: none;">
+        <label for="subcategorySelect">Select Subcategories</label>
+        <div id="subcategoryOptions" class="checkbox-group">
+          <!-- Subcategories will be populated dynamically -->
+        </div>
+      </div>
+      
+      <button type="submit" class="submit-button">Find Arbitrage Opportunities</button>
     </form>
 
     <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 20px;">
-      <p>Scanning marketplaces for the best deals...</p>
+      <p>Scanning marketplaces for arbitrage opportunities...</p>
       <div class="spinner"></div>
     </div>
 
