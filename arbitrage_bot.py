@@ -499,8 +499,7 @@ def run_arbitrage_scan(subcategories):
                 print(f"Found {len(real_opportunities)} real arbitrage opportunities")
                 return real_opportunities
             else:
-                print("No real arbitrage
-print("No real arbitrage opportunities found. Falling back to simulated data.")
+                print("No real arbitrage opportunities found. Falling back to simulated data.")
                 
                 # Fall back to simulated data
                 return generate_simulated_opportunities(subcategories)
