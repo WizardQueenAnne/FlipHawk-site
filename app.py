@@ -1,6 +1,6 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request, jsonify
 import os
-from arbitrage_bot import run_arbitrage_scan  # Import your arbitrage bot directly from the root
+from arbitrage_bot import run_arbitrage_scan
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -10,12 +10,35 @@ app = Flask(__name__)
 def serve_index():
     return send_from_directory(os.getcwd(), 'index.html')
 
-# Additional route for running the arbitrage scan
+# Serve static files
+@app.route('/styles.css')
+def serve_css():
+    return send_from_directory(os.getcwd(), 'styles.css')
+
+@app.route('/script.js')
+def serve_js():
+    return send_from_directory(os.getcwd(), 'script.js')
+
+# API endpoint for running the arbitrage scan
 @app.route('/run_scan', methods=['POST'])
 def run_scan():
-    # Trigger your arbitrage scan logic here
-    result = run_arbitrage_scan()
-    return result  # Return results as needed
+    data = request.get_json()
+    category = data.get('category', '')
+    
+    # Map categories to keywords
+    keywords_map = {
+        'Tech': ['laptop', 'smartphone', 'headphones', 'tablet'],
+        'Collectibles': ['pokemon cards', 'vintage toys', 'comic books', 'action figures'],
+        'Vintage Clothing': ['vintage denim', 'retro sneakers', 'vintage jackets', 'band shirts']
+    }
+    
+    keywords = keywords_map.get(category, [])
+    if not keywords:
+        return jsonify({"error": "Invalid category"}), 400
+    
+    # Run the arbitrage scan
+    result = run_arbitrage_scan(keywords)
+    return jsonify(result)
 
 if __name__ == '__main__':
     # Use environment variable to specify the port for Render
