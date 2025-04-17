@@ -56,6 +56,30 @@ select:focus {
     outline: none;
 }
 
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.checkbox-item input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    cursor: pointer;
+    margin-bottom: 0;
+    font-weight: normal;
+}
+
 .submit-button {
     background-color: #4CAF50;
     color: white;
@@ -68,6 +92,7 @@ select:focus {
     transition: all 0.3s;
     font-weight: 600;
     box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+    margin-top: 10px;
 }
 
 .submit-button:hover {
@@ -98,8 +123,8 @@ select:focus {
 
 .deal-item {
     background-color: #f8f9fa;
-    padding: 16px;
-    margin: 12px 0;
+    padding: 20px;
+    margin: 16px 0;
     border-radius: 8px;
     border: 1px solid #e9ecef;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -113,60 +138,142 @@ select:focus {
 .deal-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
 .deal-header h3 {
     margin: 0;
-    font-size: 1.2em;
+    font-size: 1.3em;
     color: #2c3e50;
     flex: 1;
+    min-width: 200px;
 }
 
 .confidence-badge {
-    padding: 4px 8px;
+    padding: 4px 10px;
     border-radius: 20px;
     color: white;
-    font-size: 0.8em;
+    font-size: 0.85em;
     font-weight: 600;
     white-space: nowrap;
+    margin-top: 3px;
 }
 
-.deal-body {
+.deal-prices {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.price-container {
+    flex: 1;
+    background-color: #f1f8e9;
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.price-label {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.buy-price {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #2e7d32;
+    margin-bottom: 10px;
+}
+
+.sell-price {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #d32f2f;
+    margin-bottom: 10px;
+}
+
+.deal-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: white;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.buy-btn {
+    background-color: #388e3c;
+}
+
+.buy-btn:hover {
+    background-color: #2e7d32;
+}
+
+.sell-btn {
+    background-color: #d32f2f;
+}
+
+.sell-btn:hover {
+    background-color: #c62828;
+}
+
+.deal-profit {
+    background-color: #e8f5e9;
+    padding: 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.profit-amount {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.profit-percentage {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #1565c0;
+    background-color: #e3f2fd;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.deal-info {
+    margin-top: 12px;
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    gap: 10px;
 }
 
-.deal-price {
-    font-size: 1.3em;
-    font-weight: bold;
-    color: #e74c3c;
-    margin: 5px 0;
-}
-
-.deal-keyword {
+.deal-subcategory {
+    margin: 0;
     color: #7f8c8d;
     font-size: 0.9em;
-    margin: 5px 0;
 }
 
-.view-deal-btn {
-    display: inline-block;
-    background-color: #3498db;
-    color: white;
-    padding: 8px 16px;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: background-color 0.2s;
-    margin-top: 5px;
+.no-results, .error-message {
+    text-align: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #7f8c8d;
 }
 
-.view-deal-btn:hover {
-    background-color: #2980b9;
+.error-message {
+    color: #c0392b;
 }
 
 /* Loading spinner */
@@ -185,17 +292,32 @@ select:focus {
     100% { transform: rotate(360deg); }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
     .container {
         padding: 20px;
     }
     
     .deal-header {
         flex-direction: column;
-        align-items: flex-start;
     }
     
     .confidence-badge {
         margin-top: 8px;
+        align-self: flex-start;
+    }
+    
+    .deal-prices {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .deal-profit {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: 1fr;
     }
 }
