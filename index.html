@@ -1,48 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipHawk Arbitrage Finder</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlipHawk - Real-Time Arbitrage</title>
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-  <div class="container">
-    <h1>🔍 FlipHawk Arbitrage Finder</h1>
-    <p class="subtitle">Find profitable arbitrage opportunities across online marketplaces</p>
-    
-    <form id="scanForm">
-      <div class="category-container">
-        <label for="categorySelect">Select a Category</label>
-        <select id="categorySelect" name="category" required>
-          <option value="" disabled selected>Choose a category</option>
-          <option value="Tech">Tech</option>
-          <option value="Collectibles">Collectibles</option>
-          <option value="Antiques">Antiques</option>
-          <option value="Trading Cards">Trading Cards</option>
-          <option value="Vintage Clothing">Vintage Clothing</option>
-          <option value="Shoes">Shoes</option>
-        </select>
-      </div>
-      
-      <div id="subcategoryContainer" class="subcategory-container" style="display: none;">
-        <label for="subcategorySelect">Select Subcategories</label>
-        <div id="subcategoryOptions" class="checkbox-group">
-          <!-- Subcategories will be populated dynamically -->
-        </div>
-      </div>
-      
-      <button type="submit" class="submit-button">Find Arbitrage Opportunities</button>
-    </form>
+  <header>
+    <h1>FlipHawk</h1>
+    <p id="deal-count">Scanning listings...</p>
+  </header>
 
-    <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 20px;">
-      <p>Scanning marketplaces for arbitrage opportunities...</p>
-      <div class="spinner"></div>
-    </div>
+  <main>
+    <section class="category-select">
+      <label for="category">Choose Category:</label>
+      <select id="category">
+        <option value="">-- Select a Category --</option>
+        <option value="Tech">🖥️ Tech</option>
+        <option value="Collectibles">🃏 Collectibles</option>
+        <option value="Vintage Clothing">👕 Vintage Clothing</option>
+        <option value="Sneakers">👟 Sneakers</option>
+      </select>
 
-    <div id="dealResults">
-      <h2 id="resultsTitle" style="display: none;">Top Arbitrage Opportunities</h2>
-      <ul id="dealList"></ul>
+      <div id="subcategories"></div>
+      <button id="runScan">Scan Deals</button>
+    </section>
+
+    <section id="results" class="results-grid"></section>
+  </main>
+
+  <footer>
+    <a href="/about">About & Transparency</a>
+    <button id="feedbackBtn">Feedback</button>
+  </footer>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-btn" id="closeFeedback">&times;</span>
+      <h2>Feedback / Report Issue</h2>
+      <textarea id="feedbackText" placeholder="What would you like to share?"></textarea>
+      <button id="submitFeedback">Submit</button>
     </div>
   </div>
 
