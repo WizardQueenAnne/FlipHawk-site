@@ -1,201 +1,139 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const scanForm = document.getElementById('scanForm');
-    const categorySelect = document.getElementById('categorySelect');
-    const subcategoryContainer = document.getElementById('subcategoryContainer');
-    const subcategoryOptions = document.getElementById('subcategoryOptions');
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const resultsTitle = document.getElementById('resultsTitle');
-    const dealList = document.getElementById('dealList');
+document.addEventListener('DOMContentLoaded', () => {
+  const categorySelect = document.getElementById('category');
+  const subcategoriesDiv = document.getElementById('subcategories');
+  const runScanButton = document.getElementById('runScan');
+  const resultsContainer = document.getElementById('results');
+  const dealCountDisplay = document.getElementById('deal-count');
+  const feedbackModal = document.getElementById('feedbackModal');
+  const feedbackBtn = document.getElementById('feedbackBtn');
+  const closeFeedback = document.getElementById('closeFeedback');
+  const submitFeedback = document.getElementById('submitFeedback');
 
-    // Define subcategories for each category
-    const subcategories = {
-        'Tech': [
-            'Laptops', 'Smartphones', 'Tablets', 'Headphones', 'Gaming Consoles', 
-            'Computer Parts', 'Cameras', 'Smartwatches', 'Bluetooth Speakers'
-        ],
-        'Collectibles': [
-            'Action Figures', 'Comic Books', 'Coins', 'Stamps', 'Vinyl Records', 
-            'Movie Memorabilia', 'Vintage Toys', 'Autographs'
-        ],
-        'Antiques': [
-            'Furniture', 'Jewelry', 'Clocks', 'Art', 'Silverware', 
-            'Glassware', 'Pottery', 'Books'
-        ],
-        'Trading Cards': [
-            'Magic: The Gathering', 'Pokémon', 'Yu-Gi-Oh!', 'Baseball Cards', 
-            'Football Cards', 'Basketball Cards', 'Soccer Cards', 'Hockey Cards'
-        ],
-        'Vintage Clothing': [
-            'Denim', 'T-Shirts', 'Jackets', 'Dresses', 'Sweaters', 
-            'Band Merch', 'Designer Items', 'Activewear'
-        ],
-        'Shoes': [
-            'Sneakers', 'Boots', 'Dress Shoes', 'Athletic Shoes', 'Designer Shoes',
-            'Limited Edition', 'Vintage', 'Sandals'
-        ]
-    };
+  // Category → Subcategories mapping
+  const subcategoriesMap = {
+    'Tech': ['Laptops', 'Smartphones', 'Headphones', 'Gaming Consoles', 'Computer Parts'],
+    'Collectibles': ['Action Figures', 'Comic Books', 'Coins', 'Vintage Toys', 'Autographs'],
+    'Vintage Clothing': ['Denim', 'T-Shirts', 'Jackets', 'Dresses', 'Band Merch'],
+    'Sneakers': ['Jordans', 'Nike', 'Adidas', 'Yeezys', 'Converse']
+  };
 
-    // Update subcategories when category changes
-    categorySelect.addEventListener('change', function() {
-        const category = this.value;
-        if (category) {
-            populateSubcategories(category);
-            subcategoryContainer.style.display = 'block';
-        } else {
-            subcategoryContainer.style.display = 'none';
-        }
+  // Generate subcategory checkboxes
+  categorySelect.addEventListener('change', () => {
+    const category = categorySelect.value;
+    subcategoriesDiv.innerHTML = '';
+
+    if (subcategoriesMap[category]) {
+      subcategoriesMap[category].forEach((sub, idx) => {
+        const label = document.createElement('label');
+        label.className = 'checkbox';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = sub;
+        input.id = `sub-${idx}`;
+
+        const span = document.createElement('span');
+        span.textContent = sub;
+
+        label.appendChild(input);
+        label.appendChild(span);
+        subcategoriesDiv.appendChild(label);
+      });
+    }
+  });
+
+  // Run scan
+  runScanButton.addEventListener('click', () => {
+    const selectedCategory = categorySelect.value;
+    const selectedSubs = [...subcategoriesDiv.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+
+    if (!selectedCategory || selectedSubs.length === 0) {
+      alert('Please select a category and at least one subcategory.');
+      return;
+    }
+
+    dealCountDisplay.textContent = 'Scanning for deals...';
+    resultsContainer.innerHTML = '';
+
+    fetch('/run_scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: selectedCategory,
+        subcategories: selectedSubs
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        dealCountDisplay.textContent = 'Error during scan.';
+        resultsContainer.innerHTML = `<p class="error-message">${data.error}</p>`;
+        return;
+      }
+
+      if (data.length === 0) {
+        dealCountDisplay.textContent = 'No deals found.';
+        resultsContainer.innerHTML = '<p class="no-results">No arbitrage opportunities found. Try different subcategories.</p>';
+        return;
+      }
+
+      dealCountDisplay.textContent = `${data.length} deal${data.length > 1 ? 's' : ''} found`;
+
+      data.forEach(deal => {
+        const card = document.createElement('div');
+        card.className = 'deal-card';
+
+        const profitColor = getConfidenceColor(deal.confidence);
+
+        card.innerHTML = `
+          <div class="deal-title">
+            <h3>${deal.title}</h3>
+            <span class="confidence" style="background-color: ${profitColor};">${deal.confidence}% Confidence</span>
+          </div>
+          <div class="deal-body">
+            <div class="deal-image">
+              <img src="${deal.image || 'https://via.placeholder.com/120'}" alt="Item Image">
+            </div>
+            <div class="deal-info">
+              <p><strong>Buy for:</strong> $${deal.buyPrice}</p>
+              <p><strong>Sell for:</strong> $${deal.sellPrice}</p>
+              <p><strong>Profit:</strong> $${deal.profit} (${deal.profitPercentage.toFixed(1)}%)</p>
+              <p><strong>Category:</strong> ${deal.subcategory}</p>
+            </div>
+            <div class="deal-links">
+              <a href="${deal.buyLink}" target="_blank" class="deal-btn buy-btn">Buy Listing</a>
+              <a href="${deal.sellLink}" target="_blank" class="deal-btn sell-btn">Sell Listing</a>
+            </div>
+          </div>
+        `;
+        resultsContainer.appendChild(card);
+      });
+    })
+    .catch(err => {
+      dealCountDisplay.textContent = 'Scan failed.';
+      resultsContainer.innerHTML = `<p class="error-message">Error: ${err.message}</p>`;
     });
+  });
 
-    // Populate subcategories based on selected category
-    function populateSubcategories(category) {
-        subcategoryOptions.innerHTML = '';
-        const options = subcategories[category] || [];
-        
-        options.forEach((subcategory, index) => {
-            const checkboxId = `subcategory-${index}`;
-            
-            const checkboxDiv = document.createElement('div');
-            checkboxDiv.className = 'checkbox-item';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = checkboxId;
-            checkbox.name = 'subcategories';
-            checkbox.value = subcategory;
-            
-            const label = document.createElement('label');
-            label.htmlFor = checkboxId;
-            label.textContent = subcategory;
-            
-            checkboxDiv.appendChild(checkbox);
-            checkboxDiv.appendChild(label);
-            subcategoryOptions.appendChild(checkboxDiv);
-        });
-    }
+  function getConfidenceColor(conf) {
+    if (conf >= 90) return '#4CAF50';       // Green
+    if (conf >= 80) return '#8BC34A';       // Lime Green
+    if (conf >= 70) return '#FFC107';       // Amber
+    return '#FF5722';                       // Red/Orange
+  }
 
-    scanForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Get the selected category
-        const category = categorySelect.value;
-        
-        if (!category) {
-            alert('Please select a category');
-            return;
-        }
-        
-        // Get selected subcategories
-        const selectedSubcategories = [];
-        document.querySelectorAll('input[name="subcategories"]:checked').forEach(checkbox => {
-            selectedSubcategories.push(checkbox.value);
-        });
-        
-        if (selectedSubcategories.length === 0) {
-            alert('Please select at least one subcategory');
-            return;
-        }
-        
-        // Show loading indicator
-        loadingIndicator.style.display = 'block';
-        resultsTitle.style.display = 'none';
-        dealList.innerHTML = '';
-        
-        // Make API request to Flask backend
-        fetch('/run_scan', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                category: category,
-                subcategories: selectedSubcategories
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Hide loading indicator
-            loadingIndicator.style.display = 'none';
-            
-            // Display results
-            if (data.length > 0) {
-                resultsTitle.style.display = 'block';
-                displayDeals(data);
-            } else {
-                dealList.innerHTML = '<p class="no-results">No arbitrage opportunities found. Please try different subcategories or check back later.</p>';
-            }
-        })
-        .catch(error => {
-            loadingIndicator.style.display = 'none';
-            dealList.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
-            console.error('Error:', error);
-        });
-    });
-
-    function displayDeals(deals) {
-        dealList.innerHTML = '';
-        
-        deals.forEach(deal => {
-            const listItem = document.createElement('li');
-            listItem.className = 'deal-item';
-            
-            const buyPrice = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(deal.buyPrice);
-            
-            const sellPrice = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(deal.sellPrice);
-            
-            const profit = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(deal.profit);
-            
-            const profitPercentage = deal.profitPercentage.toFixed(0);
-            
-            listItem.innerHTML = `
-                <div class="deal-header">
-                    <h3>${deal.title}</h3>
-                    <span class="confidence-badge" style="background-color: ${getConfidenceColor(deal.confidence)}">
-                        ${deal.confidence}% Confidence
-                    </span>
-                </div>
-                <div class="deal-prices">
-                    <div class="price-container">
-                        <div class="price-label">Buy for:</div>
-                        <div class="buy-price">${buyPrice}</div>
-                        <a href="${deal.buyLink}" target="_blank" class="deal-btn buy-btn">View Listing</a>
-                    </div>
-                    <div class="price-container">
-                        <div class="price-label">Sell for:</div>
-                        <div class="sell-price">${sellPrice}</div>
-                        <a href="${deal.sellLink}" target="_blank" class="deal-btn sell-btn">View Listing</a>
-                    </div>
-                </div>
-                <div class="deal-profit">
-                    <div class="profit-amount">Potential Profit: ${profit}</div>
-                    <div class="profit-percentage">(${profitPercentage}% ROI)</div>
-                </div>
-                <div class="deal-info">
-                    <p class="deal-subcategory">Category: ${deal.subcategory}</p>
-                </div>
-            `;
-            
-            dealList.appendChild(listItem);
-        });
+  // Feedback Modal
+  feedbackBtn.addEventListener('click', () => feedbackModal.classList.remove('hidden'));
+  closeFeedback.addEventListener('click', () => feedbackModal.classList.add('hidden'));
+  submitFeedback.addEventListener('click', () => {
+    const feedbackText = document.getElementById('feedbackText').value;
+    if (!feedbackText) {
+      alert('Please enter some feedback.');
+      return;
     }
-    
-    function getConfidenceColor(confidence) {
-        if (confidence >= 90) return "#4CAF50"; // Green
-        if (confidence >= 80) return "#8BC34A"; // Light Green
-        if (confidence >= 70) return "#FFC107"; // Amber
-        return "#FF5722"; // Deep Orange
-    }
+    feedbackModal.classList.add('hidden');
+    alert('Thank you for your feedback!');
+    document.getElementById('feedbackText').value = '';
+    // In real implementation, send feedback to backend or Discord webhook
+  });
 });
