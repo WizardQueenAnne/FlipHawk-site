@@ -9,12 +9,12 @@
 <body>
   <header>
     <h1>FlipHawk</h1>
-    <p id="deal-count">Scanning listings...</p>
+    <p id="deal-count">Ready to scan deals.</p>
   </header>
 
-  <main>
-    <section class="category-select">
-      <label for="category">Choose Category:</label>
+  <main class="container">
+    <div class="category-container">
+      <label for="category">Choose a Category:</label>
       <select id="category">
         <option value="">-- Select a Category --</option>
         <option value="Tech">🖥️ Tech</option>
@@ -22,12 +22,19 @@
         <option value="Vintage Clothing">👕 Vintage Clothing</option>
         <option value="Sneakers">👟 Sneakers</option>
       </select>
+    </div>
 
-      <div id="subcategories"></div>
-      <button id="runScan">Scan Deals</button>
-    </section>
+    <div class="subcategory-container" id="subcategories"></div>
 
-    <section id="results" class="results-grid"></section>
+    <button id="runScan" class="submit-button">Scan Deals</button>
+
+    <div id="dealResults">
+      <h2 id="resultsTitle" class="hidden">Top Deals Found</h2>
+      <div id="spinner" class="spinner hidden"></div>
+      <div id="errorDisplay" class="error-message hidden"></div>
+      <div id="noResults" class="no-results hidden">No profitable deals found. Try a different combo!</div>
+      <ul id="dealList"></ul>
+    </div>
   </main>
 
   <footer>
