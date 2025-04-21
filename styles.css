@@ -121,6 +121,7 @@ select:focus {
     padding: 0;
 }
 
+/* Enhanced Deal Card Styling */
 .deal-item {
     background-color: #f8f9fa;
     padding: 20px;
@@ -128,6 +129,9 @@ select:focus {
     border-radius: 8px;
     border: 1px solid #e9ecef;
     transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .deal-item:hover {
@@ -151,6 +155,7 @@ select:focus {
     min-width: 200px;
 }
 
+/* Color-coded Confidence Badge */
 .confidence-badge {
     padding: 4px 10px;
     border-radius: 20px;
@@ -159,6 +164,18 @@ select:focus {
     font-weight: 600;
     white-space: nowrap;
     margin-top: 3px;
+}
+
+.confidence-high {
+    background-color: #4CAF50;
+}
+
+.confidence-medium {
+    background-color: #f39c12;
+}
+
+.confidence-low {
+    background-color: #e74c3c;
 }
 
 .deal-prices {
@@ -276,7 +293,7 @@ select:focus {
     color: #c0392b;
 }
 
-/* Loading spinner */
+/* Loading Spinner */
 .spinner {
     width: 40px;
     height: 40px;
@@ -292,31 +309,41 @@ select:focus {
     100% { transform: rotate(360deg); }
 }
 
+/* Real-Time Deal Count Styling */
+#liveDealCounter {
+    font-size: 0.95em;
+    color: #888;
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+/* Responsive Tweaks */
 @media (max-width: 700px) {
     .container {
         padding: 20px;
     }
-    
+
     .deal-header {
         flex-direction: column;
     }
-    
+
     .confidence-badge {
         margin-top: 8px;
         align-self: flex-start;
     }
-    
+
     .deal-prices {
         flex-direction: column;
         gap: 10px;
     }
-    
+
     .deal-profit {
         flex-direction: column;
         gap: 8px;
         text-align: center;
     }
-    
+
     .checkbox-group {
         grid-template-columns: 1fr;
     }
