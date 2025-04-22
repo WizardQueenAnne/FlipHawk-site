@@ -1,56 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FlipHawk - Real-Time Arbitrage</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlipHawk Arbitrage Finder</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <header>
-    <h1>FlipHawk</h1>
-    <p id="deal-count">Ready to scan deals.</p>
-  </header>
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <img src="/logo.png" alt="FlipHawk Logo" class="main-logo">
+      </div>
+      <p class="subtitle">Find profitable arbitrage opportunities across online marketplaces</p>
+      
+      <div class="auth-container">
+        <button id="loginBtn" class="auth-btn"><i class="fas fa-user"></i> Login</button>
+        <button id="signupBtn" class="auth-btn"><i class="fas fa-user-plus"></i> Sign Up</button>
+      </div>
+    </header>
 
-  <main class="container">
-    <div class="category-container">
-      <label for="category">Choose a Category:</label>
-      <select id="category">
-        <option value="">-- Select a Category --</option>
-        <option value="Tech">🖥️ Tech</option>
-        <option value="Collectibles">🃏 Collectibles</option>
-        <option value="Vintage Clothing">👕 Vintage Clothing</option>
-        <option value="Sneakers">👟 Sneakers</option>
-      </select>
+    <div class="stats-banner">
+      <div class="stat-item">
+        <i class="fas fa-search"></i>
+        <span id="scanningCount">Scanning <b>0</b> listings...</span>
+      </div>
+      <div class="stat-item">
+        <i class="fas fa-chart-line"></i>
+        <span id="weeklyDealsCount">Found <b>0</b> deals this week</span>
+      </div>
+      <div class="stat-item">
+        <i class="fas fa-users"></i>
+        <span id="userCount"><b>0</b> users online</span>
+      </div>
     </div>
+    
+    <form id="scanForm">
+      <div class="category-container">
+        <label for="categorySelect">Select a Category</label>
+        <select id="categorySelect" name="category" required>
+          <option value="" disabled selected>Choose a category</option>
+          <option value="Tech">💻 Tech</option>
+          <option value="Collectibles">🏆 Collectibles</option>
+          <option value="Antiques">🏺 Antiques</option>
+          <option value="Trading Cards">🃏 Trading Cards</option>
+          <option value="Vintage Clothing">👕 Vintage Clothing</option>
+          <option value="Shoes">👟 Shoes</option>
+        </select>
+      </div>
+      
+      <div id="subcategoryContainer" class="subcategory-container" style="display: none;">
+        <label for="subcategorySelect">Select Subcategories</label>
+        <div id="subcategoryOptions" class="checkbox-group">
+          <!-- Subcategories will be populated dynamically -->
+        </div>
+      </div>
+      
+      <button type="submit" class="submit-button"><i class="fas fa-search"></i> Find Arbitrage Opportunities</button>
+    </form>
 
-    <div class="subcategory-container" id="subcategories"></div>
-
-    <button id="runScan" class="submit-button">Scan Deals</button>
+    <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 20px;">
+      <p>Scanning marketplaces for arbitrage opportunities...</p>
+      <div class="spinner"></div>
+    </div>
 
     <div id="dealResults">
-      <h2 id="resultsTitle" class="hidden">Top Deals Found</h2>
-      <div id="spinner" class="spinner hidden"></div>
-      <div id="errorDisplay" class="error-message hidden"></div>
-      <div id="noResults" class="no-results hidden">No profitable deals found. Try a different combo!</div>
-      <ul id="dealList"></ul>
-    </div>
-  </main>
-
-  <footer>
-    <a href="/about">About & Transparency</a>
-    <button id="feedbackBtn">Feedback</button>
-  </footer>
-
-  <!-- Feedback Modal -->
-  <div id="feedbackModal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close-btn" id="closeFeedback">&times;</span>
-      <h2>Feedback / Report Issue</h2>
-      <textarea id="feedbackText" placeholder="What would you like to share?"></textarea>
-      <button id="submitFeedback">Submit</button>
+      <h2 id="resultsTitle" style="display: none;">Top Arbitrage Opportunities</h2>
+      <div id="dealList" class="deal-cards"></div>
     </div>
   </div>
+
+  <!-- Modal for login -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Login to FlipHawk</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit" class="modal-btn">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for signup -->
+  <div id="signupModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Create an Account</h2>
+      <form id="signupForm">
+        <div class="form-group">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" required>
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" required>
+        </div>
+        <button type="submit" class="modal-btn">Sign Up</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Chat/Feedback Button -->
+  <div class="feedback-button">
+    <button id="feedbackBtn">
+      <i class="fas fa-comment-dots"></i>
+    </button>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Send Feedback</h2>
+      <form id="feedbackForm">
+        <div class="form-group">
+          <label for="feedbackType">Feedback Type</label>
+          <select id="feedbackType" required>
+            <option value="" disabled selected>Select feedback type</option>
+            <option value="bug">Report a Bug</option>
+            <option value="suggestion">Suggestion</option>
+            <option value="question">Question</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="feedbackMessage">Your Message</label>
+          <textarea id="feedbackMessage" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="modal-btn">Submit Feedback</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- About Modal -->
+  <div id="aboutModal" class="modal">
+    <div class="modal-content about-content">
+      <span class="close-modal">&times;</span>
+      <h2>About FlipHawk</h2>
+      <div class="tab-container">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="mission">Our Mission</button>
+          <button class="tab-btn" data-tab="how-it-works">How It Works</button>
+          <button class="tab-btn" data-tab="confidence">Confidence Score</button>
+        </div>
+        <div class="tab-content">
+          <div id="mission" class="tab-pane active">
+            <h3>Our Mission</h3>
+            <p>FlipHawk was created to democratize arbitrage opportunities for everyone. We believe in giving people the tools to find profitable deals across online marketplaces without needing specialized knowledge or expensive software.</p>
+            <p>Our goal is to help you make informed buying and selling decisions by identifying price discrepancies in real-time.</p>
+          </div>
+          <div id="how-it-works" class="tab-pane">
+            <h3>How FlipHawk Works</h3>
+            <p>FlipHawk scans online marketplaces like eBay to find items that are being sold at different price points. Our algorithm:</p>
+            <ol>
+              <li>Searches for listings in your selected categories</li>
+              <li>Uses advanced text matching to identify the same or similar items</li>
+              <li>Compares prices to find discrepancies</li>
+              <li>Calculates potential profit and ROI</li>
+              <li>Assigns confidence scores based on title similarity and other factors</li>
+            </ol>
+          </div>
+          <div id="confidence" class="tab-pane">
+            <h3>Understanding Confidence Scores</h3>
+            <p>Our confidence score helps you gauge the reliability of an arbitrage opportunity:</p>
+            <div class="confidence-scale">
+              <div class="confidence-item">
+                <span class="confidence-badge" style="background-color: #4CAF50">90-100%</span>
+                <p>High confidence - Very likely the same item with a significant price difference</p>
+              </div>
+              <div class="confidence-item">
+                <span class="confidence-badge" style="background-color: #8BC34A">80-89%</span>
+                <p>Good confidence - Likely the same item with minor differences</p>
+              </div>
+              <div class="confidence-item">
+                <span class="confidence-badge" style="background-color: #FFC107">70-79%</span>
+                <p>Moderate confidence - Similar items with potential differences</p>
+              </div>
+              <div class="confidence-item">
+                <span class="confidence-badge" style="background-color: #FF5722">Below 70%</span>
+                <p>Low confidence - May be different items or conditions</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-logo">
+        <img src="/mini-logo.png" alt="FlipHawk Mini Logo" class="mini-logo">
+      </div>
+      <nav class="footer-nav">
+        <a href="#" id="aboutLink">About</a>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Contact</a>
+      </nav>
+      <div class="footer-social">
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-facebook"></i></a>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+      </div>
+    </div>
+    <div class="footer-copyright">
+      &copy; 2025 FlipHawk. All rights reserved.
+    </div>
+  </footer>
 
   <script src="script.js"></script>
 </body>
