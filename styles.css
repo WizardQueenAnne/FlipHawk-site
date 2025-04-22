@@ -738,3 +738,19 @@ footer {
     .footer-container {
         flex-direction: column;
         text-align: center;
+    }
+    
+    .footer-nav, .footer-social {
+        justify-content: center;
+    }
+    
+    .stats-banner {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        width: 100%;
+        justify-content: center;
+    }
+}
