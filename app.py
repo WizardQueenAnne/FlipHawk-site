@@ -235,3 +235,15 @@ def log_scan(category, subcategories, results_count):
         "category": category,
         "subcategories": subcategories,
         "results_count": results_count,
+        "timestamp": datetime.now().isoformat(),
+        "user": session.get('user_email', 'anonymous')
+    }
+    
+    scan_log.append(scan_entry)
+    
+    # In a real app, you would save this to a database
+
+if __name__ == '__main__':
+    # Use environment variable to specify the port for Render
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
