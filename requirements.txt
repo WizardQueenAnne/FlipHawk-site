@@ -1,7 +1,6 @@
 flask
 beautifulsoup4
 aiohttp
-difflib
 asyncio
 gunicorn
 python-dotenv
