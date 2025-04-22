@@ -1,40 +1,241 @@
-import random
-import aiohttp
+"""
+FlipHawk Arbitrage Bot - Optimized
+A real-time scraper that finds arbitrage opportunities across marketplaces.
+This version focuses on speed, accuracy, and comprehensive keyword generation.
+"""
+
 import asyncio
-from bs4 import BeautifulSoup
+import aiohttp
 import re
 import time
+import logging
+import random
+from bs4 import BeautifulSoup
 from difflib import SequenceMatcher
+from urllib.parse import quote_plus
 
-async def fetch_page(session, url):
-    """Fetch a page and return the HTML content."""
-    try:
-        async with session.get(url, timeout=30) as response:
-            if response.status == 200:
-                return await response.text()
-            else:
-                print(f"Error fetching {url}: Status code {response.status}")
-                return None
-    except Exception as e:
-        print(f"Exception fetching {url}: {str(e)}")
-        return None
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('arbitrage_bot')
+
+# Constants
+MAX_CONCURRENT_REQUESTS = 25  # Higher for faster scraping
+REQUEST_TIMEOUT = 8  # Shorter timeout for speed
+MIN_PROFIT_PERCENTAGE = 20  # Minimum ROI 
+MIN_PROFIT_DOLLARS = 15  # Minimum absolute profit
+MAX_RESULTS_PER_SUBCATEGORY = 5  # Keep only the best opportunities
+SIMILARITY_THRESHOLD = 0.78  # Threshold for considering items as the same 
+
+# Categories and subcategories
+CATEGORIES = {
+    "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
+    "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
+    "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
+    "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
+    "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
+    "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
+    "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
+    "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
+}
+
+# User agents for rotation to avoid rate limiting
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+]
+
+# Advanced keyword generators
+def generate_keywords(subcategory):
+    """Generate extensive keywords for the subcategory including typos, variations, etc."""
+    keywords = [subcategory]  # Start with the exact subcategory name
+    
+    # Dictionary of predefined keywords for each subcategory
+    subcategory_keywords = {
+        "Magic: The Gathering": [
+            "MTG", "Magic The Gathering", "Magic cards", "MtG cards", 
+            "Magic booster", "MTG singles", "Magic: The Gathering cards",
+            "MTG rare", "Magic foil", "Commander deck", "Magic mythic",
+            "MTG collection", "Magic TCG", "Magic sealed", "Magic booster box",
+            "Magic standard", "Magic modern", "Magic commander", "Magic vintage",
+            "Magic legacy", "Magic collector", "Magic draft", "Magic: TG",
+            # Common typos and misspellings
+            "Majic the Gathering", "Magic the Gathring", "Magik the Gathering",
+            "Magic teh Gathering", "MGT", "MTG crads", "Mtg cads", "Majic cards",
+            "Magictg", "Magci", "Maigc", "Mgaic", "MTG lot", "Majic the gathring"
+        ],
+        "Pokémon": [
+            "Pokemon", "Pokemon cards", "Pokemon TCG", "Pokemon Trading Card Game",
+            "Pokemon packs", "Pokemon box", "Pokemon booster", "Pokemon rare",
+            "Pokemon collection", "Pokemon singles", "Pokemon sealed", "Pokemon PSA",
+            "Pokemon graded", "Pokemon lot", "Pokemon set", "Pokemon vintage",
+            "Pokemon WOTC", "Pokemon ex", "Pokemon gx", "Pokemon v", "Pokemon vmax",
+            # Specific card names that are popular
+            "Charizard", "Pikachu", "Blastoise", "Venusaur", "Mewtwo", "Lugia",
+            # Common typos and misspellings
+            "Pokmon", "Pokeemon", "Pokemn", "Pokeman", "Pokemin", "Poekmon", 
+            "Pokéman", "Pokmen", "Pokmeon", "Pokmn", "Pokmon cards", "Pokmen cards"
+        ],
+        "Yu-Gi-Oh": [
+            "Yugioh", "Yu-Gi-Oh", "Yu Gi Oh", "YGO", "Yugioh cards", "Yu-Gi-Oh cards",
+            "Yugioh rare", "YGO collection", "Yugioh booster", "Yu-Gi-Oh deck",
+            "Yugioh singles", "Yugioh lot", "Yu-Gi-Oh collection", "Yugioh set", 
+            "Yugioh sealed", "Yugioh 1st edition", "Yugioh unlimited", "Yugioh PSA",
+            # Common typos and misspellings
+            "Yugio", "Yugi-oh", "Yugiho", "Yu gi ho", "Yugi oh", "Yugi-ho", "Yu-gi-ho",
+            "Yugiooh", "Yuigoh", "YuGiOh", "Yu-Gi-Yo", "Yu-Gi-o", "Yugih", "Yugio cards"
+        ],
+        "Headphones": [
+            "headphones", "wireless headphones", "bluetooth headphones", "noise cancelling headphones",
+            "over ear headphones", "on ear headphones", "earbuds", "wireless earbuds", "in-ear headphones",
+            "studio headphones", "audiophile headphones", "high-end headphones", "gaming headset",
+            "Sony headphones", "Bose headphones", "Sennheiser headphones", "AKG headphones", 
+            "Audio-Technica headphones", "Beyerdynamic headphones", "JBL headphones", "Beats headphones",
+            # Models
+            "WH-1000XM4", "WH-1000XM5", "QC45", "QC35", "HD660S", "HD650", "HD600", "AirPods Pro",
+            # Common typos
+            "headphons", "heaphones", "hedphones", "hedphnes", "eadphones", "headfones", "haedphones"
+        ],
+        "Keyboards": [
+            "keyboard", "mechanical keyboard", "gaming keyboard", "wireless keyboard", 
+            "bluetooth keyboard", "60% keyboard", "TKL keyboard", "full-size keyboard",
+            "ortholinear keyboard", "split keyboard", "custom keyboard", "keyboard kit",
+            "Cherry MX", "Gateron", "Kailh", "Zealio", "Topre", "hot swap keyboard",
+            "PBT keycaps", "keyboard foam", "keyboard lube", "keyboard switches",
+            # Brands
+            "Ducky keyboard", "Logitech keyboard", "Razer keyboard", "Corsair keyboard",
+            "Keychron", "GMMK", "Drop keyboard", "KBDfans", "Royal Kludge",
+            # Common typos
+            "keybaord", "keyborad", "keybord", "keboard", "keyboar", "keyboad", "meachanical"
+        ],
+        "Jordans": [
+            "Air Jordan", "Jordan 1", "Jordan 4", "Jordan 3", "Jordan 11", "Jordan 5",
+            "Nike Jordan", "Jordan High", "Jordan Mid", "Jordan Low", "Jordan Retro",
+            "Chicago Jordan", "Bred Jordan", "Banned Jordan", "Shadow Jordan", "Royal Jordan",
+            "Jordan OG", "Jordan collab", "Jordan Travis Scott", "Jordan Off-White",
+            "Jordan Fragment", "Jordan Patent", "Jordan University Blue",
+            # Common typos
+            "Jordon", "Jourdan", "Jodan", "Jordns", "Jordens", "Jorden", "Jordn",
+            "Air Jodan", "Nike Jordon", "Jodens", "Jorden 1"
+        ],
+        "Graphics Cards": [
+            "GPU", "graphics card", "video card", "gaming GPU", "Nvidia GPU", "AMD GPU", 
+            "RTX 3090", "RTX 3080", "RTX 3070", "RTX 3060", "RTX 2080", "RTX 2070", 
+            "RX 6900", "RX 6800", "RX 6700", "GDDR6", "GDDR6X", "ray tracing GPU",
+            "MSI GPU", "ASUS GPU", "EVGA GPU", "Gigabyte GPU", "Founders Edition",
+            # Common typos
+            "grpahics card", "grphics card", "grafics card", "grahpics card", "graphic card", 
+            "video crad", "vidoe card", "graphcis card", "nvidia grapics", "NVidia"
+        ],
+        "Consoles": [
+            "gaming console", "video game console", "game system", "PlayStation", "PS5", "PS4", 
+            "PlayStation 5", "PlayStation 4", "Xbox", "Xbox Series X", "Xbox Series S", 
+            "Xbox One", "Nintendo Switch", "Switch OLED", "Switch Lite", "Nintendo", 
+            "game console", "console bundle", "special edition console", "limited edition console",
+            # Common typos
+            "Playstation", "Play Station", "PlsyStation", "Platstation", "P55", "PS", 
+            "XBox", "X box", "X-Box", "Nintedo", "Nintento", "Swich", "Nitendo", "Swtich"
+        ]
+        # Add more subcategories as needed
+    }
+    
+    # Add predefined keywords for the subcategory if available
+    if subcategory in subcategory_keywords:
+        keywords.extend(subcategory_keywords[subcategory])
+    else:
+        # If not found exactly, try finding partial matches
+        for key, values in subcategory_keywords.items():
+            if key.lower() in subcategory.lower() or subcategory.lower() in key.lower():
+                keywords.extend(values)
+                break
+    
+    # Generate common typos for the subcategory if it's not already in our predefined lists
+    if len(keywords) < 5:
+        # Simple typo generator for subcategory name
+        for i in range(len(subcategory)):
+            if i > 0:
+                # Swap adjacent characters
+                typo = subcategory[:i-1] + subcategory[i] + subcategory[i-1] + subcategory[i+1:]
+                keywords.append(typo)
+            
+            # Remove one character
+            if len(subcategory) > 4:  # Only if word is long enough
+                typo = subcategory[:i] + subcategory[i+1:]
+                keywords.append(typo)
+                
+        # Add a space in a random position for multi-word subcategories
+        words = subcategory.split()
+        if len(words) > 1:
+            for i, word in enumerate(words):
+                if len(word) > 3:
+                    mid = len(word) // 2
+                    typo_words = words.copy()
+                    typo_words[i] = word[:mid] + " " + word[mid:]
+                    keywords.append(" ".join(typo_words))
+    
+    # Remove duplicates and limit to a reasonable number for performance
+    unique_keywords = list(dict.fromkeys([k.strip() for k in keywords if k.strip()]))
+    return unique_keywords[:20]  # Limit to 20 keywords for performance
+
+def get_random_user_agent():
+    """Get a random user agent to avoid detection."""
+    return random.choice(USER_AGENTS)
+
+async def fetch_page(session, url, retries=2):
+    """Fetch a webpage with retry logic."""
+    headers = {
+        'User-Agent': get_random_user_agent(),
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Referer': 'https://www.google.com/',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+    }
+    
+    for attempt in range(retries + 1):
+        try:
+            async with session.get(url, headers=headers, timeout=REQUEST_TIMEOUT) as response:
+                if response.status == 200:
+                    return await response.text()
+                elif response.status == 429:  # Too many requests
+                    wait_time = (attempt + 1) * 2  # Progressive backoff
+                    logger.warning(f"Rate limited - waiting {wait_time}s before retry {attempt+1}/{retries}")
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.warning(f"Error fetching {url}: Status {response.status} (Attempt {attempt+1}/{retries})")
+                    if attempt < retries:
+                        await asyncio.sleep(1)
+        except asyncio.TimeoutError:
+            logger.warning(f"Timeout fetching {url} (Attempt {attempt+1}/{retries})")
+            if attempt < retries:
+                await asyncio.sleep(1)
+        except Exception as e:
+            logger.warning(f"Exception fetching {url}: {str(e)} (Attempt {attempt+1}/{retries})")
+            if attempt < retries:
+                await asyncio.sleep(1)
+    
+    return None  # Return None if all retries failed
 
 def normalize_title(title):
-    """Normalize title for better comparison."""
+    """Normalize product title for better comparison."""
+    if not title:
+        return ""
+    
     # Convert to lowercase
     title = title.lower()
     
-    # Remove common filler words and phrases
-    fillers = ['brand new', 'new', 'sealed', 'mint', 'condition', 'authentic', 
-               'genuine', 'official', 'in box', 'inbox', 'with box', 'unopened', 
-               'fast shipping', 'free shipping', 'ships fast', 'lot of', 'set of',
-               'excellent', 'great', 'like new', 'oem', 'original', 'factory',
-               'bundle', 'rare', 'htf', 'hard to find', 'limited', 'exclusive',
-               'complete', '100%', 'perfect', 'amazing', 'clean', 'tested',
-               'working', 'fully functional', 'guaranteed', 'warranty']
+    # Remove common filler phrases
+    fillers = [
+        'brand new', 'new', 'sealed', 'mint', 'condition', 'authentic', 
+        'genuine', 'official', 'with box', 'in box', 'unopened', 'fast shipping',
+        'free shipping', 'ships fast', 'lot of', 'bundle', 'rare', 'hard to find',
+        'limited', 'exclusive', 'excellent', 'great', 'like new', 'tested', 'working'
+    ]
     
     for filler in fillers:
-        title = title.replace(filler, '')
+        title = re.sub(r'\b' + re.escape(filler) + r'\b', '', title)
     
     # Remove special characters and extra spaces
     title = re.sub(r'[^\w\s]', ' ', title)
@@ -42,114 +243,37 @@ def normalize_title(title):
     
     return title
 
-def generate_keywords(subcategory):
-    """Generate search keyword variations for a subcategory."""
-    keywords = [subcategory]
+def extract_model_numbers(title):
+    """Extract model numbers from title for better matching."""
+    patterns = [
+        r'\b[A-Z0-9]{2,4}-[A-Z0-9]{2,6}\b',  # Format: XX-XXXX
+        r'\b[A-Z][0-9]{1,4}[A-Z]?\b',        # Format: X###X
+        r'\b[A-Z]{1,3}[0-9]{2,5}\b',         # Format: XX###
+        r'\b[0-9]{1,2}[A-Z]{1,2}[0-9]{1,4}\b'  # Format: #XX###
+    ]
     
-    # Add common variations and related terms
-    variations = {
-        "Laptops": ["Laptop computer", "Notebook computer", "Portable computer", "Laptop PC", "Ultrabook", 
-                   "MacBook", "ThinkPad", "Dell XPS", "HP Spectre", "Asus ZenBook", "Gaming laptop"],
-        "Smartphones": ["Cell phone", "Mobile phone", "Smart phone", "iPhone", "Android phone", "Galaxy phone", 
-                       "Google Pixel", "OnePlus", "Xiaomi", "Unlocked phone", "5G phone"],
-        "Tablets": ["Tablet computer", "iPad", "Android tablet", "Galaxy Tab", "Surface tablet", 
-                   "iPad Pro", "iPad Air", "Kindle Fire", "Drawing tablet", "E-reader"],
-        "Headphones": ["Wireless headphones", "Earbuds", "AirPods", "Over-ear headphones", "Noise cancelling headphones", 
-                      "Bluetooth headphones", "Gaming headset", "Studio headphones", "Sony WH", "Bose QuietComfort"],
-        "Gaming Consoles": ["PlayStation", "Xbox", "Nintendo Switch", "Video game console", "Gaming system", 
-                           "PS5", "Xbox Series X", "PlayStation 4", "Xbox One", "Nintendo", "Steam Deck"],
-        "Computer Parts": ["CPU", "GPU", "Graphics card", "Computer memory", "SSD", "Hard drive", "Motherboard", 
-                          "Power supply", "RAM", "RTX", "Radeon", "Intel", "AMD", "Corsair", "NVIDIA"],
-        "Cameras": ["Digital camera", "DSLR", "Mirrorless camera", "Action camera", "Camera body", 
-                   "Canon", "Nikon", "Sony Alpha", "Fujifilm", "GoPro", "Camera lens"],
-        "Smartwatches": ["Smart watch", "Apple Watch", "Fitness tracker", "Garmin watch", "Wearable tech", 
-                        "Samsung Galaxy Watch", "Fitbit", "Smart band", "GPS watch", "Sport watch"],
-        "Bluetooth Speakers": ["Wireless speaker", "Portable speaker", "Smart speaker", "Bluetooth audio", 
-                              "JBL", "Bose", "Sonos", "Battery speaker", "Waterproof speaker", "Sony speaker"],
-        
-        "Action Figures": ["Collectible figure", "Statue figure", "Toy figure", "Character figure", 
-                          "Marvel figure", "DC figure", "Star Wars figure", "Funko Pop", "NECA figure", "McFarlane"],
-        "Comic Books": ["Comics", "Graphic novel", "Comic collection", "Vintage comic", 
-                       "Marvel comic", "DC comic", "Image comics", "First issue", "Key issue", "Comic lot"],
-        "Coins": ["Collectible coins", "Rare coins", "Silver coins", "Gold coins", "Numismatic", 
-                 "Proof coin", "Ancient coin", "Morgan dollar", "Bullion coin", "Mint coin", "Commemorative coin"],
-        "Stamps": ["Postage stamps", "Stamp collection", "Rare stamps", "Philately", 
-                  "First day cover", "Mint stamps", "Used stamps", "Vintage stamps", "Foreign stamps"],
-        "Vinyl Records": ["LP records", "Albums vinyl", "Vintage vinyl", "Record collection", 
-                         "33 RPM", "45 RPM", "First pressing", "Rare vinyl", "Limited edition vinyl", "Colored vinyl"],
-        "Movie Memorabilia": ["Film memorabilia", "Movie props", "Cinema collectibles", "Movie posters", 
-                             "Autographed movie", "Film cell", "Original poster", "Movie script", "Screen used"],
-        "Vintage Toys": ["Retro toys", "Classic toys", "Old toys", "Collectible toys", "Antique toys", 
-                        "80s toys", "90s toys", "Vintage action figures", "Vintage dolls", "Transformers G1"],
-        "Autographs": ["Signed memorabilia", "Celebrity signature", "Autographed", "Signed photos", 
-                      "Sports autograph", "Music autograph", "COA", "Authenticated", "JSA", "PSA/DNA"],
-        
-        "Magic: The Gathering": ["MTG", "Magic The Gathering", "Magic cards", "MtG cards", "MTG rare", "Magic booster", 
-                                "MTG singles", "MTG lot", "Magic foil", "Commander deck", "Mythic rare", "Black Lotus"],
-        "Pokémon": ["Pokemon", "Pokemon cards", "Pokemon TCG", "Pokemon Trading Card Game", "Pokemon rare", 
-                   "Pokemon booster", "Pokemon lot", "Pokemon collection", "Charizard", "PSA Pokemon", "WOTC Pokemon"],
-        "Yu-Gi-Oh!": ["Yugioh", "Yu Gi Oh", "YGO", "Yu-Gi-Oh cards", "Yugioh rare", 
-                     "Yugioh lot", "YGO collection", "Konami TCG", "First edition yugioh", "Yugioh secret rare"],
-        "Baseball Cards": ["MLB cards", "Baseball trading cards", "Vintage baseball cards", "Topps baseball", 
-                          "Rookie card", "Autograph baseball card", "Bowman baseball", "Panini baseball", "Relic card"],
-        "Football Cards": ["NFL cards", "Football trading cards", "Vintage football cards", 
-                          "Rookie card NFL", "Auto football card", "Panini football", "Donruss football"],
-        "Basketball Cards": ["NBA cards", "Basketball trading cards", "Vintage basketball cards", 
-                            "Rookie card NBA", "Panini basketball", "Topps basketball", "Jordan card"],
-        "Soccer Cards": ["FIFA cards", "Football trading cards", "Soccer trading cards", 
-                        "Panini soccer", "Topps Match Attax", "World Cup cards", "Premier League cards"],
-        "Hockey Cards": ["NHL cards", "Hockey trading cards", "Vintage hockey cards", 
-                        "Upper Deck hockey", "The Cup hockey", "Rookie hockey card", "Gretzky card"],
-        
-        "Denim": ["Jeans", "Denim pants", "Vintage jeans", "Designer jeans", "Denim jacket", 
-                 "Levi's", "Wrangler", "Selvedge denim", "Raw denim", "Slim fit jeans", "Straight leg jeans"],
-        "T-Shirts": ["Tee shirts", "Graphic tees", "Vintage t-shirts", "Band t-shirts", "Designer t-shirts", 
-                    "Concert shirt", "Rare t-shirt", "Single stitch", "80s t-shirt", "90s t-shirt"],
-        "Jackets": ["Coat", "Outerwear", "Vintage jacket", "Designer jacket", "Leather jacket", 
-                   "Bomber jacket", "Trucker jacket", "Varsity jacket", "Military jacket", "Ski jacket"],
-        "Dresses": ["Vintage dress", "Designer dress", "Evening gown", "Cocktail dress", 
-                   "Maxi dress", "Midi dress", "Wedding dress", "Summer dress", "Party dress"],
-        "Sweaters": ["Pullover", "Cardigan", "Vintage sweater", "Designer sweater", "Knit sweater", 
-                    "Cashmere sweater", "Wool sweater", "Crewneck", "Cozy sweater", "Cable knit"],
-        "Band Merch": ["Concert merch", "Music merchandise", "Band t-shirt", "Tour merch", 
-                      "Rock band", "Metal band", "Rap merch", "Vintage band", "Artist merchandise"],
-        "Designer Items": ["Luxury clothing", "High-end fashion", "Designer brand", "Couture", 
-                          "Gucci", "Louis Vuitton", "Prada", "Chanel", "Saint Laurent", "Designer purse"],
-        "Activewear": ["Athletic wear", "Gym clothes", "Workout gear", "Sports apparel", 
-                      "Nike", "Adidas", "Under Armour", "Lululemon", "Running clothes", "Yoga pants"],
-        
-        "Sneakers": ["Athletic shoes", "Running shoes", "Designer sneakers", "Collectible sneakers", "Rare sneakers", 
-                    "Nike", "Air Jordan", "Adidas", "Yeezy", "New Balance", "Off-White", "Dunk low", "Vintage sneakers"],
-        "Boots": ["Winter boots", "Leather boots", "Combat boots", "Designer boots", "Hiking boots", 
-                 "Dr. Martens", "Timberland", "Chelsea boots", "Cowboy boots", "Work boots", "Engineer boots"],
-        "Dress Shoes": ["Formal shoes", "Oxford shoes", "Men's dress shoes", "Women's heels", "Designer dress shoes", 
-                       "Loafers", "Wingtips", "Brogues", "Leather dress shoes", "Italian shoes", "Church's shoes"],
-        "Athletic Shoes": ["Sport shoes", "Running shoes", "Training shoes", "Workout shoes", 
-                          "Basketball shoes", "Cross trainers", "Tennis shoes", "Track spikes", "Gym shoes"],
-        "Designer Shoes": ["Luxury shoes", "High-end shoes", "Designer brand shoes", "Fashion shoes", 
-                          "Gucci shoes", "Prada shoes", "Louboutin", "Jimmy Choo", "Balenciaga", "Ferragamo"],
-        "Limited Edition": ["Rare shoes", "Exclusive release", "Limited release", "Special edition", 
-                           "Collaboration shoes", "Numbered release", "Drop release", "Collector's edition"],
-        "Vintage": ["Retro shoes", "Classic shoes", "Old school shoes", "Vintage footwear", 
-                   "70s shoes", "80s shoes", "90s shoes", "Made in USA", "Made in England", "Original release"],
-        "Sandals": ["Flip flops", "Summer shoes", "Beach sandals", "Designer sandals", 
-                   "Birkenstock", "Teva", "Leather sandals", "Sport sandals", "Slide sandals", "Comfort sandals"],
-    }
+    model_numbers = []
+    for pattern in patterns:
+        matches = re.findall(pattern, title.upper())
+        model_numbers.extend(matches)
     
-    # Add subcategory-specific variations
-    if subcategory in variations:
-        keywords.extend(variations[subcategory])
-    
-    return keywords
+    return model_numbers
 
-async def search_ebay_listings(session, keyword, sort="price_asc"):
-    """Search eBay listings with the given keyword and sort order."""
-    encoded_keyword = keyword.replace(" ", "+")
+async def search_ebay_listings(session, keyword, sort="price_asc", max_listings=40):
+    """
+    Search eBay for listings with the given keyword.
+    Optimized for speed and accuracy.
+    """
+    encoded_keyword = quote_plus(keyword)
     
     # Determine sort parameter
-    sort_param = "15" if sort == "price_asc" else "16"  # 15=price+shipping: lowest first, 16=price+shipping: highest first
+    sort_param = "15" if sort == "price_asc" else "16"  # 15=lowest, 16=highest
     
-    url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_keyword}&_sop={sort_param}&LH_BIN=1&LH_ItemCondition=1000"
+    # Build URL with advanced search parameters:
+    # - Buy It Now only (no auctions)
+    # - New and Like New condition
+    # - US only (for more accurate shipping costs)
+    url = f"https://www.ebay.com/sch/i.html?_nkw={encoded_keyword}&_sop={sort_param}&LH_BIN=1&_fsrp=1&_sacat=0&LH_PrefLoc=1"
     
     html = await fetch_page(session, url)
     if not html:
@@ -158,105 +282,155 @@ async def search_ebay_listings(session, keyword, sort="price_asc"):
     soup = BeautifulSoup(html, 'html.parser')
     listings = []
     
-    # Find all search result items
-    items = soup.select('li.s-item')
-    
-    for item in items[:20]:  # Limit to first 20 results
-        # Skip if it's the first "result" which is usually an ad/header
-        if 'srp-river-results-null-search__item' in item.get('class', []):
-            continue
-            
-        # Extract title
-        title_elem = item.select_one('.s-item__title')
-        if not title_elem:
-            continue
-        title = title_elem.get_text(strip=True)
-        if 'Shop on eBay' in title:
-            continue
-            
-        # Extract price
-        price_elem = item.select_one('.s-item__price')
-        if not price_elem:
-            continue
-            
-        price_text = price_elem.get_text(strip=True)
-        # Handle price ranges (take the average)
-        if ' to ' in price_text:
-            prices = price_text.replace('$', '').replace(',', '').split(' to ')
-            try:
-                price = (float(prices[0]) + float(prices[1])) / 2
-            except:
-                continue
-        else:
-            # Extract the numeric part of the price
-            price_match = re.search(r'(\d+,)*\d+\.\d+', price_text.replace('$', ''))
-            if not price_match:
-                continue
-            try:
-                price = float(price_match.group(0).replace(',', ''))
-            except:
+    try:
+        # Find all search result items
+        items = soup.select('li.s-item')
+        
+        for item in items[:max_listings]:
+            # Skip if it's the first "result" which is usually an ad/header
+            if 'srp-river-results-null-search__item' in item.get('class', []):
                 continue
                 
-        # Extract link
-        link_elem = item.select_one('a.s-item__link')
-        if not link_elem:
-            continue
-        link = link_elem['href'].split('?')[0]
-        
-        # Extract image URL (for potential future use)
-        img_elem = item.select_one('.s-item__image-img')
-        img_url = img_elem['src'] if img_elem and 'src' in img_elem.attrs else ""
-        
-        # Check if the item has free shipping
-        shipping_elem = item.select_one('.s-item__shipping, .s-item__freeXDays')
-        has_free_shipping = shipping_elem and 'Free' in shipping_elem.get_text(strip=True)
-        
-        # Add to listings
-        listings.append({
-            'title': title,
-            'price': price,
-            'link': link,
-            'image_url': img_url,
-            'free_shipping': has_free_shipping,
-            'normalized_title': normalize_title(title),
-            'source': 'eBay'
-        })
+            # Extract title
+            title_elem = item.select_one('.s-item__title')
+            if not title_elem:
+                continue
+            title = title_elem.get_text(strip=True)
+            if 'Shop on eBay' in title or not title:
+                continue
+                
+            # Extract price
+            price_elem = item.select_one('.s-item__price')
+            if not price_elem:
+                continue
+                
+            price_text = price_elem.get_text(strip=True)
+            # Handle price ranges (take the average)
+            if ' to ' in price_text:
+                prices = price_text.replace('$', '').replace(',', '').split(' to ')
+                try:
+                    price = (float(prices[0]) + float(prices[1])) / 2
+                except:
+                    continue
+            else:
+                # Extract the numeric part of the price
+                price_match = re.search(r'(\d+,)*\d+\.\d+', price_text.replace('$', ''))
+                if not price_match:
+                    continue
+                try:
+                    price = float(price_match.group(0).replace(',', ''))
+                except:
+                    continue
+            
+            # Skip extreme prices (sanity check)
+            if price <= 0.99 or price > 30000:
+                continue
+                
+            # Extract link
+            link_elem = item.select_one('a.s-item__link')
+            if not link_elem:
+                continue
+            link = link_elem['href'].split('?')[0]
+            
+            # Make sure it's a direct listing link, not a search
+            if not link or "/itm/" not in link:
+                continue
+            
+            # Extract image URL
+            img_elem = item.select_one('.s-item__image-img')
+            img_url = img_elem['src'] if img_elem and 'src' in img_elem.attrs else ""
+            
+            # Replace eBay's lazy-loaded image placeholder
+            if 'ir.ebaystatic.com' in img_url:
+                img_url = img_elem.get('data-src', '')
+            
+            # Extract condition
+            condition_elem = item.select_one('.SECONDARY_INFO')
+            condition = condition_elem.get_text(strip=True) if condition_elem else "New"
+            
+            # Extract model numbers for better matching
+            model_numbers = extract_model_numbers(title)
+            
+            # Add to listings
+            listings.append({
+                'title': title,
+                'price': price,
+                'link': link,
+                'image_url': img_url,
+                'normalized_title': normalize_title(title),
+                'model_numbers': model_numbers,
+                'condition': condition,
+                'source': 'eBay',
+                'keyword': keyword
+            })
+    except Exception as e:
+        logger.error(f"Error parsing eBay results for {keyword}: {str(e)}")
     
     return listings
 
-def calculate_similarity(title1, title2):
-    """Calculate similarity between two titles using SequenceMatcher."""
-    return SequenceMatcher(None, title1, title2).ratio()
+def calculate_similarity(item1, item2):
+    """Calculate similarity between two items based on multiple factors."""
+    title1 = item1['normalized_title']
+    title2 = item2['normalized_title']
+    
+    # Base title similarity
+    title_similarity = SequenceMatcher(None, title1, title2).ratio()
+    
+    # Initialize overall similarity score
+    similarity = title_similarity * 0.7  # Title is 70% of the score
+    
+    # Check for model number matches (important for electronics, etc.)
+    model_numbers1 = item1.get('model_numbers', [])
+    model_numbers2 = item2.get('model_numbers', [])
+    
+    model_match_bonus = 0
+    if model_numbers1 and model_numbers2:
+        for model1 in model_numbers1:
+            if any(model1 == model2 for model2 in model_numbers2):
+                model_match_bonus = 0.3  # Exact model match is a strong signal
+                break
+    
+    # Add model match bonus (caps at 1.0)
+    similarity = min(1.0, similarity + model_match_bonus)
+    
+    return similarity
 
-def find_arbitrage_opportunities(low_priced, high_priced, similarity_threshold=0.75):
-    """Find arbitrage opportunities by comparing low and high-priced listings."""
+def find_arbitrage_opportunities(low_priced, high_priced):
+    """Find arbitrage opportunities with optimal matching algorithm."""
     opportunities = []
     
     for low in low_priced:
         for high in high_priced:
-            # Skip if comparing the same item (same URL)
+            # Skip if same listing (same URL)
             if low['link'] == high['link']:
                 continue
                 
-            # Calculate similarity between the titles
-            similarity = calculate_similarity(low['normalized_title'], high['normalized_title'])
+            # Calculate similarity
+            similarity = calculate_similarity(low, high)
             
-            if similarity >= similarity_threshold:
-                # Calculate profit metrics
+            # Only consider items that meet our similarity threshold
+            if similarity >= SIMILARITY_THRESHOLD:
                 buy_price = low['price']
                 sell_price = high['price']
+                
+                # Skip if sell price isn't higher
+                if sell_price <= buy_price:
+                    continue
+                
+                # Calculate profit metrics
                 profit = sell_price - buy_price
                 profit_percentage = (profit / buy_price) * 100
                 
-                # Skip if profit is too low or negative
-                if profit_percentage < 20 or profit < 10:
+                # Skip if profit is too low
+                if profit_percentage < MIN_PROFIT_PERCENTAGE or profit < MIN_PROFIT_DOLLARS:
                     continue
                 
-                # Calculate confidence score based on similarity and profit
-                base_confidence = similarity * 90  # Max 90% from title similarity
-                profit_bonus = min(10, profit_percentage / 10)  # Max 10% from profit
-                confidence = min(95, base_confidence + profit_bonus)  # Cap at 95%
+                # Calculate confidence based on similarity and profit
+                base_confidence = similarity * 85
+                profit_bonus = min(15, profit_percentage / 10)  # Max 15% from profit
+                confidence = min(99, base_confidence + profit_bonus)
                 
+                # Create opportunity object
                 opportunity = {
                     'title': low['title'],
                     'buyPrice': buy_price,
@@ -266,263 +440,162 @@ def find_arbitrage_opportunities(low_priced, high_priced, similarity_threshold=0
                     'profit': profit,
                     'profitPercentage': profit_percentage,
                     'confidence': round(confidence),
-                    'similarity': similarity
+                    'similarity': similarity,
+                    'image_url': low.get('image_url') or high.get('image_url', ''),
+                    'subcategory': low.get('keyword', ''),
+                    'buyCondition': low.get('condition', 'Unknown'),
+                    'sellCondition': high.get('condition', 'Unknown')
                 }
                 
                 opportunities.append(opportunity)
     
     return opportunities
 
-async def process_subcategory(session, subcategory):
-    """Process a single subcategory to find arbitrage opportunities."""
-    keywords = generate_keywords(subcategory)
-    all_opportunities = []
-    
-    for keyword in keywords:
-        print(f"Searching for: {keyword}")
+async def process_subcategory(session, subcategory, semaphore):
+    """Process a subcategory to find arbitrage opportunities."""
+    async with semaphore:
+        keywords = generate_keywords(subcategory)
+        logger.info(f"Processing subcategory: {subcategory} with {len(keywords)} keywords")
         
-        try:
-            # Fetch listings sorted by price (ascending and descending)
-            low_priced_listings = await search_ebay_listings(session, keyword, sort="price_asc")
-            # Artificial delay to prevent rate limiting
-            await asyncio.sleep(1)
-            high_priced_listings = await search_ebay_listings(session, keyword, sort="price_desc")
+        all_opportunities = []
+        keyword_tasks = []
+        
+        # Create tasks for all keywords
+        for keyword in keywords:
+            # Create tasks for searching both price ranges concurrently
+            keyword_tasks.append(asyncio.create_task(
+                process_keyword(session, keyword, subcategory)
+            ))
+        
+        # Run all keyword tasks and collect results
+        keyword_results = await asyncio.gather(*keyword_tasks)
+        
+        # Combine all results
+        for result in keyword_results:
+            all_opportunities.extend(result)
+        
+        # Sort by profit percentage and return top results
+        sorted_opps = sorted(all_opportunities, key=lambda x: -x['profitPercentage'])
+        
+        # Return only the best opportunities
+        return sorted_opps[:MAX_RESULTS_PER_SUBCATEGORY]
+
+async def process_keyword(session, keyword, subcategory):
+    """Process a single keyword to find arbitrage opportunities."""
+    try:
+        logger.info(f"Searching for: {keyword}")
+        
+        # Search for low and high priced listings concurrently
+        low_task = asyncio.create_task(search_ebay_listings(session, keyword, sort="price_asc"))
+        high_task = asyncio.create_task(search_ebay_listings(session, keyword, sort="price_desc"))
+        
+        low_priced, high_priced = await asyncio.gather(low_task, high_task)
+        
+        if not low_priced or not high_priced:
+            return []
+        
+        # Find arbitrage opportunities
+        opportunities = find_arbitrage_opportunities(low_priced, high_priced)
+        
+        # Tag opportunities with subcategory info
+        for opp in opportunities:
+            opp['subcategory'] = subcategory
             
-            if low_priced_listings and high_priced_listings:
-                opportunities = find_arbitrage_opportunities(low_priced_listings, high_priced_listings)
-                for opp in opportunities:
-                    opp['subcategory'] = subcategory
-                    opp['keyword'] = keyword
-                all_opportunities.extend(opportunities)
-        except Exception as e:
-            print(f"Error processing keyword '{keyword}': {str(e)}")
-            continue
-    
-    return all_opportunities
+        return opportunities
+    except Exception as e:
+        logger.error(f"Error processing keyword {keyword}: {str(e)}")
+        return []
 
-async def fetch_all_arbitrage_opportunities(subcategories):
-    """Fetch arbitrage opportunities for all subcategories."""
-    async with aiohttp.ClientSession() as session:
-        tasks = [process_subcategory(session, subcat) for subcat in subcategories]
-        results = await asyncio.gather(*tasks)
+async def run_arbitrage_scan_async(subcategories):
+    """Run the arbitrage scan with optimized concurrency control."""
+    connector = aiohttp.TCPConnector(limit=MAX_CONCURRENT_REQUESTS, limit_per_host=8)
+    timeout = aiohttp.ClientTimeout(total=60)
     
-    # Combine results from all subcategories
-    all_opportunities = []
-    for result in results:
-        all_opportunities.extend(result)
-    
-    # Filter out potential duplicates (same buy/sell links)
-    unique_opportunities = []
-    seen_pairs = set()
-    
-    for opp in all_opportunities:
-        pair_key = (opp['buyLink'], opp['sellLink'])
-        if pair_key not in seen_pairs:
-            seen_pairs.add(pair_key)
-            unique_opportunities.append(opp)
-    
-    # Sort by profit percentage and return top results (limit to 20)
-    return sorted(unique_opportunities, key=lambda x: -x['profitPercentage'])[:20]
-
-def generate_simulated_opportunities(subcategories):
-    """
-    Generate simulated arbitrage opportunities for demonstration purposes.
-    This is used when no real arbitrage opportunities are found.
-    """
-    simulated = []
-    
-    product_templates = {
-        "Laptops": [
-            {"name": "Dell XPS 13 9310 13.4 inch FHD+ Laptop", "low": 699, "high": 999},
-            {"name": "MacBook Air M1 8GB RAM 256GB SSD", "low": 749, "high": 999},
-            {"name": "Lenovo ThinkPad X1 Carbon Gen 9", "low": 899, "high": 1349},
-            {"name": "ASUS ROG Zephyrus G14 Gaming Laptop", "low": 1099, "high": 1499},
-            {"name": "HP Spectre x360 2-in-1 Ultrabook", "low": 849, "high": 1199},
-            {"name": "Razer Blade 15 Gaming Laptop", "low": 1299, "high": 1799}
-        ],
-        "Smartphones": [
-            {"name": "iPhone 13 Pro 128GB Graphite Unlocked", "low": 699, "high": 899},
-            {"name": "Samsung Galaxy S21 Ultra 5G 128GB", "low": 649, "high": 899},
-            {"name": "Google Pixel 6 Pro 128GB", "low": 499, "high": 749},
-            {"name": "OnePlus 9 Pro 5G 256GB", "low": 599, "high": 799},
-            {"name": "iPhone 12 Mini 64GB Unlocked", "low": 399, "high": 599},
-            {"name": "Samsung Galaxy Z Flip 3 128GB", "low": 699, "high": 949}
-        ],
-        "Pokémon": [
-            {"name": "Charizard VMAX Rainbow Rare 074/073", "low": 149, "high": 249},
-            {"name": "Booster Box Pokémon Brilliant Stars Sealed", "low": 99, "high": 159},
-            {"name": "Pikachu VMAX Rainbow Rare 188/185", "low": 129, "high": 219},
-            {"name": "Ancient Mew Sealed Promo Card", "low": 39, "high": 89},
-            {"name": "Umbreon VMAX Alternate Art 215/203", "low": 279, "high": 399},
-            {"name": "Celebrations Ultra Premium Collection Box", "low": 199, "high": 349}
-        ],
-        "Magic: The Gathering": [
-            {"name": "Liliana of the Veil Innistrad Mythic", "low": 49, "high": 89},
-            {"name": "Jace, the Mind Sculptor Worldwake", "low": 99, "high": 189},
-            {"name": "Tarmogoyf Modern Horizons 2", "low": 29, "high": 59},
-            {"name": "Mana Crypt Eternal Masters", "low": 159, "high": 259},
-            {"name": "Ragavan, Nimble Pilferer Modern Horizons 2", "low": 69, "high": 115},
-            {"name": "Collector Booster Box Modern Horizons 3", "low": 229, "high": 349}
-        ],
-        "Yu-Gi-Oh!": [
-            {"name": "Blue-Eyes White Dragon 1st Edition", "low": 79, "high": 149},
-            {"name": "Dark Magician Girl 1st Edition", "low": 69, "high": 119},
-            {"name": "Accesscode Talker Prismatic Secret Rare", "low": 59, "high": 99},
-            {"name": "Ash Blossom & Joyous Spring Ultra Rare", "low": 29, "high": 49},
-            {"name": "Ghost Rare Stardust Dragon", "low": 149, "high": 249},
-            {"name": "Pot of Prosperity Secret Rare", "low": 79, "high": 129}
-        ],
-        "Sneakers": [
-            {"name": "Nike Air Jordan 1 Retro High OG", "low": 189, "high": 299},
-            {"name": "Adidas Yeezy Boost 350 V2", "low": 219, "high": 349},
-            {"name": "Nike Dunk Low Retro White Black", "low": 99, "high": 179},
-            {"name": "New Balance 550 White Green", "low": 89, "high": 159},
-            {"name": "Nike SB Dunk Low Travis Scott", "low": 899, "high": 1299},
-            {"name": "Air Jordan 4 Retro University Blue", "low": 299, "high": 449}
-        ],
-        "Denim": [
-            {"name": "Levi's 501 Original Fit Jeans Vintage", "low": 45, "high": 99},
-            {"name": "Vintage Wrangler Cowboy Cut Jeans", "low": 39, "high": 85},
-            {"name": "Lee Riders Vintage High Waisted Jeans", "low": 49, "high": 110},
-            {"name": "Carhartt Double Knee Work Jeans", "low": 55, "high": 95},
-            {"name": "Evisu Painted Pocket Selvage Denim", "low": 159, "high": 299},
-            {"name": "Vintage Levi's 517 Orange Tab Denim", "low": 65, "high": 125}
-        ],
-        "Vintage Toys": [
-            {"name": "Star Wars Vintage Kenner Action Figure", "low": 29, "high": 89},
-            {"name": "Transformers G1 Optimus Prime", "low": 89, "high": 249},
-            {"name": "Original Nintendo Game Boy", "low": 59, "high": 129},
-            {"name": "Vintage Barbie Doll 1970s", "low": 49, "high": 119},
-            {"name": "He-Man Masters of the Universe Figure", "low": 39, "high": 99},
-            {"name": "Original Teenage Mutant Ninja Turtles Figure", "low": 29, "high": 79}
-        ],
-        "Headphones": [
-            {"name": "Sony WH-1000XM4 Wireless Noise Cancelling", "low": 249, "high": 349},
-            {"name": "Apple AirPods Pro with MagSafe Case", "low": 169, "high": 249},
-            {"name": "Bose QuietComfort 45 Noise Cancelling", "low": 229, "high": 329},
-            {"name": "Sennheiser HD 660 S Audiophile Headphones", "low": 339, "high": 499},
-            {"name": "Beats Studio3 Wireless Noise Cancelling", "low": 189, "high": 299}
-        ],
-        "Gaming Consoles": [
-            {"name": "PlayStation 5 Disc Edition Console", "low": 449, "high": 599},
-            {"name": "Xbox Series X 1TB Console", "low": 479, "high": 599},
-            {"name": "Nintendo Switch OLED Model White", "low": 329, "high": 399},
-            {"name": "Sony PlayStation 4 Pro 1TB", "low": 279, "high": 379},
-            {"name": "Steam Deck 512GB Console", "low": 529, "high": 699}
-        ],
-        "Computer Parts": [
-            {"name": "NVIDIA GeForce RTX 4070 Graphics Card", "low": 549, "high": 699},
-            {"name": "AMD Ryzen 9 7900X CPU Processor", "low": 429, "high": 559},
-            {"name": "Samsung 2TB 980 PRO SSD PCIe 4.0", "low": 179, "high": 249},
-            {"name": "Corsair Vengeance RGB Pro 32GB DDR4", "low": 89, "high": 139},
-            {"name": "ASUS ROG Strix Z790-E Gaming Motherboard", "low": 349, "high": 469}
+    async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+        # Create a semaphore to limit concurrent subcategory processing
+        semaphore = asyncio.Semaphore(min(len(subcategories), 5))
+        
+        # Process each subcategory with controlled concurrency
+        subcategory_tasks = [
+            process_subcategory(session, subcat, semaphore) 
+            for subcat in subcategories
         ]
-    }
-    
-    # Default products if specific category not found
-    default_products = [
-        {"name": "Vintage Collection Rare Item", "low": 79, "high": 149},
-        {"name": "Limited Edition Collectible", "low": 49, "high": 119},
-        {"name": "Rare Discontinued Model", "low": 99, "high": 199},
-        {"name": "Sealed Original Package Item", "low": 59, "high": 129},
-        {"name": "Collector's Edition Set", "low": 129, "high": 259},
-        {"name": "Hard to Find Special Release", "low": 89, "high": 169}
-    ]
-    
-    # Generate opportunities for the subcategories
-    for subcategory in subcategories:
-        # Find appropriate product templates
-        templates = None
-        for key in product_templates:
-            if key.lower() in subcategory.lower() or subcategory.lower() in key.lower():
-                templates = product_templates[key]
-                break
         
-        if not templates:
-            templates = default_products
+        # Run all subcategory tasks
+        results = await asyncio.gather(*subcategory_tasks)
         
-        # Create 1-3 opportunities for this subcategory
-        for _ in range(random.randint(1, 3)):
-            template = random.choice(templates)
-            
-            # Add some randomness to the prices
-            buy_price = template["low"] * random.uniform(0.9, 1.1)
-            sell_price = template["high"] * random.uniform(0.9, 1.1)
-            
-            # Calculate profit metrics
-            profit = sell_price - buy_price
-            profit_percentage = (profit / buy_price) * 100
-            
-            # Generate random confidence score
-            confidence = random.randint(70, 95)
-            
-            # Create opportunity
-            opportunity = {
-                "title": template["name"],
-                "buyPrice": round(buy_price, 2),
-                "sellPrice": round(sell_price, 2),
-                "buyLink": "https://www.ebay.com/sch/i.html?_nkw=" + template["name"].replace(" ", "+"),
-                "sellLink": "https://www.ebay.com/sch/i.html?_nkw=" + template["name"].replace(" ", "+") + "&_sop=16",
-                "profit": round(profit, 2),
-                "profitPercentage": round(profit_percentage, 2),
-                "confidence": confidence,
-                "subcategory": subcategory,
-                "keyword": subcategory  # Add keyword for consistency with real opportunities
-            }
-            
-            simulated.append(opportunity)
-    
-    # Sort by profit percentage and return (limit to 20)
-    return sorted(simulated, key=lambda x: -x["profitPercentage"])[:20]
+        # Combine all results
+        all_opportunities = []
+        for result in results:
+            all_opportunities.extend(result)
+        
+        # Filter out duplicates (same buy/sell pair)
+        unique_opportunities = []
+        seen_pairs = set()
+        
+        for opp in all_opportunities:
+            pair_key = (opp['buyLink'], opp['sellLink'])
+            if pair_key not in seen_pairs:
+                seen_pairs.add(pair_key)
+                unique_opportunities.append(opp)
+        
+        # Sort by profit percentage
+        sorted_opps = sorted(unique_opportunities, key=lambda x: -x['profitPercentage'])
+        
+        # Return only the best opportunities, but keep diversity by subcategory
+        # First, get top results from each subcategory
+        final_results = []
+        subcategory_included = set()
+        
+        # First pass: include top results from each subcategory
+        for opp in sorted_opps:
+            if opp['subcategory'] not in subcategory_included and len(final_results) < len(subcategories) * 2:
+                final_results.append(opp)
+                subcategory_included.add(opp['subcategory'])
+        
+        # Second pass: include remaining top results
+        for opp in sorted_opps:
+            if opp not in final_results and len(final_results) < 10:
+                final_results.append(opp)
+        
+        return final_results
 
 def run_arbitrage_scan(subcategories):
-    """
-    Run an arbitrage scan across multiple online marketplaces.
-    This function tries to fetch real opportunities first, and falls back to simulated data if needed.
-    """
+    """Run the arbitrage scan synchronously (wrapper for async function)."""
+    start_time = time.time()
+    logger.info(f"Starting scan for {len(subcategories)} subcategories: {subcategories}")
+    
     try:
-        print(f"Starting arbitrage scan for subcategories: {subcategories}")
-        
-        # Try to run the real arbitrage scan
+        # Create a new event loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        try:
-            start_time = time.time()
-            real_opportunities = loop.run_until_complete(fetch_all_arbitrage_opportunities(subcategories))
-            end_time = time.time()
-            
-            print(f"Scan completed in {end_time - start_time:.2f} seconds")
-            
-            # If we found real opportunities, return them
-            if real_opportunities:
-                print(f"Found {len(real_opportunities)} real arbitrage opportunities")
-                return real_opportunities
-            else:
-                print("No real arbitrage opportunities found. Falling back to simulated data.")
-                
-                # Fall back to simulated data
-                return generate_simulated_opportunities(subcategories)
-        except Exception as e:
-            print(f"Error running real arbitrage scan: {str(e)}")
-            print("Falling back to simulated data.")
-            return generate_simulated_opportunities(subcategories)
-        finally:
-            loop.close()
-    except Exception as e:
-        print(f"Unexpected error: {str(e)}")
+        # Run the async scan
+        results = loop.run_until_complete(run_arbitrage_scan_async(subcategories))
         
-        # In case of any error, fall back to simulated data to ensure the UI has something to display
-        return generate_simulated_opportunities(subcategories)
+        end_time = time.time()
+        logger.info(f"Scan completed in {end_time - start_time:.2f} seconds")
+        logger.info(f"Found {len(results)} arbitrage opportunities")
+        
+        return results
+    except Exception as e:
+        logger.error(f"Error in arbitrage scan: {str(e)}")
+        return []
+    finally:
+        # Clean up the event loop
+        try:
+            loop.close()
+        except:
+            pass
 
 if __name__ == "__main__":
-    # Test the arbitrage scanner with a single subcategory
-    test_subcategory = ["Sneakers"]
-    result = run_arbitrage_scan(test_subcategory)
+    # Test the scanner with a single subcategory
+    test_subcategories = ["Magic: The Gathering"]
+    results = run_arbitrage_scan(test_subcategories)
     
     # Print the results
-    print(f"Found {len(result)} arbitrage opportunities:")
-    for i, opportunity in enumerate(result, 1):
+    print(f"\nFound {len(results)} arbitrage opportunities:")
+    for i, opportunity in enumerate(results[:5], 1):
         print(f"\nOpportunity #{i}:")
         print(f"Title: {opportunity['title']}")
         print(f"Buy Price: ${opportunity['buyPrice']:.2f}")
