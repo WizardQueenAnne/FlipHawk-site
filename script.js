@@ -5,107 +5,100 @@ document.addEventListener('DOMContentLoaded', function() {
     const subcategoryContainer = document.getElementById('subcategoryContainer');
     const subcategoryOptions = document.getElementById('subcategoryOptions');
     const loadingIndicator = document.getElementById('loadingIndicator');
+    const loadingMessage = document.getElementById('loadingMessage');
     const resultsTitle = document.getElementById('resultsTitle');
     const dealList = document.getElementById('dealList');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    const filterOptions = document.getElementById('filterOptions');
+    const sortOptions = document.getElementById('sortOptions');
+    const confidenceFilter = document.getElementById('confidenceFilter');
+    const progressFill = document.querySelector('.progress-fill');
     
-    // Auth Elements
-    const loginBtn = document.getElementById('loginBtn');
-    const signupBtn = document.getElementById('signupBtn');
-    const loginModal = document.getElementById('loginModal');
-    const signupModal = document.getElementById('signupModal');
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-    
-    // Feedback Elements
-    const feedbackBtn = document.getElementById('feedbackBtn');
-    const feedbackModal = document.getElementById('feedbackModal');
-    const feedbackForm = document.getElementById('feedbackForm');
-    
-    // About Elements
-    const aboutLink = document.getElementById('aboutLink');
-    const aboutModal = document.getElementById('aboutModal');
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    
-    // Stats Elements
-    const scanningCountEl = document.getElementById('scanningCount');
-    const weeklyDealsCountEl = document.getElementById('weeklyDealsCount');
-    const userCountEl = document.getElementById('userCount');
-    
-    // Close Modal Buttons
-    const closeButtons = document.querySelectorAll('.close-modal');
-    
-    // User state
-    let isLoggedIn = false;
-    let userFavorites = [];
-    
-    // Define subcategories for each category with icons
-    const subcategories = {
+    // Define all categories and subcategories
+    const categories = {
         'Tech': [
-            { name: 'Laptops', icon: '💻' },
-            { name: 'Smartphones', icon: '📱' },
-            { name: 'Tablets', icon: '📱' },
-            { name: 'Headphones', icon: '🎧' },
-            { name: 'Gaming Consoles', icon: '🎮' },
-            { name: 'Computer Parts', icon: '🔧' },
-            { name: 'Cameras', icon: '📷' },
-            { name: 'Smartwatches', icon: '⌚' },
-            { name: 'Bluetooth Speakers', icon: '🔊' }
+            'Headphones', 'Keyboards', 'Graphics Cards', 'CPUs', 'Laptops',
+            'Monitors', 'SSDs', 'Routers', 'Vintage Tech'
         ],
         'Collectibles': [
-            { name: 'Action Figures', icon: '🦸' },
-            { name: 'Comic Books', icon: '📚' },
-            { name: 'Coins', icon: '🪙' },
-            { name: 'Stamps', icon: '📬' },
-            { name: 'Vinyl Records', icon: '💿' },
-            { name: 'Movie Memorabilia', icon: '🎬' },
-            { name: 'Vintage Toys', icon: '🧸' },
-            { name: 'Autographs', icon: '✍️' }
-        ],
-        'Antiques': [
-            { name: 'Furniture', icon: '🪑' },
-            { name: 'Jewelry', icon: '💍' },
-            { name: 'Clocks', icon: '🕰️' },
-            { name: 'Art', icon: '🖼️' },
-            { name: 'Silverware', icon: '🍴' },
-            { name: 'Glassware', icon: '🥃' },
-            { name: 'Pottery', icon: '🏺' },
-            { name: 'Books', icon: '📚' }
-        ],
-        'Trading Cards': [
-            { name: 'Magic: The Gathering', icon: '🃏' },
-            { name: 'Pokémon', icon: '⚡' },
-            { name: 'Yu-Gi-Oh!', icon: '👾' },
-            { name: 'Baseball Cards', icon: '⚾' },
-            { name: 'Football Cards', icon: '🏈' },
-            { name: 'Basketball Cards', icon: '🏀' },
-            { name: 'Soccer Cards', icon: '⚽' },
-            { name: 'Hockey Cards', icon: '🏒' }
+            'Pokémon', 'Magic: The Gathering', 'Yu-Gi-Oh', 'Funko Pops', 'Sports Cards',
+            'Comic Books', 'Action Figures', 'LEGO Sets'
         ],
         'Vintage Clothing': [
-            { name: 'Denim', icon: '👖' },
-            { name: 'T-Shirts', icon: '👕' },
-            { name: 'Jackets', icon: '🧥' },
-            { name: 'Dresses', icon: '👗' },
-            { name: 'Sweaters', icon: '🧶' },
-            { name: 'Band Merch', icon: '🎸' },
-            { name: 'Designer Items', icon: '👜' },
-            { name: 'Activewear', icon: '🏃' }
+            'Jordans', 'Nike Dunks', 'Vintage Tees', 'Band Tees', 'Denim Jackets',
+            'Designer Brands', 'Carhartt', 'Patagonia'
         ],
-        'Shoes': [
-            { name: 'Sneakers', icon: '👟' },
-            { name: 'Boots', icon: '👢' },
-            { name: 'Dress Shoes', icon: '👞' },
-            { name: 'Athletic Shoes', icon: '🏃' },
-            { name: 'Designer Shoes', icon: '👠' },
-            { name: 'Limited Edition', icon: '✨' },
-            { name: 'Vintage', icon: '🕰️' },
-            { name: 'Sandals', icon: '👡' }
+        'Antiques': [
+            'Coins', 'Watches', 'Cameras', 'Typewriters', 'Vinyl Records',
+            'Vintage Tools', 'Old Maps', 'Antique Toys'
+        ],
+        'Gaming': [
+            'Consoles', 'Game Controllers', 'Rare Games', 'Arcade Machines', 
+            'Handhelds', 'Gaming Headsets', 'VR Gear'
+        ],
+        'Music Gear': [
+            'Electric Guitars', 'Guitar Pedals', 'Synthesizers', 'Vintage Amps',
+            'Microphones', 'DJ Equipment'
+        ],
+        'Tools & DIY': [
+            'Power Tools', 'Hand Tools', 'Welding Equipment', 'Toolboxes',
+            'Measuring Devices', 'Woodworking Tools'
+        ],
+        'Outdoors & Sports': [
+            'Bikes', 'Skateboards', 'Scooters', 'Camping Gear', 'Hiking Gear',
+            'Fishing Gear', 'Snowboards'
         ]
     };
-
-    // Initialize real-time stats with random values
-    initializeStats();
-
+    
+    // Category icons
+    const categoryIcons = {
+        'Tech': '💻',
+        'Collectibles': '🏆',
+        'Vintage Clothing': '👟',
+        'Antiques': '🕰️',
+        'Gaming': '🎮',
+        'Music Gear': '🎸',
+        'Tools & DIY': '🛠️',
+        'Outdoors & Sports': '🚲'
+    };
+    
+    // Subcategory icons
+    const subcategoryIcons = {
+        // Tech
+        'Headphones': '🎧',
+        'Keyboards': '⌨️',
+        'Graphics Cards': '🖥️',
+        'CPUs': '🔄',
+        'Laptops': '💻',
+        'Monitors': '🖥️',
+        'SSDs': '💾',
+        'Routers': '📡',
+        'Vintage Tech': '📟',
+        
+        // Collectibles
+        'Pokémon': '⚡',
+        'Magic: The Gathering': '🃏',
+        'Yu-Gi-Oh': '👹',
+        'Funko Pops': '🧸',
+        'Sports Cards': '🏆',
+        'Comic Books': '📚',
+        'Action Figures': '🦸',
+        'LEGO Sets': '🧱',
+        
+        // Vintage Clothing
+        'Jordans': '👟',
+        'Nike Dunks': '👟',
+        'Vintage Tees': '👕',
+        'Band Tees': '🎸',
+        'Denim Jackets': '🧥',
+        'Designer Brands': '👜',
+        'Carhartt': '👷',
+        'Patagonia': '🏔️',
+        
+        // Default icon for others
+        'default': '📦'
+    };
+    
     // Update subcategories when category changes
     categorySelect.addEventListener('change', function() {
         const category = this.value;
@@ -116,11 +109,11 @@ document.addEventListener('DOMContentLoaded', function() {
             subcategoryContainer.style.display = 'none';
         }
     });
-
+    
     // Populate subcategories based on selected category
     function populateSubcategories(category) {
         subcategoryOptions.innerHTML = '';
-        const options = subcategories[category] || [];
+        const options = categories[category] || [];
         
         options.forEach((subcategory, index) => {
             const checkboxId = `subcategory-${index}`;
@@ -132,18 +125,32 @@ document.addEventListener('DOMContentLoaded', function() {
             checkbox.type = 'checkbox';
             checkbox.id = checkboxId;
             checkbox.name = 'subcategories';
-            checkbox.value = subcategory.name;
+            checkbox.value = subcategory;
             
             const label = document.createElement('label');
             label.htmlFor = checkboxId;
-            label.innerHTML = `${subcategory.icon} ${subcategory.name}`;
+            
+            // Add icon if available
+            const icon = subcategoryIcons[subcategory] || subcategoryIcons['default'];
+            label.innerHTML = `${icon} ${subcategory}`;
             
             checkboxDiv.appendChild(checkbox);
             checkboxDiv.appendChild(label);
             subcategoryOptions.appendChild(checkboxDiv);
         });
+        
+        // Add click handler to checkbox items for better UX
+        document.querySelectorAll('.checkbox-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Don't trigger if they clicked directly on the checkbox
+                if (e.target !== this.querySelector('input[type="checkbox"]')) {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                }
+            });
+        });
     }
-
+    
     // Handle form submission
     scanForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -152,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const category = categorySelect.value;
         
         if (!category) {
-            alert('Please select a category');
+            showAlert('Please select a category');
             return;
         }
         
@@ -163,17 +170,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (selectedSubcategories.length === 0) {
-            alert('Please select at least one subcategory');
+            showAlert('Please select at least one subcategory');
             return;
         }
         
-        // Update scanning count
-        updateScanningCount(selectedSubcategories.length * 20);
+        if (selectedSubcategories.length > 5) {
+            showAlert('Please select up to 5 subcategories for optimal results');
+            return;
+        }
         
-        // Show loading indicator
-        loadingIndicator.style.display = 'block';
-        resultsTitle.style.display = 'none';
-        dealList.innerHTML = '';
+        // Show loading indicator and hide results
+        startLoading(selectedSubcategories);
+        resetResults();
         
         // Make API request to Flask backend
         fetch('/run_scan', {
@@ -194,40 +202,41 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             // Hide loading indicator
-            loadingIndicator.style.display = 'none';
+            stopLoading();
             
             // Display results
-            if (data.length > 0) {
-                resultsTitle.style.display = 'block';
-                displayDeals(data);
-                
-                // Update weekly deals count
-                updateWeeklyDealsCount(data.length);
-            } else {
-                dealList.innerHTML = '<p class="no-results">No arbitrage opportunities found. Please try different subcategories or check back later.</p>';
-            }
+            displayResults(data);
         })
         .catch(error => {
-            loadingIndicator.style.display = 'none';
-            dealList.innerHTML = `<p class="error-message">Error: ${error.message}</p>`;
+            stopLoading();
+            showError('Error connecting to server. Please try again.');
             console.error('Error:', error);
         });
     });
-
+    
+    // Display arbitrage opportunities
+    function displayResults(deals) {
+        // Hide loading indicator completely
+        loadingIndicator.style.display = 'none';
+        
+        // Display results
+        if (deals && deals.length > 0) {
+            resultsTitle.style.display = 'block';
+            resultsTitle.textContent = 'Top Arbitrage Opportunities';
+            filterOptions.style.display = 'flex';
+            displayDeals(deals);
+        } else {
+            noResultsMessage.style.display = 'block';
+        }
+    }
+    
     // Display deals as cards
     function displayDeals(deals) {
         dealList.innerHTML = '';
         
-        deals.forEach((deal, index) => {
-            const isFavorite = userFavorites.some(fav => 
-                fav.buyLink === deal.buyLink && fav.sellLink === deal.sellLink
-            );
-            
+        deals.forEach(deal => {
             const card = document.createElement('div');
-            card.className = 'deal-card';
-            
-            // Get a placeholder image URL or use the actual image if available
-            const imageUrl = deal.image_url || getPlaceholderImage(deal.subcategory);
+            card.className = 'opportunity-card';
             
             // Format prices
             const buyPrice = new Intl.NumberFormat('en-US', {
@@ -245,90 +254,147 @@ document.addEventListener('DOMContentLoaded', function() {
                 currency: 'USD'
             }).format(deal.profit);
             
-            const profitPercentage = deal.profitPercentage.toFixed(0);
+            const profitPercentage = Math.round(deal.profitPercentage);
             
             // Get confidence color
             const confidenceColor = getConfidenceColor(deal.confidence);
             
+            // Calculate estimated taxes (simplified, around 8%)
+            const estimatedTax = deal.buyPrice * 0.08;
+            const estimatedShipping = 5.99; // Example fixed shipping cost
+            
+            const totalCost = deal.buyPrice + estimatedTax + estimatedShipping;
+            const netProfit = deal.sellPrice - totalCost;
+            const netProfitPercentage = (netProfit / totalCost) * 100;
+            
+            const formattedNetProfit = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(netProfit);
+            
+            // Get icon for subcategory
+            const subcategoryIcon = getSubcategoryIcon(deal.subcategory);
+            
             card.innerHTML = `
-                <div class="card-favorite ${isFavorite ? 'active' : ''}" data-id="${index}">
-                    <i class="fas ${isFavorite ? 'fa-heart' : 'fa-heart'}"></i>
-                </div>
-                <div class="card-image">
-                    <img src="${imageUrl}" alt="${deal.title}">
-                </div>
-                <div class="card-content">
-                    <div class="card-header">
-                        <h3 class="card-title">${deal.title}</h3>
+                <div class="opportunity-header">
+                    <div class="opportunity-title">
+                        <h3>${deal.title}</h3>
                         <span class="confidence-badge" style="background-color: ${confidenceColor}">
-                            ${deal.confidence}% Confidence
+                            ${deal.confidence}% Match
                         </span>
                     </div>
-                    <div class="card-prices">
-                        <div class="price-box buy-box">
-                            <div class="price-label">Buy for:</div>
-                            <div class="price-value buy-price">${buyPrice}</div>
+                </div>
+
+                <div class="product-comparison">
+                    <div class="product-card buy-card">
+                        <div class="product-image">
+                            <img src="${deal.image_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${deal.title}">
                         </div>
-                        <div class="price-box sell-box">
-                            <div class="price-label">Sell for:</div>
-                            <div class="price-value sell-price">${sellPrice}</div>
+                        <div class="product-details">
+                            <div class="product-price">${buyPrice}</div>
+                            <div class="product-condition">${deal.buyCondition || 'New'}</div>
+                            <a href="${deal.buyLink}" target="_blank" class="product-btn buy-btn">
+                                <i class="fas fa-shopping-cart"></i> Buy Product
+                            </a>
                         </div>
                     </div>
-                    <div class="card-profit">
-                        <div class="profit-amount">Profit: ${profit}</div>
-                        <div class="profit-percentage">${profitPercentage}% ROI</div>
+                    
+                    <div class="profit-details">
+                        <div class="profit-card">
+                            <div class="profit-header">Profit Details</div>
+                            <div class="profit-row">
+                                <span>Cost Price:</span>
+                                <span>${buyPrice}</span>
+                            </div>
+                            <div class="profit-row">
+                                <span>Est. Tax (8%):</span>
+                                <span>+$${estimatedTax.toFixed(2)}</span>
+                            </div>
+                            <div class="profit-row">
+                                <span>Est. Shipping:</span>
+                                <span>+$${estimatedShipping.toFixed(2)}</span>
+                            </div>
+                            <div class="profit-row">
+                                <span>Selling Price:</span>
+                                <span>${sellPrice}</span>
+                            </div>
+                            <div class="profit-total">
+                                <span>Net Profit:</span>
+                                <span>${formattedNetProfit}</span>
+                            </div>
+                            <div class="profit-roi">
+                                <span>ROI:</span>
+                                <span>${Math.round(netProfitPercentage)}%</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-actions">
-                        <a href="${deal.buyLink}" target="_blank" class="card-btn buy-btn">
-                            <i class="fas fa-shopping-cart"></i> Buy
-                        </a>
-                        <a href="${deal.sellLink}" target="_blank" class="card-btn sell-btn">
-                            <i class="fas fa-tag"></i> Sell
-                        </a>
+
+                    <div class="product-card sell-card">
+                        <div class="product-image">
+                            <img src="${deal.image_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${deal.title}">
+                        </div>
+                        <div class="product-details">
+                            <div class="product-price">${sellPrice}</div>
+                            <div class="product-condition">${deal.sellCondition || 'New'}</div>
+                            <a href="${deal.sellLink}" target="_blank" class="product-btn sell-btn">
+                                <i class="fas fa-external-link-alt"></i> View Listing
+                            </a>
+                        </div>
                     </div>
-                    <div class="card-info">
-                        <i class="fas fa-tag"></i> ${getCategoryIcon(deal.subcategory)} ${deal.subcategory}
+                </div>
+                
+                <div class="opportunity-footer">
+                    <div class="opportunity-category">
+                        <i class="fas fa-tag"></i> ${subcategoryIcon} ${deal.subcategory}
+                    </div>
+                    <div class="opportunity-actions">
+                        <button class="save-btn"><i class="far fa-bookmark"></i> Save</button>
+                        <button class="share-btn"><i class="fas fa-share-alt"></i> Share</button>
                     </div>
                 </div>
             `;
             
             dealList.appendChild(card);
             
-            // Add favorite functionality
-            const favoriteBtn = card.querySelector('.card-favorite');
-            favoriteBtn.addEventListener('click', function() {
-                const dealId = this.getAttribute('data-id');
-                toggleFavorite(deals[dealId], this);
+            // Add save functionality
+            const saveBtn = card.querySelector('.save-btn');
+            saveBtn.addEventListener('click', function() {
+                const bookmarkIcon = this.querySelector('i');
+                if (bookmarkIcon.classList.contains('far')) {
+                    bookmarkIcon.classList.replace('far', 'fas');
+                    showAlert('Opportunity saved!');
+                } else {
+                    bookmarkIcon.classList.replace('fas', 'far');
+                    showAlert('Opportunity removed from saved items');
+                }
+            });
+            
+            // Add share functionality
+            const shareBtn = card.querySelector('.share-btn');
+            shareBtn.addEventListener('click', function() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'FlipHawk Arbitrage Opportunity',
+                        text: `Check out this profit opportunity: ${deal.title} - Buy: ${buyPrice}, Sell: ${sellPrice}, Profit: ${profit}`,
+                        url: window.location.href
+                    })
+                    .catch(() => showAlert('Copied to clipboard!'));
+                } else {
+                    // Fallback to copy to clipboard
+                    const shareText = `Arbitrage opportunity: ${deal.title} - Buy: ${buyPrice}, Sell: ${sellPrice}, Profit: ${profit}`;
+                    
+                    // Create temporary textarea for copy
+                    const el = document.createElement('textarea');
+                    el.value = shareText;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    
+                    showAlert('Copied to clipboard!');
+                }
             });
         });
-    }
-    
-    // Toggle favorite status
-    function toggleFavorite(deal, element) {
-        if (!isLoggedIn) {
-            // Show login modal if not logged in
-            showModal(loginModal);
-            return;
-        }
-        
-        const index = userFavorites.findIndex(fav => 
-            fav.buyLink === deal.buyLink && fav.sellLink === deal.sellLink
-        );
-        
-        if (index === -1) {
-            // Add to favorites
-            userFavorites.push(deal);
-            element.classList.add('active');
-            element.querySelector('i').className = 'fas fa-heart';
-        } else {
-            // Remove from favorites
-            userFavorites.splice(index, 1);
-            element.classList.remove('active');
-            element.querySelector('i').className = 'fas fa-heart';
-        }
-        
-        // Save to localStorage (in a real app, this would be saved to the server)
-        localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
     }
     
     // Get confidence color based on score
@@ -339,189 +405,152 @@ document.addEventListener('DOMContentLoaded', function() {
         return "#FF5722"; // Deep Orange
     }
     
-    // Get placeholder image based on category
-    function getPlaceholderImage(category) {
-        const categoryMap = {
-            'Laptops': 'https://via.placeholder.com/300x180.png?text=Laptop',
-            'Smartphones': 'https://via.placeholder.com/300x180.png?text=Smartphone',
-            'Headphones': 'https://via.placeholder.com/300x180.png?text=Headphones',
-            'Sneakers': 'https://via.placeholder.com/300x180.png?text=Sneakers',
-            'Pokémon': 'https://via.placeholder.com/300x180.png?text=Pokemon+Cards',
-            'Magic: The Gathering': 'https://via.placeholder.com/300x180.png?text=Magic+Cards'
-        };
-        
-        return categoryMap[category] || 'https://via.placeholder.com/300x180.png?text=Product';
+    // Get icon for subcategory
+    function getSubcategoryIcon(subcategory) {
+        return subcategoryIcons[subcategory] || subcategoryIcons['default'];
     }
     
-    // Get category icon
-    function getCategoryIcon(category) {
-        // Search through all subcategories to find the matching one
-        for (const [key, value] of Object.entries(subcategories)) {
-            const subcat = value.find(item => item.name === category);
-            if (subcat) {
-                return subcat.icon;
+    // Reset results area
+    function resetResults() {
+        resultsTitle.style.display = 'none';
+        filterOptions.style.display = 'none';
+        dealList.innerHTML = '';
+        noResultsMessage.style.display = 'none';
+    }
+    
+    // Start loading animation
+    function startLoading(subcategories) {
+        loadingIndicator.style.display = 'block';
+        loadingMessage.textContent = `Scanning marketplaces for ${subcategories.join(', ')} opportunities...`;
+        
+        // Reset and animate progress bar
+        progressFill.style.width = '0%';
+        setTimeout(() => {
+            progressFill.style.width = '95%';
+        }, 100);
+    }
+    
+    // Stop loading animation
+    function stopLoading() {
+        // Keep the loading indicator visible but update the message
+        loadingMessage.textContent = "Processing results...";
+        progressFill.style.width = '100%';
+        
+        // Hide loading after a delay
+        setTimeout(() => {
+            loadingIndicator.style.display = 'none';
+        }, 1000);
+    }
+    
+    // Show alert message
+    function showAlert(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert';
+        alert.innerHTML = `
+            <div class="alert-content">
+                <i class="fas fa-info-circle"></i>
+                <span>${message}</span>
+                <button class="alert-close">&times;</button>
+            </div>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        // Add remove functionality
+        alert.querySelector('.alert-close').addEventListener('click', function() {
+            document.body.removeChild(alert);
+        });
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (document.body.contains(alert)) {
+                document.body.removeChild(alert);
             }
-        }
-        return '🔍'; // Default icon
+        }, 5000);
     }
     
-    // Initialize mock statistics
-    function initializeStats() {
-        // Random number of listings being scanned
-        const scanningCount = Math.floor(Math.random() * 500) + 100;
-        scanningCountEl.innerHTML = `Scanning <b>${scanningCount}</b> listings...`;
+    // Show error message
+    function showError(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert error';
+        alert.innerHTML = `
+            <div class="alert-content">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+                <button class="alert-close">&times;</button>
+            </div>
+        `;
         
-        // Random number of deals found this week
-        const weeklyDeals = Math.floor(Math.random() * 200) + 50;
-        weeklyDealsCountEl.innerHTML = `Found <b>${weeklyDeals}</b> deals this week`;
+        document.body.appendChild(alert);
         
-        // Random number of users online
-        const userCount = Math.floor(Math.random() * 100) + 20;
-        userCountEl.innerHTML = `<b>${userCount}</b> users online`;
-        
-        // Update these values periodically
-        setInterval(() => {
-            updateScanningCount(Math.floor(Math.random() * 100) + 50);
-        }, 10000);
-    }
-    
-    // Update scanning count
-    function updateScanningCount(count) {
-        scanningCountEl.innerHTML = `Scanning <b>${count}</b> listings...`;
-    }
-    
-    // Update weekly deals count
-    function updateWeeklyDealsCount(newDeals) {
-        const currentCount = parseInt(weeklyDealsCountEl.querySelector('b').textContent);
-        const updatedCount = currentCount + newDeals;
-        weeklyDealsCountEl.innerHTML = `Found <b>${updatedCount}</b> deals this week`;
-    }
-    
-    // Modal functions
-    function showModal(modal) {
-        modal.classList.add('active');
-    }
-    
-    function hideModal(modal) {
-        modal.classList.remove('active');
-    }
-    
-    // Event listeners for modals
-    loginBtn.addEventListener('click', () => showModal(loginModal));
-    signupBtn.addEventListener('click', () => showModal(signupModal));
-    feedbackBtn.addEventListener('click', () => showModal(feedbackModal));
-    aboutLink.addEventListener('click', () => showModal(aboutModal));
-    
-    // Close modal when clicking the X
-    closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            hideModal(modal);
+        // Add remove functionality
+        alert.querySelector('.alert-close').addEventListener('click', function() {
+            document.body.removeChild(alert);
         });
-    });
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (document.body.contains(alert)) {
+                document.body.removeChild(alert);
+            }
+        }, 5000);
+    }
     
-    // Close modal when clicking outside the content
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('modal')) {
-            hideModal(e.target);
-        }
-    });
-    
-    // Tab functionality for the about modal
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all tabs
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            this.classList.add('active');
-            
-            // Hide all tab panes
-            document.querySelectorAll('.tab-pane').forEach(pane => {
-                pane.classList.remove('active');
-            });
-            
-            // Show the selected tab pane
-            const tabId = this.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
+    // Add filtering functionality
+    sortOptions.addEventListener('change', function() {
+        const sortValue = this.value;
+        const confidenceLevel = parseInt(confidenceFilter.value);
+        
+        // Get all cards
+        const cards = Array.from(dealList.querySelectorAll('.opportunity-card'));
+        
+        // Sort the cards based on selected option
+        cards.sort((a, b) => {
+            if (sortValue === 'profit') {
+                const profitA = parseFloat(a.querySelector('.profit-total span:last-child').textContent.replace(/[^0-9.-]+/g, ''));
+                const profitB = parseFloat(b.querySelector('.profit-total span:last-child').textContent.replace(/[^0-9.-]+/g, ''));
+                return profitB - profitA;
+            } else if (sortValue === 'roi') {
+                const roiA = parseInt(a.querySelector('.profit-roi span:last-child').textContent);
+                const roiB = parseInt(b.querySelector('.profit-roi span:last-child').textContent);
+                return roiB - roiA;
+            } else if (sortValue === 'confidence') {
+                const confA = parseInt(a.querySelector('.confidence-badge').textContent);
+                const confB = parseInt(b.querySelector('.confidence-badge').textContent);
+                return confB - confA;
+            } else if (sortValue === 'price') {
+                const priceA = parseFloat(a.querySelector('.buy-card .product-price').textContent.replace(/[^0-9.-]+/g, ''));
+                const priceB = parseFloat(b.querySelector('.buy-card .product-price').textContent.replace(/[^0-9.-]+/g, ''));
+                return priceA - priceB;
+            }
+            return 0;
         });
-    });
-    
-    // Handle login form submission
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
         
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
+        // Filter by confidence level if needed
+        const filteredCards = confidenceLevel > 0 
+            ? cards.filter(card => {
+                const confidence = parseInt(card.querySelector('.confidence-badge').textContent);
+                return confidence >= confidenceLevel;
+              })
+            : cards;
         
-        // In a real app, this would validate with a server
-        // For demo purposes, just set logged in state
-        isLoggedIn = true;
-        loginBtn.innerHTML = `<i class="fas fa-user"></i> ${email.split('@')[0]}`;
-        signupBtn.style.display = 'none';
+        // Clear the current cards
+        dealList.innerHTML = '';
         
-        // Close modal
-        hideModal(loginModal);
+        // Add back the sorted/filtered cards
+        filteredCards.forEach(card => dealList.appendChild(card));
         
-        // Load user favorites from localStorage
-        loadUserFavorites();
-    });
-    
-    // Handle signup form submission
-    signupForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const name = document.getElementById('signupName').value;
-        const email = document.getElementById('signupEmail').value;
-        const password = document.getElementById('signupPassword').value;
-        
-        // In a real app, this would create an account on the server
-        // For demo purposes, just set logged in state
-        isLoggedIn = true;
-        loginBtn.innerHTML = `<i class="fas fa-user"></i> ${name.split(' ')[0]}`;
-        signupBtn.style.display = 'none';
-        
-        // Close modal
-        hideModal(signupModal);
-    });
-    
-    // Handle feedback form submission
-    feedbackForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const feedbackType = document.getElementById('feedbackType').value;
-        const message = document.getElementById('feedbackMessage').value;
-        
-        // In a real app, this would send feedback to the server
-        alert('Thank you for your feedback! We appreciate your input.');
-        
-        // Reset the form
-        this.reset();
-        
-        // Close modal
-        hideModal(feedbackModal);
-    });
-    
-    // Load user favorites from localStorage
-    function loadUserFavorites() {
-        const savedFavorites = localStorage.getItem('userFavorites');
-        if (savedFavorites) {
-            userFavorites = JSON.parse(savedFavorites);
+        // Show no results message if all cards are filtered out
+        if (filteredCards.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'no-filtered-results';
+            noResults.innerHTML = '<p>No results match your filter criteria</p>';
+            dealList.appendChild(noResults);
         }
-    }
+    });
     
-    // Check if user has previously logged in (in a real app, this would validate with the server)
-    function checkLoginStatus() {
-        // For demo purposes, we'll just check if favorites exist
-        const savedFavorites = localStorage.getItem('userFavorites');
-        if (savedFavorites) {
-            isLoggedIn = true;
-            loginBtn.innerHTML = `<i class="fas fa-user"></i> User`;
-            signupBtn.style.display = 'none';
-            loadUserFavorites();
-        }
-    }
-    
-    // Check login status on page load
-    checkLoginStatus();
+    confidenceFilter.addEventListener('change', function() {
+        // Trigger the sort function which also handles filtering
+        sortOptions.dispatchEvent(new Event('change'));
+    });
 });
