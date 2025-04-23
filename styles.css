@@ -812,4 +812,140 @@ footer {
   color: white;
 }
 
-.footer-column ul
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-column li {
+  margin-bottom: 0.8rem;
+}
+
+.footer-column a {
+  color: rgba(255, 255, 255, 0.7);
+  transition: color var(--transition-fast);
+}
+
+.footer-column a:hover {
+  color: white;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+}
+
+/* Improved Footer Branding */
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-brand span {
+  font-size: 1.5rem;
+  font-weight: 600;
+  background: linear-gradient(to right, #ffffff, #cccccc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+}
+
+.mini-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  padding: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Media Queries */
+@media (max-width: 992px) {
+  .product-comparison {
+    grid-template-columns: 1fr;
+  }
+  
+  .profit-details {
+    order: 3;
+    margin-top: 20px;
+  }
+  
+  .opportunity-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .confidence-badge {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-subtitle {
+    font-size: 1.5rem;
+  }
+  
+  .scanner-card {
+    padding: 1.5rem;
+  }
+  
+  .checkbox-group {
+    grid-template-columns: 1fr;
+  }
+  
+  .opportunity-footer {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .step {
+    min-width: 100%;
+  }
+  
+  .confidence-level {
+    min-width: 100%;
+  }
+  
+  .footer-content {
+    flex-direction: column;
+  }
+  
+  .footer-links {
+    flex-direction: column;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-logo {
+    max-width: 250px;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.3rem;
+  }
+  
+  .cta-button {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  
+  .section-title {
+    font-size: 1.7rem;
+  }
+  
+  #filterOptions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    width: 100%;
+  }
+}
