@@ -1,1 +1,20 @@
-
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <circle cx="50" cy="50" r="48" fill="#F9E8C7" stroke="#2D1E0F" stroke-width="2"/>
+  
+  <!-- Hawk Head -->
+  <path d="M70,25 Q80,25 85,35 Q90,45 85,55 Q80,65 75,70 Q68,76 60,78 Q50,80 40,75 Q30,70 25,60 Q20,50 22,40 Q25,30 35,25 Q45,20 55,23 Q65,25 70,35 Z" fill="#D16B34" stroke="#2D1E0F" stroke-width="2.5"/>
+  
+  <!-- Eye -->
+  <circle cx="60" cy="40" r="5" fill="#2D1E0F"/>
+  <circle cx="60" cy="39" r="1.5" fill="white"/>
+  
+  <!-- Beak -->
+  <path d="M75,45 Q85,50 80,55 Q77,57 72,55 Z" fill="#F9CC5A" stroke="#2D1E0F" stroke-width="2"/>
+  
+  <!-- Feather Details -->
+  <path d="M28,42 L22,38" stroke="#2D1E0F" stroke-width="2" stroke-linecap="round"/>
+  <path d="M30,55 L20,60" stroke="#2D1E0F" stroke-width="2" stroke-linecap="round"/>
+  <path d="M38,70 L30,75" stroke="#2D1E0F" stroke-width="2" stroke-linecap="round"/>
+  <path d="M55,75 L52,80" stroke="#2D1E0F" stroke-width="2" stroke-linecap="round"/>
+</svg>
