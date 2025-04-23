@@ -30,10 +30,15 @@ def serve_css():
 def serve_js():
     return send_from_directory(os.getcwd(), 'script.js')
 
-# Serve logo images and favicon
+# Serve static files from the static directory
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(static_dir, filename)
+
+# Serve favicon
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(static_dir, 'favicon.png')
 
 # Simple scan stats tracker
 scan_log = []
@@ -52,7 +57,7 @@ def log_scan(category, subcategories, results_count):
     if len(scan_log) > 1000:
         scan_log.pop(0)
 
-# API endpoint for running the arbitrage scan
+# API endpoint for running the resale scan
 @app.route('/run_scan', methods=['POST'])
 def run_scan():
     """
