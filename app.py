@@ -30,14 +30,10 @@ def serve_css():
 def serve_js():
     return send_from_directory(os.getcwd(), 'script.js')
 
-# Serve logo images
-@app.route('/logo.png')
-def serve_logo():
-    return send_from_directory(os.path.join(os.getcwd(), 'static'), 'logo.png')
-
-@app.route('/mini-logo.png')
-def serve_mini_logo():
-    return send_from_directory(os.path.join(os.getcwd(), 'static'), 'mini-logo.png')
+# Serve logo images and favicon
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(static_dir, filename)
 
 # Simple scan stats tracker
 scan_log = []
@@ -60,7 +56,7 @@ def log_scan(category, subcategories, results_count):
 @app.route('/run_scan', methods=['POST'])
 def run_scan():
     """
-    Run an arbitrage scan based on the selected category and subcategories.
+    Run a resale opportunity scan based on the selected category and subcategories.
     
     Expected JSON input:
     {
@@ -79,7 +75,7 @@ def run_scan():
         # Log the scan request
         logger.info(f"Received scan request for category: {category}, subcategories: {subcategories}")
         
-        # Run the arbitrage scan with the subcategories as keywords
+        # Run the resale scan with the subcategories as keywords
         start_time = datetime.now()
         results = run_arbitrage_scan(subcategories)
         end_time = datetime.now()
