@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
             stopLoading();
             
             // Display results
-            displayResults(data);
+            displayResults(data, selectedSubcategories);
         })
         .catch(error => {
             stopLoading();
@@ -214,19 +214,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Display arbitrage opportunities
-    function displayResults(deals) {
+    // Display resale opportunities
+    function displayResults(deals, selectedSubcategories) {
         // Hide loading indicator completely
         loadingIndicator.style.display = 'none';
         
         // Display results
         if (deals && deals.length > 0) {
             resultsTitle.style.display = 'block';
-            resultsTitle.textContent = 'Top Arbitrage Opportunities';
+            resultsTitle.textContent = 'Top Resale Opportunities';
             filterOptions.style.display = 'flex';
             displayDeals(deals);
         } else {
             noResultsMessage.style.display = 'block';
+            
+            // Make the message more specific with the selected subcategories
+            const subCatList = selectedSubcategories.join(', ');
+            document.querySelector('.no-results-content p:first-of-type').textContent = 
+                `We couldn't find any resale opportunities for ${subCatList} at the moment.`;
         }
     }
     
@@ -374,183 +379,11 @@ document.addEventListener('DOMContentLoaded', function() {
             shareBtn.addEventListener('click', function() {
                 if (navigator.share) {
                     navigator.share({
-                        title: 'FlipHawk Arbitrage Opportunity',
+                        title: 'FlipHawk Resale Opportunity',
                         text: `Check out this profit opportunity: ${deal.title} - Buy: ${buyPrice}, Sell: ${sellPrice}, Profit: ${profit}`,
                         url: window.location.href
                     })
                     .catch(() => showAlert('Copied to clipboard!'));
                 } else {
                     // Fallback to copy to clipboard
-                    const shareText = `Arbitrage opportunity: ${deal.title} - Buy: ${buyPrice}, Sell: ${sellPrice}, Profit: ${profit}`;
-                    
-                    // Create temporary textarea for copy
-                    const el = document.createElement('textarea');
-                    el.value = shareText;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    
-                    showAlert('Copied to clipboard!');
-                }
-            });
-        });
-    }
-    
-    // Get confidence color based on score
-    function getConfidenceColor(confidence) {
-        if (confidence >= 90) return "#4CAF50"; // Green
-        if (confidence >= 80) return "#8BC34A"; // Light Green
-        if (confidence >= 70) return "#FFC107"; // Amber
-        return "#FF5722"; // Deep Orange
-    }
-    
-    // Get icon for subcategory
-    function getSubcategoryIcon(subcategory) {
-        return subcategoryIcons[subcategory] || subcategoryIcons['default'];
-    }
-    
-    // Reset results area
-    function resetResults() {
-        resultsTitle.style.display = 'none';
-        filterOptions.style.display = 'none';
-        dealList.innerHTML = '';
-        noResultsMessage.style.display = 'none';
-    }
-    
-    // Start loading animation
-    function startLoading(subcategories) {
-        loadingIndicator.style.display = 'block';
-        loadingMessage.textContent = `Scanning marketplaces for ${subcategories.join(', ')} opportunities...`;
-        
-        // Reset and animate progress bar
-        progressFill.style.width = '0%';
-        setTimeout(() => {
-            progressFill.style.width = '95%';
-        }, 100);
-    }
-    
-    // Stop loading animation
-    function stopLoading() {
-        // Keep the loading indicator visible but update the message
-        loadingMessage.textContent = "Processing results...";
-        progressFill.style.width = '100%';
-        
-        // Hide loading after a delay
-        setTimeout(() => {
-            loadingIndicator.style.display = 'none';
-        }, 1000);
-    }
-    
-    // Show alert message
-    function showAlert(message) {
-        const alert = document.createElement('div');
-        alert.className = 'alert';
-        alert.innerHTML = `
-            <div class="alert-content">
-                <i class="fas fa-info-circle"></i>
-                <span>${message}</span>
-                <button class="alert-close">&times;</button>
-            </div>
-        `;
-        
-        document.body.appendChild(alert);
-        
-        // Add remove functionality
-        alert.querySelector('.alert-close').addEventListener('click', function() {
-            document.body.removeChild(alert);
-        });
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (document.body.contains(alert)) {
-                document.body.removeChild(alert);
-            }
-        }, 5000);
-    }
-    
-    // Show error message
-    function showError(message) {
-        const alert = document.createElement('div');
-        alert.className = 'alert error';
-        alert.innerHTML = `
-            <div class="alert-content">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>${message}</span>
-                <button class="alert-close">&times;</button>
-            </div>
-        `;
-        
-        document.body.appendChild(alert);
-        
-        // Add remove functionality
-        alert.querySelector('.alert-close').addEventListener('click', function() {
-            document.body.removeChild(alert);
-        });
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (document.body.contains(alert)) {
-                document.body.removeChild(alert);
-            }
-        }, 5000);
-    }
-    
-    // Add filtering functionality
-    sortOptions.addEventListener('change', function() {
-        const sortValue = this.value;
-        const confidenceLevel = parseInt(confidenceFilter.value);
-        
-        // Get all cards
-        const cards = Array.from(dealList.querySelectorAll('.opportunity-card'));
-        
-        // Sort the cards based on selected option
-        cards.sort((a, b) => {
-            if (sortValue === 'profit') {
-                const profitA = parseFloat(a.querySelector('.profit-total span:last-child').textContent.replace(/[^0-9.-]+/g, ''));
-                const profitB = parseFloat(b.querySelector('.profit-total span:last-child').textContent.replace(/[^0-9.-]+/g, ''));
-                return profitB - profitA;
-            } else if (sortValue === 'roi') {
-                const roiA = parseInt(a.querySelector('.profit-roi span:last-child').textContent);
-                const roiB = parseInt(b.querySelector('.profit-roi span:last-child').textContent);
-                return roiB - roiA;
-            } else if (sortValue === 'confidence') {
-                const confA = parseInt(a.querySelector('.confidence-badge').textContent);
-                const confB = parseInt(b.querySelector('.confidence-badge').textContent);
-                return confB - confA;
-            } else if (sortValue === 'price') {
-                const priceA = parseFloat(a.querySelector('.buy-card .product-price').textContent.replace(/[^0-9.-]+/g, ''));
-                const priceB = parseFloat(b.querySelector('.buy-card .product-price').textContent.replace(/[^0-9.-]+/g, ''));
-                return priceA - priceB;
-            }
-            return 0;
-        });
-        
-        // Filter by confidence level if needed
-        const filteredCards = confidenceLevel > 0 
-            ? cards.filter(card => {
-                const confidence = parseInt(card.querySelector('.confidence-badge').textContent);
-                return confidence >= confidenceLevel;
-              })
-            : cards;
-        
-        // Clear the current cards
-        dealList.innerHTML = '';
-        
-        // Add back the sorted/filtered cards
-        filteredCards.forEach(card => dealList.appendChild(card));
-        
-        // Show no results message if all cards are filtered out
-        if (filteredCards.length === 0) {
-            const noResults = document.createElement('div');
-            noResults.className = 'no-filtered-results';
-            noResults.innerHTML = '<p>No results match your filter criteria</p>';
-            dealList.appendChild(noResults);
-        }
-    });
-    
-    confidenceFilter.addEventListener('change', function() {
-        // Trigger the sort function which also handles filtering
-        sortOptions.dispatchEvent(new Event('change'));
-    });
-});
+                    const shareText = `Resale opportunity
