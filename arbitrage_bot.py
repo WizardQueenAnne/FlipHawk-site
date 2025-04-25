@@ -61,16 +61,21 @@ class Scraper:
     def __init__(self):
         self.session = None
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0'
         }
         self.proxy_pool = self._load_proxies()
-        self.rate_limit_delay = 1.0
+        self.rate_limit_delay = 1.5  # Increased delay
         self.max_retries = 3
         
     def _load_proxies(self) -> List[str]:
@@ -101,6 +106,9 @@ class Scraper:
             session = await self.get_session()
             proxy = random.choice(self.proxy_pool) if self.proxy_pool else None
             
+            # Add random delay to avoid rate limiting
+            await asyncio.sleep(random.uniform(0.5, 1.5))
+            
             async with session.get(url, proxy=proxy) as response:
                 if response.status == 200:
                     return await response.text()
@@ -129,8 +137,10 @@ class Scraper:
             f"https://www.ebay.com/sch/i.html?_nkw={encoded_keyword}",
             f"_sop={sort_param}",
             "LH_BIN=1",  # Buy It Now only
-            "LH_ItemCondition=1000|1500|2000|2500|3000",  # New and Like New conditions
-            "LH_PrefLoc=1"  # US only
+            "LH_ItemCondition=1000|1500|2000",  # New and Like New conditions only
+            "LH_PrefLoc=1",  # US only
+            "rt=nc",  # Non-category specific search
+            "_ipg=200"  # 200 items per page
         ]
         
         if min_price:
@@ -147,9 +157,10 @@ class Scraper:
         soup = BeautifulSoup(html, 'html.parser')
         listings = []
         
+        # Find all search result items
         items = soup.select('li.s-item')
         
-        for item in items[:30]:  # Increased limit
+        for item in items[:50]:  # Increased limit for better matching
             try:
                 listing = self._parse_ebay_item(item)
                 if listing:
@@ -162,8 +173,8 @@ class Scraper:
     
     def _parse_ebay_item(self, item) -> Optional[Listing]:
         """Parse eBay item with enhanced data extraction."""
-        # Skip sponsored items
-        if 'srp-river-results-null-search__item' in item.get('class', []):
+        # Skip sponsored items and empty results
+        if any(cls in item.get('class', []) for cls in ['srp-river-results-SEARCH_STATUS', 'srp-river-results-null-search__item']):
             return None
         
         # Extract title
@@ -172,7 +183,7 @@ class Scraper:
             return None
         
         title = title_elem.get_text(strip=True)
-        if 'Shop on eBay' in title:
+        if 'Shop on eBay' in title or title.startswith('Tap'):
             return None
         
         # Extract price
@@ -182,12 +193,12 @@ class Scraper:
         
         price_text = price_elem.get_text(strip=True)
         
-        # Handle price ranges
+        # Handle price ranges - take the lower price
         if ' to ' in price_text:
             prices = re.findall(r'[\d,]+\.?\d*', price_text)
             if len(prices) >= 2:
                 try:
-                    price = (float(prices[0].replace(',', '')) + float(prices[1].replace(',', ''))) / 2
+                    price = float(prices[0].replace(',', ''))
                 except:
                     return None
             else:
@@ -205,14 +216,14 @@ class Scraper:
         link_elem = item.select_one('a.s-item__link')
         if not link_elem:
             return None
-        link = link_elem['href'].split('?')[0]
+        link = link_elem['href'].split('?')[0]  # Remove URL parameters
         
         # Extract image
         img_elem = item.select_one('.s-item__image-img')
         img_url = img_elem['src'] if img_elem and 'src' in img_elem.attrs else ""
         
         # Extract shipping info
-        shipping_elem = item.select_one('.s-item__shipping, .s-item__freeXDays')
+        shipping_elem = item.select_one('.s-item__shipping, .s-item__freeXDays, .s-item__logisticsCost')
         shipping_text = shipping_elem.get_text(strip=True) if shipping_elem else ""
         free_shipping = 'Free' in shipping_text
         
@@ -235,10 +246,10 @@ class Scraper:
         location = location_elem.get_text(strip=True) if location_elem else None
         
         # Extract sold count
-        sold_elem = item.select_one('.s-item__quantitySold')
+        sold_elem = item.select_one('.s-item__quantitySold, .s-item__hotness')
         sold_count = 0
         if sold_elem:
-            sold_match = re.search(r'(\d+)', sold_elem.get_text())
+            sold_match = re.search(r'(\d+)\s*sold', sold_elem.get_text(), re.IGNORECASE)
             if sold_match:
                 sold_count = int(sold_match.group(1))
         
@@ -257,29 +268,12 @@ class Scraper:
         )
     
     def normalize_title(self, title: str) -> str:
-        """Enhanced title normalization with NLP techniques."""
+        """Enhanced title normalization with stricter cleaning."""
         # Convert to lowercase
         title = title.lower()
         
-        # Remove common filler words
-        fillers = [
-            'brand new', 'new', 'sealed', 'mint', 'condition', 'authentic', 
-            'genuine', 'official', 'in box', 'inbox', 'with box', 'unopened', 
-            'fast shipping', 'free shipping', 'ships fast', 'lot of', 'set of',
-            'excellent', 'great', 'like new', 'oem', 'original', 'factory',
-            'bundle', 'rare', 'htf', 'hard to find', 'limited', 'exclusive',
-            'complete', '100%', 'perfect', 'amazing', 'clean', 'tested',
-            'working', 'fully functional', 'guaranteed', 'warranty',
-            'factory sealed', 'brand-new', 'bnib', 'nib', 'mib', 'usa seller',
-            'in hand', 'ready to ship', 'same day shipping', 'fast ship'
-        ]
-        
-        for filler in fillers:
-            title = title.replace(filler, '')
-        
-        # Remove special characters and extra spaces
-        title = re.sub(r'[^\w\s]', ' ', title)
-        title = re.sub(r'\s+', ' ', title).strip()
+        # Remove non-alphanumeric characters except spaces
+        title = re.sub(r'[^a-z0-9\s]', ' ', title)
         
         # Extract key model numbers and identifiers
         model_patterns = [
@@ -293,8 +287,15 @@ class Scraper:
             matches = re.findall(pattern, title)
             models.extend(matches)
         
+        # Remove duplicate models
+        models = list(set(models))
+        
+        # If models found, prioritize them in the normalized title
         if models:
             title = ' '.join(models) + ' ' + title
+        
+        # Remove extra spaces
+        title = re.sub(r'\s+', ' ', title).strip()
         
         return title
 
@@ -312,7 +313,19 @@ class ArbitrageAnalyzer:
         ]
     
     def calculate_similarity(self, title1: str, title2: str) -> float:
-        """Calculate similarity using multiple methods."""
+        """Calculate similarity using multiple methods with stricter matching."""
+        # Extract model numbers first
+        models1 = set()
+        models2 = set()
+        
+        for pattern in self.model_patterns:
+            models1.update(re.findall(pattern, title1))
+            models2.update(re.findall(pattern, title2))
+        
+        # If model numbers don't match at all, return low similarity
+        if models1 and models2 and not models1.intersection(models2):
+            return 0.3
+        
         # Basic sequence matching
         sequence_sim = SequenceMatcher(None, title1, title2).ratio()
         
@@ -324,22 +337,15 @@ class ArbitrageAnalyzer:
             cosine_sim = 0.0
         
         # Model number matching
-        models1 = set()
-        models2 = set()
-        
-        for pattern in self.model_patterns:
-            models1.update(re.findall(pattern, title1))
-            models2.update(re.findall(pattern, title2))
-        
         model_sim = 0.0
         if models1 and models2:
             model_sim = len(models1.intersection(models2)) / len(models1.union(models2))
         
-        # Weighted combination
+        # Weighted combination with higher threshold
         weights = {
             'sequence': 0.3,
-            'cosine': 0.4,
-            'model': 0.3
+            'cosine': 0.3,
+            'model': 0.4  # Increased weight for model matching
         }
         
         final_similarity = (
@@ -351,8 +357,8 @@ class ArbitrageAnalyzer:
         return final_similarity
     
     def find_opportunities(self, low_priced: List[Listing], high_priced: List[Listing], 
-                           min_profit: float = 10.0, min_profit_percent: float = 20.0) -> List[Dict[str, Any]]:
-        """Find arbitrage opportunities with advanced matching and scoring."""
+                           min_profit: float = 15.0, min_profit_percent: float = 25.0) -> List[Dict[str, Any]]:
+        """Find arbitrage opportunities with stricter matching criteria."""
         opportunities = []
         
         for low in low_priced:
@@ -361,10 +367,10 @@ class ArbitrageAnalyzer:
                 if low.link == high.link:
                     continue
                 
-                # Calculate similarity
+                # Calculate similarity with higher threshold
                 similarity = self.calculate_similarity(low.normalized_title, high.normalized_title)
                 
-                if similarity >= 0.75:  # Threshold for potential match
+                if similarity >= 0.85:  # Increased threshold for stricter matching
                     # Calculate profit metrics
                     buy_price = low.price + low.shipping_cost
                     sell_price = high.price
@@ -380,52 +386,44 @@ class ArbitrageAnalyzer:
                         low, high, similarity, profit_percentage
                     )
                     
-                    opportunity = {
-                        'title': low.title,
-                        'buyPrice': buy_price,
-                        'sellPrice': sell_price,
-                        'buyLink': low.link,
-                        'sellLink': high.link,
-                        'profit': profit,
-                        'profitPercentage': profit_percentage,
-                        'confidence': round(confidence),
-                        'similarity': similarity,
-                        'buyCondition': low.condition,
-                        'sellCondition': high.condition,
-                        'buyLocation': low.location,
-                        'sellLocation': high.location,
-                        'image_url': low.image_url or high.image_url,
-                        'sold_count': high.sold_count,
-                        'buyShipping': low.shipping_cost,
-                        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    
-                    opportunities.append(opportunity)
+                    # Only include high-confidence matches
+                    if confidence >= 75:
+                        opportunity = {
+                            'title': low.title,
+                            'buyPrice': buy_price,
+                            'sellPrice': sell_price,
+                            'buyLink': low.link,
+                            'sellLink': high.link,
+                            'profit': profit,
+                            'profitPercentage': profit_percentage,
+                            'confidence': round(confidence),
+                            'similarity': similarity,
+                            'buyCondition': low.condition,
+                            'sellCondition': high.condition,
+                            'buyLocation': low.location,
+                            'sellLocation': high.location,
+                            'image_url': low.image_url or high.image_url,
+                            'sold_count': high.sold_count,
+                            'buyShipping': low.shipping_cost,
+                            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                        
+                        opportunities.append(opportunity)
         
         return opportunities
     
     def _calculate_confidence(self, low: Listing, high: Listing, similarity: float, profit_percentage: float) -> float:
-        """Calculate confidence score based on multiple factors."""
+        """Calculate confidence score with stricter criteria."""
         # Base confidence from similarity
         base_confidence = similarity * 100
         
-        # Adjust for condition match
+        # Condition must match exactly for high confidence
         condition_penalty = 0
         if low.condition != high.condition:
-            condition_map = {
-                'New': 4,
-                'Like New': 3,
-                'Very Good': 2,
-                'Good': 1,
-                'Acceptable': 0
-            }
-            low_score = condition_map.get(low.condition, 0)
-            high_score = condition_map.get(high.condition, 0)
-            if low_score < high_score:
-                condition_penalty = (high_score - low_score) * 5
+            condition_penalty = 15  # Increased penalty
         
         # Bonus for high profit percentage
-        profit_bonus = min(10, profit_percentage / 10)
+        profit_bonus = min(5, profit_percentage / 10)
         
         # Bonus for sold count
         sold_bonus = min(5, high.sold_count / 10)
@@ -444,52 +442,36 @@ class ArbitrageAnalyzer:
 class KeywordGenerator:
     def __init__(self):
         self.comprehensive_keywords = self._load_comprehensive_keywords()
-        self.typo_patterns = self._load_typo_patterns()
     
     def _load_comprehensive_keywords(self) -> Dict[str, Dict[str, List[str]]]:
-        """Load comprehensive keyword database with typos and variations."""
+        """Load comprehensive keyword database."""
         return {
             "Tech": {
                 "Headphones": ["headphones", "earbuds", "airpods", "beats", "bose", "sony wh", 
-                              "bluetooth buds", "aipods", "ear pods", "wireless headphones", 
-                              "noise cancelling", "anc headphones", "headphone", "hedphones"],
+                              "bluetooth buds", "wireless headphones", "noise cancelling", 
+                              "anc headphones", "marshall major", "sennheiser"],
                 "Keyboards": ["mechanical keyboard", "gaming keyboard", "logitech", "corsair k", 
-                             "kbd", "keybord", "key board", "rgb keyboard", "wireless keyboard",
-                             "keyboard mechanical", "cherry mx", "mech keyboard"],
-                "Graphics Cards": ["gpu", "rtx 3080", "gtx", "radeon", "graphics card", "rx580", 
-                                  "rtx3090", "video card", "nvidia", "amd gpu", "graphic card", 
-                                  "grafics card", "gpu card"],
+                             "kbd", "rgb keyboard", "wireless keyboard", "cherry mx"],
+                "Graphics Cards": ["gpu", "rtx 3080", "gtx", "radeon", "graphics card", "rx 6800", 
+                                  "rtx 4090", "video card", "nvidia", "amd gpu", "geforce"],
                 "CPUs": ["intel i7", "ryzen", "processor", "cpu", "i9", "i5", "amd cpu", 
-                        "intel chip", "core i7", "amd ryzen", "processer", "proccessor"],
+                        "intel chip", "core i7", "amd ryzen", "threadripper"],
                 "Laptops": ["macbook", "gaming laptop", "dell xps", "hp laptop", "thinkpad", 
-                           "laptp", "chromebook", "notebook", "ultrabook", "laptop computer", 
-                           "mac book", "portable computer"],
+                           "chromebook", "notebook", "ultrabook", "laptop computer"],
                 "Monitors": ["gaming monitor", "lg ultragear", "27 inch monitor", "144hz", 
-                            "curved screen", "samsung monitor", "4k monitor", "ultrawide", 
-                            "computer monitor", "moniter", "monitor display"],
+                            "curved screen", "samsung monitor", "4k monitor", "ultrawide"],
                 "SSDs": ["ssd", "solid state drive", "m.2", "nvme", "samsung evo", 
-                        "fast storage", "sata ssd", "ssd drive", "m2 ssd", "ssd storage"],
+                        "crucial mx500", "western digital ssd", "san disk ssd"],
                 "Routers": ["wifi router", "netgear", "tp link", "gaming router", 
-                           "wireless modem", "routr", "wifi 6 router", "mesh router", 
-                           "router wifi", "wire less router"],
+                           "wireless modem", "wifi 6 router", "mesh wifi system"],
                 "Vintage Tech": ["walkman", "ipod classic", "flip phone", "cassette player", 
-                                "vintage computer", "old tech", "retro tech", "antique tech", 
-                                "legacy tech", "obsolete tech"]
+                                "vintage computer", "old tech", "retro tech", "commodore"]
             },
-            # Add more categories...
-        }
-    
-    def _load_typo_patterns(self) -> Dict[str, List[str]]:
-        """Load common typo patterns."""
-        return {
-            'missing_letters': ['apl', 'msft', 'googl', 'amazn'],
-            'double_letters': ['micrrosoft', 'appple', 'sonny'],
-            'wrong_letters': ['nividia', 'intell', 'ryzen'],
-            'swapped_letters': ['teh', 'recieve', 'wierd']
+            # Add more categories as needed...
         }
     
     def generate_keywords(self, subcategory: str) -> List[str]:
-        """Generate comprehensive keyword list with variations and typos."""
+        """Generate keyword list for a subcategory."""
         keywords = []
         
         # Get base keywords for subcategory
@@ -498,32 +480,11 @@ class KeywordGenerator:
                 keywords.extend(subcat_dict[subcategory])
                 break
         
-        # Add common variations
-        variations = []
-        for keyword in keywords[:]:
-            # Singular/plural
-            if keyword.endswith('s') and len(keyword) > 3:
-                variations.append(keyword[:-1])
-            elif not keyword.endswith('s'):
-                variations.append(keyword + 's')
-            
-            # With/without spaces
-            if ' ' in keyword:
-                variations.append(keyword.replace(' ', ''))
-            
-            # Common typos
-            for pattern, examples in self.typo_patterns.items():
-                if pattern == 'missing_letters':
-                    if len(keyword) > 5:
-                        variations.append(keyword[:-1])
-                        variations.append(keyword[1:])
-                elif pattern == 'double_letters':
-                    for i, char in enumerate(keyword):
-                        if i < len(keyword) - 1 and char != keyword[i + 1]:
-                            variations.append(keyword[:i] + char + keyword[i:])
+        # If no specific keywords found, use the subcategory itself
+        if not keywords:
+            keywords = [subcategory.lower()]
         
-        keywords.extend(variations)
-        return list(set(keywords))
+        return keywords
 
 async def process_subcategory(subcategory: str, scraper: Scraper, analyzer: ArbitrageAnalyzer, 
                               keyword_gen: KeywordGenerator) -> List[Dict[str, Any]]:
@@ -531,13 +492,13 @@ async def process_subcategory(subcategory: str, scraper: Scraper, analyzer: Arbi
     keywords = keyword_gen.generate_keywords(subcategory)
     all_opportunities = []
     
-    for keyword in keywords[:5]:  # Limit keywords per subcategory
+    for keyword in keywords[:3]:  # Limit keywords per subcategory for speed
         logger.info(f"Searching for: {keyword}")
         
         try:
             # Fetch listings sorted by price (ascending and descending)
             low_priced = await scraper.search_ebay(keyword, sort="price_asc")
-            await asyncio.sleep(1)  # Rate limiting
+            await asyncio.sleep(1.5)  # Rate limiting
             high_priced = await scraper.search_ebay(keyword, sort="price_desc")
             
             if low_priced and high_priced:
@@ -582,7 +543,7 @@ async def fetch_all_arbitrage_opportunities(subcategories: List[str]) -> List[Di
                 unique_opportunities.append(opp)
         
         # Sort by profit percentage and return top results
-        return sorted(unique_opportunities, key=lambda x: -x['profitPercentage'])[:30]
+        return sorted(unique_opportunities, key=lambda x: -x['profitPercentage'])[:20]
         
     finally:
         await scraper.close_session()
@@ -603,85 +564,17 @@ def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
             
             logger.info(f"Scan completed in {end_time - start_time:.2f} seconds")
             
-            # If we found real opportunities, return them
-            if opportunities:
-                logger.info(f"Found {len(opportunities)} arbitrage opportunities")
-                return opportunities
-            else:
-                logger.info("No arbitrage opportunities found. Using simulated data.")
-                return generate_simulated_opportunities(subcategories)
+            return opportunities
                 
         except Exception as e:
             logger.error(f"Error running arbitrage scan: {str(e)}")
-            return generate_simulated_opportunities(subcategories)
+            return []
         finally:
             loop.close()
             
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
-        return generate_simulated_opportunities(subcategories)
-
-def generate_simulated_opportunities(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """Generate realistic simulated arbitrage opportunities."""
-    simulated = []
-    
-    product_templates = {
-        "Laptops": [
-            {"name": "Dell XPS 13 9310 13.4 inch FHD+ Laptop", "low": 699, "high": 999},
-            {"name": "MacBook Air M1 8GB RAM 256GB SSD", "low": 749, "high": 999},
-            {"name": "Lenovo ThinkPad X1 Carbon Gen 9", "low": 899, "high": 1349}
-        ],
-        "Headphones": [
-            {"name": "Sony WH-1000XM4 Wireless Noise Cancelling", "low": 249, "high": 349},
-            {"name": "Apple AirPods Pro with MagSafe Case", "low": 169, "high": 249},
-            {"name": "Bose QuietComfort 45 Noise Cancelling", "low": 229, "high": 329}
-        ],
-        "Graphics Cards": [
-            {"name": "NVIDIA GeForce RTX 4070 Graphics Card", "low": 549, "high": 699},
-            {"name": "AMD Radeon RX 7900 XT GPU", "low": 699, "high": 899},
-            {"name": "NVIDIA GeForce RTX 3060 Ti", "low": 299, "high": 399}
-        ]
-    }
-    
-    # Default products if category not found
-    default_products = [
-        {"name": "Premium Product Item", "low": 99, "high": 149},
-        {"name": "High-Quality Device", "low": 199, "high": 299},
-        {"name": "Professional Equipment", "low": 299, "high": 449}
-    ]
-    
-    for subcategory in subcategories:
-        templates = product_templates.get(subcategory, default_products)
-        
-        for _ in range(random.randint(2, 4)):
-            template = random.choice(templates)
-            
-            buy_price = template["low"] * random.uniform(0.9, 1.1)
-            sell_price = template["high"] * random.uniform(0.9, 1.1)
-            
-            profit = sell_price - buy_price
-            profit_percentage = (profit / buy_price) * 100
-            
-            confidence = random.randint(75, 95)
-            
-            opportunity = {
-                "title": template["name"],
-                "buyPrice": round(buy_price, 2),
-                "sellPrice": round(sell_price, 2),
-                "buyLink": f"https://www.ebay.com/sch/i.html?_nkw={template['name'].replace(' ', '+')}",
-                "sellLink": f"https://www.ebay.com/sch/i.html?_nkw={template['name'].replace(' ', '+')}&_sop=16",
-                "profit": round(profit, 2),
-                "profitPercentage": round(profit_percentage, 2),
-                "confidence": confidence,
-                "subcategory": subcategory,
-                "keyword": subcategory,
-                "image_url": "https://via.placeholder.com/300x200",
-                "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
-            simulated.append(opportunity)
-    
-    return sorted(simulated, key=lambda x: -x["profitPercentage"])[:20]
+        return []
 
 if __name__ == "__main__":
     # Test the arbitrage scanner
