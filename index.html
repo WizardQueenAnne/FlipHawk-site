@@ -3,205 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipHawk | Find Profitable Resale Opportunities</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>FlipHawk | Smart Arbitrage Scanner</title>
+  
+  <!-- Meta Tags -->
+  <meta name="description" content="FlipHawk - Find profitable resale opportunities with advanced AI-powered scanning">
+  <meta name="keywords" content="arbitrage, resale, flipping, profit, ecommerce, deals">
+  <meta name="theme-color" content="#22c55e">
+  
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <link rel="apple-touch-icon" href="/static/favicon.png">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/styles.css">
+  
+  <!-- React and Dependencies -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Icon Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Charts -->
+  <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
+  
+  <!-- PWA Support -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID');
+  </script>
 </head>
 <body>
-  <header class="hero-section">
-    <div class="hero-content">
-      <div class="logo-container">
-        <img src="/static/logo.png" alt="FlipHawk Logo" class="main-logo">
-      </div>
-      <h2 class="hero-subtitle">Find profitable resale deals in real-time</h2>
-      <p class="hero-description">Our intelligent scanner finds identical products with price differences for maximum profit</p>
-      <a href="#scanner-section" class="cta-button">Start Scanning <i class="fas fa-arrow-right"></i></a>
+  <div id="root"></div>
+  
+  <!-- NoScript fallback -->
+  <noscript>
+    <div class="noscript-message">
+      <h1>JavaScript Required</h1>
+      <p>Please enable JavaScript in your browser to use FlipHawk</p>
     </div>
-  </header>
-
-  <div class="container" id="scanner-section">
-    <div class="scanner-card">
-      <h2 class="section-title">Find Resale Opportunities</h2>
-      <p class="section-subtitle">Select a category and subcategories to scan for price differences</p>
-      
-      <form id="scanForm">
-        <div class="form-row">
-          <div class="category-container">
-            <label for="categorySelect">Category</label>
-            <select id="categorySelect" name="category" required>
-              <option value="" disabled selected>Choose a category</option>
-              <option value="Tech">💻 Tech</option>
-              <option value="Collectibles">🏆 Collectibles</option>
-              <option value="Vintage Clothing">👕 Vintage Clothing</option>
-              <option value="Antiques">🕰️ Antiques</option>
-              <option value="Gaming">🎮 Gaming</option>
-              <option value="Music Gear">🎸 Music Gear</option>
-              <option value="Tools & DIY">🛠️ Tools & DIY</option>
-              <option value="Outdoors & Sports">🚲 Outdoors & Sports</option>
-            </select>
-          </div>
-        </div>
-        
-        <div id="subcategoryContainer" class="subcategory-container" style="display: none;">
-          <label for="subcategorySelect">Subcategories (select up to 5)</label>
-          <div id="subcategoryOptions" class="checkbox-group">
-            <!-- Subcategories will be populated dynamically -->
-          </div>
-        </div>
-        
-        <button type="submit" class="submit-button"><i class="fas fa-search"></i> Start Search</button>
-      </form>
-    </div>
-
-    <div id="loadingIndicator" style="display: none;">
-      <div class="loading-content">
-        <div class="spinner"></div>
-        <h3>Scanning Marketplaces</h3>
-        <p id="loadingMessage">Searching for resale opportunities...</p>
-        <div class="progress-bar">
-          <div class="progress-fill"></div>
-        </div>
-        <p class="loading-tip">We're analyzing listings to find the exact same products at different prices</p>
-      </div>
-    </div>
-
-    <div id="dealResults">
-      <h2 id="resultsTitle" style="display: none;">Top Resale Opportunities</h2>
-      <div id="filterOptions" style="display: none;">
-        <div class="filter-group">
-          <label>Sort by:</label>
-          <select id="sortOptions">
-            <option value="profit" selected>Highest Profit</option>
-            <option value="roi">Highest ROI %</option>
-            <option value="confidence">Highest Confidence</option>
-            <option value="price">Lowest Buy Price</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label>Filter by:</label>
-          <select id="confidenceFilter">
-            <option value="0">All Confidence Levels</option>
-            <option value="90">90%+ Confidence</option>
-            <option value="80">80%+ Confidence</option>
-            <option value="70">70%+ Confidence</option>
-          </select>
-        </div>
-      </div>
-      <div id="dealList" class="deal-cards"></div>
-    </div>
-
-    <div id="noResultsMessage" style="display: none;">
-      <div class="no-results-content">
-        <i class="fas fa-search-minus"></i>
-        <h3>Expanding Our Search</h3>
-        <p>We're searching more marketplaces for resale opportunities.</p>
-        <p>Try selecting different subcategories or check back in a moment.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="how-it-works">
-    <div class="container">
-      <h2 class="section-title">How FlipHawk Works</h2>
-      <div class="steps-container">
-        <div class="step">
-          <div class="step-icon">
-            <i class="fas fa-search"></i>
-          </div>
-          <h3>1. Select & Search</h3>
-          <p>Choose categories and click "Start Search" to begin scanning thousands of listings</p>
-        </div>
-        <div class="step">
-          <div class="step-icon">
-            <i class="fas fa-robot"></i>
-          </div>
-          <h3>2. Intelligent Matching</h3>
-          <p>Our algorithm identifies identical products across listings with different prices</p>
-        </div>
-        <div class="step">
-          <div class="step-icon">
-            <i class="fas fa-chart-line"></i>
-          </div>
-          <h3>3. Profit Calculation</h3>
-          <p>See exact profit potential with tax and shipping included, with direct links to listings</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="confidence-section">
-    <div class="container">
-      <h2 class="section-title">Understanding Confidence Scores</h2>
-      <div class="confidence-levels">
-        <div class="confidence-level">
-          <div class="confidence-badge" style="background-color: #4CAF50;">90-100%</div>
-          <h3>High Confidence</h3>
-          <p>Exact same item with confirmed matching details</p>
-        </div>
-        <div class="confidence-level">
-          <div class="confidence-badge" style="background-color: #8BC34A;">80-89%</div>
-          <h3>Good Confidence</h3>
-          <p>Same item with minor variations in listing details</p>
-        </div>
-        <div class="confidence-level">
-          <div class="confidence-badge" style="background-color: #FFC107;">70-79%</div>
-          <h3>Moderate Confidence</h3>
-          <p>Same item with potential differences in condition or specs</p>
-        </div>
-        <div class="confidence-level">
-          <div class="confidence-badge" style="background-color: #FF5722;">Below 70%</div>
-          <h3>Low Confidence</h3>
-          <p>Similar items with differences - verify carefully</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <footer>
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <img src="/static/mini-logo.png" alt="FlipHawk Mini Logo" class="mini-logo">
-          <span>FlipHawk</span>
-        </div>
-        <div class="footer-links">
-          <div class="footer-column">
-            <h4>Resources</h4>
-            <ul>
-              <li><a href="#">About</a></li>
-              <li><a href="#">How It Works</a></li>
-              <li><a href="#">FAQ</a></li>
-            </ul>
-          </div>
-          <div class="footer-column">
-            <h4>Legal</h4>
-            <ul>
-              <li><a href="#">Terms</a></li>
-              <li><a href="#">Privacy</a></li>
-              <li><a href="#">Cookie Policy</a></li>
-            </ul>
-          </div>
-          <div class="footer-column">
-            <h4>Connect</h4>
-            <ul>
-              <li><a href="#">Contact</a></li>
-              <li><a href="#">Twitter</a></li>
-              <li><a href="#">Discord</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2025 FlipHawk. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
-
-  <script src="script.js"></script>
+  </noscript>
+  
+  <!-- Main Application -->
+  <script type="text/babel" src="/script.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('SW registered:', registration);
+          })
+          .catch(error => {
+            console.log('SW registration failed:', error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
