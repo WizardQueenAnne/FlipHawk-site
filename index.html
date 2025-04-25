@@ -3,18 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipHawk | Smart Arbitrage Scanner</title>
+  <title>FlipHawk | Smart Resale Scanner</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --primary-light: #dbeafe;
-      --secondary: #10b981;
-      --secondary-dark: #059669;
-      --secondary-light: #d1fae5;
-      --accent: #f59e0b;
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #eef2ff;
+      --secondary: #06b6d4;
+      --secondary-dark: #0891b2;
+      --secondary-light: #ecfeff;
+      --accent: #f43f5e;
+      --success: #10b981;
+      --warning: #f59e0b;
       --background: #f8fafc;
       --surface: #ffffff;
       --text: #0f172a;
@@ -22,6 +24,7 @@
       --border: #e2e8f0;
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     }
 
     * {
@@ -35,6 +38,7 @@
       background-color: var(--background);
       color: var(--text);
       line-height: 1.6;
+      min-height: 100vh;
     }
 
     .container {
@@ -44,9 +48,9 @@
     }
 
     .header {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      background: var(--gradient);
       color: white;
-      padding: 60px 0;
+      padding: 80px 0;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -70,6 +74,11 @@
       position: relative;
     }
 
+    .header h1 i {
+      color: var(--secondary-light);
+      margin-right: 1rem;
+    }
+
     .header p {
       font-size: 1.25rem;
       opacity: 0.9;
@@ -83,9 +92,10 @@
       border-radius: 16px;
       box-shadow: var(--shadow-lg);
       padding: 2rem;
-      margin: -40px auto 40px;
+      margin: -60px auto 40px;
       position: relative;
       max-width: 800px;
+      text-align: center;
     }
 
     .form-group {
@@ -97,6 +107,12 @@
       font-weight: 600;
       margin-bottom: 0.5rem;
       color: var(--text);
+      text-align: left;
+    }
+
+    label i {
+      color: var(--primary);
+      margin-right: 0.5rem;
     }
 
     select {
@@ -108,6 +124,7 @@
       transition: all 0.3s ease;
       background-color: var(--surface);
       cursor: pointer;
+      text-align: left;
     }
 
     select:focus {
@@ -131,17 +148,41 @@
       border-radius: 8px;
       transition: all 0.3s ease;
       cursor: pointer;
+      border: 2px solid transparent;
     }
 
     .checkbox-wrapper:hover {
       background: var(--primary-light);
+      border-color: var(--primary);
     }
 
     .checkbox-wrapper input[type="checkbox"] {
+      display: none;
+    }
+
+    .checkbox-wrapper .checkbox-custom {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
       margin-right: 0.75rem;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-custom {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-custom::after {
+      content: '\f00c';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      color: white;
+      font-size: 12px;
     }
 
     .btn {
@@ -159,7 +200,7 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      background: var(--gradient);
       color: white;
     }
 
@@ -205,6 +246,7 @@
       margin: 1rem 0;
       display: flex;
       align-items: center;
+      justify-content: center;
     }
 
     .error i {
@@ -224,6 +266,7 @@
       overflow: hidden;
       box-shadow: var(--shadow);
       transition: all 0.3s ease;
+      text-align: left;
     }
 
     .result-card:hover {
@@ -246,7 +289,8 @@
     }
 
     .confidence-badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
       padding: 0.25rem 0.75rem;
       border-radius: 20px;
       font-size: 0.875rem;
@@ -254,9 +298,13 @@
       color: white;
     }
 
-    .confidence-high { background: var(--secondary); }
-    .confidence-medium { background: var(--accent); }
-    .confidence-low { background: #ef4444; }
+    .confidence-badge i {
+      margin-right: 0.5rem;
+    }
+
+    .confidence-high { background: var(--success); }
+    .confidence-medium { background: var(--warning); }
+    .confidence-low { background: var(--accent); }
 
     .result-body {
       padding: 1.5rem;
@@ -272,6 +320,11 @@
       text-align: center;
     }
 
+    .price-item i {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
     .price-label {
       font-size: 0.875rem;
       color: var(--text-light);
@@ -284,23 +337,28 @@
     }
 
     .profit-section {
-      background: var(--secondary-light);
+      background: var(--success);
+      color: white;
       padding: 1rem;
       border-radius: 8px;
       text-align: center;
       margin-bottom: 1rem;
     }
 
+    .profit-section i {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
     .profit-label {
       font-size: 0.875rem;
-      color: var(--secondary-dark);
+      opacity: 0.9;
       margin-bottom: 0.25rem;
     }
 
     .profit-value {
       font-size: 1.5rem;
       font-weight: 700;
-      color: var(--secondary-dark);
     }
 
     .result-actions {
@@ -335,36 +393,41 @@
       box-shadow: var(--shadow);
     }
 
-    .stats-section {
+    .features {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 3rem;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin: 4rem 0;
     }
 
-    .stat-card {
+    .feature-card {
       background: var(--surface);
-      padding: 1.5rem;
+      padding: 2rem;
       border-radius: 12px;
       box-shadow: var(--shadow);
       text-align: center;
+      transition: all 0.3s ease;
     }
 
-    .stat-icon {
-      font-size: 2rem;
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
       color: var(--primary);
       margin-bottom: 1rem;
     }
 
-    .stat-value {
-      font-size: 1.75rem;
-      font-weight: 700;
+    .feature-title {
+      font-size: 1.25rem;
+      font-weight: 600;
       margin-bottom: 0.5rem;
     }
 
-    .stat-label {
+    .feature-text {
       color: var(--text-light);
-      font-size: 0.875rem;
     }
 
     @media (max-width: 768px) {
@@ -373,7 +436,7 @@
       }
       
       .main-card {
-        margin: -20px 20px 20px;
+        margin: -40px 20px 20px;
         padding: 1.5rem;
       }
       
@@ -384,41 +447,45 @@
       .results {
         grid-template-columns: 1fr;
       }
+      
+      .features {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <header class="header">
     <div class="container">
-      <h1>FlipHawk</h1>
-      <p>Discover profitable arbitrage opportunities across online marketplaces with advanced AI-powered scanning</p>
+      <h1><i class="fas fa-magnifying-glass-dollar"></i>FlipHawk</h1>
+      <p>Find profitable resale opportunities across online marketplaces with smart scanning technology</p>
     </div>
   </header>
 
   <main class="container">
     <div class="main-card">
       <div class="form-group">
-        <label for="category">Select Category</label>
+        <label for="category"><i class="fas fa-layer-group"></i>Select Category</label>
         <select id="category">
           <option value="">Choose a category...</option>
-          <option value="Tech">Tech</option>
-          <option value="Collectibles">Collectibles</option>
-          <option value="Vintage Clothing">Vintage Clothing</option>
-          <option value="Antiques">Antiques</option>
-          <option value="Gaming">Gaming</option>
-          <option value="Music Gear">Music Gear</option>
-          <option value="Tools & DIY">Tools & DIY</option>
-          <option value="Outdoors & Sports">Outdoors & Sports</option>
+          <option value="Tech">💻 Tech</option>
+          <option value="Collectibles">🏆 Collectibles</option>
+          <option value="Vintage Clothing">👕 Vintage Clothing</option>
+          <option value="Antiques">🏺 Antiques</option>
+          <option value="Gaming">🎮 Gaming</option>
+          <option value="Music Gear">🎸 Music Gear</option>
+          <option value="Tools & DIY">🛠️ Tools & DIY</option>
+          <option value="Outdoors & Sports">⚽ Outdoors & Sports</option>
         </select>
       </div>
 
       <div id="subcategoriesContainer" style="display: none;">
-        <label>Select Subcategories (up to 5)</label>
+        <label><i class="fas fa-check-square"></i>Select Subcategories (up to 5)</label>
         <div class="subcategories" id="subcategories"></div>
       </div>
 
       <button id="scanButton" class="btn btn-primary" disabled>
-        <i class="fas fa-search"></i> Find Opportunities
+        <i class="fas fa-radar"></i> Find Resale Opportunities
       </button>
 
       <div id="error" class="error" style="display: none;">
@@ -428,11 +495,29 @@
 
       <div id="loading" class="loading" style="display: none;">
         <div class="loading-spinner"></div>
-        <p>Scanning for opportunities...</p>
+        <p>Scanning marketplaces for resale opportunities...</p>
       </div>
     </div>
 
     <div id="results" class="results"></div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+        <div class="feature-title">Fast Scanning</div>
+        <div class="feature-text">Real-time scanning across multiple marketplaces</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="feature-title">Profit Analysis</div>
+        <div class="feature-text">Automatic profit calculations with fees included</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
+        <div class="feature-title">Smart Matching</div>
+        <div class="feature-text">Advanced algorithms for accurate product matching</div>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -470,6 +555,7 @@
           html += `
             <label class="checkbox-wrapper">
               <input type="checkbox" value="${subcat}" onchange="handleSubcategoryChange(this)">
+              <div class="checkbox-custom"></div>
               ${subcat}
             </label>
           `;
@@ -553,8 +639,8 @@
       if (results.length === 0) {
         resultsDiv.innerHTML = `
           <div style="text-align: center; padding: 3rem;">
-            <i class="fas fa-search" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
-            <h3>No opportunities found</h3>
+            <i class="fas fa-search-minus" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+            <h3>No resale opportunities found</h3>
             <p style="color: var(--text-light);">Try selecting different subcategories or check back later</p>
           </div>
         `;
@@ -566,21 +652,24 @@
           <div class="result-header">
             <h3>${result.title}</h3>
             <span class="confidence-badge ${getConfidenceBadgeClass(result.confidence)}">
-              ${result.confidence}% Match
+              <i class="fas fa-check-circle"></i> ${result.confidence}% Match
             </span>
           </div>
           <div class="result-body">
             <div class="price-row">
               <div class="price-item">
+                <i class="fas fa-tag fa-lg"></i>
                 <div class="price-label">Buy Price</div>
                 <div class="price-value">$${result.buyPrice.toFixed(2)}</div>
               </div>
               <div class="price-item">
+                <i class="fas fa-dollar-sign fa-lg"></i>
                 <div class="price-label">Sell Price</div>
                 <div class="price-value">$${result.sellPrice.toFixed(2)}</div>
               </div>
             </div>
             <div class="profit-section">
+              <i class="fas fa-chart-line"></i>
               <div class="profit-label">Potential Profit</div>
               <div class="profit-value">$${result.profit.toFixed(2)} (${result.profitPercentage.toFixed(1)}%)</div>
             </div>
