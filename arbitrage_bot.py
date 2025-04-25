@@ -576,4 +576,325 @@ class KeywordGenerator:
                 "SSDs": [
                     # Popular brands
                     "samsung evo", "crucial mx500", "western digital ssd", "wd black",
-                    "sandisk ssd", "kingston ssd", "nvme ssd",
+                    "sandisk ssd", "kingston ssd", "nvme ssd", "m.2 ssd", "sata ssd",
+                    "samsuung ssd", "cruicial", "westurn digital", "sanddisc",
+                    
+                    # Storage capacities
+                    "1tb ssd", "2tb ssd", "500gb ssd", "256gb ssd", "512gb ssd",
+                    "1 tb ssd", "2 tb ssd", "500 gb ssd", "2 terabyte ssd",
+                    
+                    # Types
+                    "pcie ssd", "gen4 ssd", "gen5 ssd", "portable ssd", "external ssd",
+                    "usb ssd", "thunderbolt ssd", "solid state", "solidsate drive"
+                ],
+                
+                "Routers": [
+                    # Popular brands
+                    "netgear router", "tp link router", "asus router", "linksys router",
+                    "google nest wifi", "eero router", "orbi router", "nighthawk router",
+                    "netgeer", "tp-link", "tplink", "linksis", "googl wifi",
+                    
+                    # Technologies
+                    "wifi 6 router", "wifi 6e router", "ax router", "mesh wifi",
+                    "gaming router", "5g router", "tri band router", "dual band router",
+                    "wi-fi 6", "wfi router", "wifi raouter", "roter",
+                    
+                    # Models
+                    "archer ax73", "nighthawk rax80", "orbi rbk852", "deco x60",
+                    "arris surfboard", "cable modem router", "modem router combo"
+                ],
+                
+                "Vintage Tech": [
+                    # Classic devices
+                    "walkman", "discman", "ipod classic", "ipod nano", "ipod shuffle",
+                    "gameboy", "game boy", "nintendo ds", "psp", "ps vita",
+                    "walk man", "disc man", "i pod", "game boy advance",
+                    
+                    # Computers and consoles
+                    "commodore 64", "amiga", "atari", "nes", "snes", "n64",
+                    "sega genesis", "sega saturn", "dreamcast", "original xbox",
+                    "comodore", "amega", "nintendo 64", "super nintendo",
+                    
+                    # Phones and cameras
+                    "nokia 3310", "motorola razr", "blackberry", "palm pilot",
+                    "polaroid camera", "kodak camera", "film camera", "35mm camera",
+                    "nokia brick", "razor phone", "black berry", "flip phone"
+                ]
+            },
+            
+            "Collectibles": {
+                "Pokémon": [
+                    # Card types
+                    "pokemon cards", "pokemon card lot", "pokemon booster box",
+                    "pokemon etb", "pokemon elite trainer box", "pokemon graded cards",
+                    "charizard card", "pikachu card", "japanese pokemon cards",
+                    "pokemom cards", "pokmon", "pokeman", "pocket monsters",
+                    
+                    # Specific sets
+                    "base set", "shadowless", "1st edition", "neo genesis", "team rocket",
+                    "hidden fates", "shining fates", "evolving skies", "brilliant stars",
+                    "first edition", "1st ed", "baseset", "x y cards",
+                    
+                    # PSA grades
+                    "psa 10", "psa 9", "psa 8", "beckett graded", "cgc graded",
+                    "gem mint", "mint condition", "near mint", "bgs 9.5",
+                    
+                    # Popular characters
+                    "charizard vmax", "rainbow charizard", "pikachu vmax", "mewtwo",
+                    "blastoise", "venusaur", "umbreon", "lugia", "rayquaza",
+                    "charzard", "pickachu", "mewto", "blastios"
+                ],
+                
+                "Magic: The Gathering": [
+                    # Product types
+                    "mtg cards", "magic cards", "mtg booster box", "commander deck",
+                    "mtg bundle", "collector booster", "set booster", "draft booster",
+                    "magik cards", "mgic the gathering", "magic gathering",
+                    
+                    # Sets and editions
+                    "alpha mtg", "beta mtg", "unlimited", "revised", "arabian nights",
+                    "antiquities", "legends", "modern horizons", "commander legends",
+                    "alpa", "betta", "arbian nights", "modrn horizons",
+                    
+                    # Popular cards
+                    "black lotus", "mox sapphire", "dual lands", "force of will",
+                    "wurmcoil engine", "tarmogoyf", "jace the mind sculptor",
+                    "blak lotus", "mox saphire", "duel lands", "taramgoyf"
+                ],
+                
+                "Yu-Gi-Oh": [
+                    # Product types
+                    "yugioh cards", "yu-gi-oh cards", "yugioh deck", "structure deck",
+                    "yugioh booster box", "yugioh tin", "yugioh mega tin",
+                    "yugioih", "yu gi oh", "duelist cards", "ygo cards",
+                    
+                    # Popular cards
+                    "blue eyes white dragon", "dark magician", "red eyes black dragon",
+                    "exodia", "pot of greed", "monster reborn", "egyptian god cards",
+                    "blue eye", "dark magican", "red eys", "egodia",
+                    
+                    # Sets
+                    "lob", "legend of blue eyes", "metal raiders", "magic ruler",
+                    "ghost rare", "starlight rare", "ultimate rare", "prismatic secret",
+                    "legand of blue eye", "metal raider", "gost rare"
+                ],
+                
+                "Funko Pops": [
+                    # General
+                    "funko pop", "pop vinyl", "funko soda", "funko exclusive",
+                    "chase funko", "flocked funko", "metallic funko", "gitd funko",
+                    "funco pop", "funko pops", "pop figure", "bobblehead",
+                    
+                    # Popular lines
+                    "marvel funko", "dc funko", "star wars funko", "anime funko",
+                    "disney funko", "dbz funko", "naruto funko", "horror funko",
+                    "mrvel funko", "starwars funko", "dragonball funko",
+                    
+                    # Exclusives
+                    "comic con exclusive", "sdcc funko", "nycc funko", "eccc funko",
+                    "target exclusive", "walmart exclusive", "hot topic exclusive",
+                    "san diego comic con", "new york comic con", "emerald city"
+                ],
+                
+                "Sports Cards": [
+                    # Types
+                    "basketball cards", "football cards", "baseball cards", "soccer cards",
+                    "hockey cards", "nba cards", "nfl cards", "mlb cards", "rookie cards",
+                    "basket ball cards", "foot ball cards", "base ball cards",
+                    
+                    # Brands
+                    "panini prizm", "topps chrome", "bowman chrome", "upper deck",
+                    "select", "mosaic", "optic", "donruss", "hoops", "chronicles",
+                    "panini prism", "tops chrome", "upperdeck", "mosaik",
+                    
+                    # Popular players
+                    "michael jordan", "lebron james", "tom brady", "patrick mahomes",
+                    "luka doncic", "shohei ohtani", "mike trout", "connor mcdavid",
+                    "jordon cards", "labron james", "mahommes", "mcdavid cards"
+                ]
+            },
+            
+            "Vintage Clothing": {
+                "Jordans": [
+                    # Models
+                    "jordan 1", "jordan 1 high", "jordan 1 retro", "aj1", "air jordan 1",
+                    "jordan 3", "jordan 4", "jordan 11", "jordan 12", "jordan 13",
+                    "jordon 1", "jordans 1", "airjordan", "air jordans",
+                    
+                    # Colorways
+                    "chicago jordan 1", "bred jordan 1", "royal jordan 1", "shadow jordan 1",
+                    "black cement 3", "white cement 3", "bred 4", "black cat 4",
+                    "chicago 1s", "bread 1s", "royle blue", "shadows jordan",
+                    
+                    # Sizes
+                    "size 10 jordan", "size 11 jordan", "size 9 jordan", "og jordan",
+                    "deadstock jordan", "ds jordan", "vnds jordan", "jordan lot",
+                    "sz 10", "sz 11", "ded stock", "dead stock"
+                ],
+                
+                "Nike Dunks": [
+                    # Models
+                    "nike dunk low", "nike dunk high", "dunk sb", "nike sb dunk",
+                    "dunk low pro", "dunk high pro", "dunk low retro", "dunk high retro",
+                    "nike dunks low", "nike dnk", "sb dunks", "dunks sb",
+                    
+                    # Popular colorways
+                    "panda dunk", "chicago dunk", "syracuse dunk", "unc dunk",
+                    "travis scott dunk", "strangelove dunk", "off white dunk",
+                    "panda dunks", "chicgo dunk", "syrucuse", "trav scott"
+                ],
+                
+                "Vintage Tees": [
+                    # Types
+                    "vintage band tee", "vintage rap tee", "vintage movie tee",
+                    "vintage sports tee", "vintage concert tee", "bootleg tee",
+                    "vintge band t shirt", "vintage t shirt", "t-shirt vintage",
+                    
+                    # Brands
+                    "vintage nike", "vintage adidas", "vintage champion", "vintage tommy",
+                    "vintage ralph lauren", "vintage harley davidson", "vintage nascar",
+                    "vintge nike", "vintage addidas", "champions vintage",
+                    
+                    # Decades
+                    "90s vintage", "80s vintage", "70s vintage", "y2k vintage",
+                    "90s tee", "80s tee", "70s tee", "nineties vintage", "eighties"
+                ]
+            }
+            
+            # Add more categories with comprehensive keyword lists including typos
+        }
+    
+    def generate_keywords(self, subcategory: str) -> List[str]:
+        """Generate keyword list for a subcategory."""
+        keywords = []
+        
+        # Get base keywords for subcategory
+        for cat, subcat_dict in self.comprehensive_keywords.items():
+            if subcategory in subcat_dict:
+                keywords.extend(subcat_dict[subcategory])
+                break
+        
+        # If no specific keywords found, use the subcategory itself
+        if not keywords:
+            keywords = [subcategory.lower()]
+        
+        # Add common typos and variations
+        expanded_keywords = []
+        for keyword in keywords:
+            expanded_keywords.append(keyword)
+            # Add common typo patterns
+            if len(keyword) > 3:
+                # Swap adjacent characters
+                for i in range(len(keyword) - 1):
+                    typo = keyword[:i] + keyword[i+1] + keyword[i] + keyword[i+2:]
+                    expanded_keywords.append(typo)
+                # Missing characters
+                for i in range(1, len(keyword) - 1):
+                    typo = keyword[:i] + keyword[i+1:]
+                    expanded_keywords.append(typo)
+        
+        return list(set(expanded_keywords))  # Remove duplicates
+
+async def process_subcategory(subcategory: str, scraper: Scraper, analyzer: ArbitrageAnalyzer, 
+                              keyword_gen: KeywordGenerator) -> List[Dict[str, Any]]:
+    """Process a single subcategory to find arbitrage opportunities."""
+    keywords = keyword_gen.generate_keywords(subcategory)
+    all_opportunities = []
+    
+    for keyword in keywords[:10]:  # Process top 10 keywords for better coverage
+        logger.info(f"Searching for: {keyword}")
+        
+        try:
+            # Fetch listings sorted by price (ascending and descending)
+            low_priced = await scraper.search_ebay(keyword, sort="price_asc")
+            await asyncio.sleep(1.5)  # Rate limiting
+            high_priced = await scraper.search_ebay(keyword, sort="price_desc")
+            
+            if low_priced and high_priced:
+                opportunities = analyzer.find_opportunities(low_priced, high_priced)
+                for opp in opportunities:
+                    opp['subcategory'] = subcategory
+                    opp['keyword'] = keyword
+                all_opportunities.extend(opportunities)
+                
+        except Exception as e:
+            logger.error(f"Error processing keyword '{keyword}': {str(e)}")
+            continue
+    
+    return all_opportunities
+
+async def fetch_all_arbitrage_opportunities(subcategories: List[str]) -> List[Dict[str, Any]]:
+    """Fetch arbitrage opportunities for all subcategories."""
+    scraper = Scraper()
+    analyzer = ArbitrageAnalyzer()
+    keyword_gen = KeywordGenerator()
+    
+    try:
+        tasks = [
+            process_subcategory(subcat, scraper, analyzer, keyword_gen)
+            for subcat in subcategories
+        ]
+        results = await asyncio.gather(*tasks)
+        
+        # Combine results from all subcategories
+        all_opportunities = []
+        for result in results:
+            all_opportunities.extend(result)
+        
+        # Filter out potential duplicates
+        unique_opportunities = []
+        seen_pairs = set()
+        
+        for opp in all_opportunities:
+            pair_key = (opp['buyLink'], opp['sellLink'])
+            if pair_key not in seen_pairs:
+                seen_pairs.add(pair_key)
+                unique_opportunities.append(opp)
+        
+        # Sort by profit percentage and return top results
+        return sorted(unique_opportunities, key=lambda x: -x['profitPercentage'])[:20]
+        
+    finally:
+        await scraper.close_session()
+
+def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
+    """Run an arbitrage scan across multiple online marketplaces."""
+    try:
+        logger.info(f"Starting arbitrage scan for subcategories: {subcategories}")
+        
+        # Create new event loop for the async operations
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            start_time = time.time()
+            opportunities = loop.run_until_complete(fetch_all_arbitrage_opportunities(subcategories))
+            end_time = time.time()
+            
+            logger.info(f"Scan completed in {end_time - start_time:.2f} seconds")
+            
+            return opportunities
+                
+        except Exception as e:
+            logger.error(f"Error running arbitrage scan: {str(e)}")
+            return []
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return []
+
+if __name__ == "__main__":
+    # Test the arbitrage scanner
+    test_subcategories = ["Laptops", "Headphones"]
+    results = run_arbitrage_scan(test_subcategories)
+    
+    print(f"Found {len(results)} arbitrage opportunities")
+    for i, opp in enumerate(results[:5], 1):
+        print(f"\nOpportunity #{i}:")
+        print(f"Title: {opp['title']}")
+        print(f"Buy Price: ${opp['buyPrice']:.2f}")
+        print(f"Sell Price: ${opp['sellPrice']:.2f}")
+        print(f"Profit: ${opp['profit']:.2f} ({opp['profitPercentage']:.2f}%)")
+        print(f"Confidence: {opp['confidence']}%")
