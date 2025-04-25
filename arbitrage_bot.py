@@ -444,148 +444,136 @@ class KeywordGenerator:
         self.comprehensive_keywords = self._load_comprehensive_keywords()
     
     def _load_comprehensive_keywords(self) -> Dict[str, Dict[str, List[str]]]:
-        """Load comprehensive keyword database."""
+        """Load comprehensive keyword database with misspellings and variations."""
         return {
             "Tech": {
-                "Headphones": ["headphones", "earbuds", "airpods", "beats", "bose", "sony wh", 
-                              "bluetooth buds", "wireless headphones", "noise cancelling", 
-                              "anc headphones", "marshall major", "sennheiser"],
-                "Keyboards": ["mechanical keyboard", "gaming keyboard", "logitech", "corsair k", 
-                             "kbd", "rgb keyboard", "wireless keyboard", "cherry mx"],
-                "Graphics Cards": ["gpu", "rtx 3080", "gtx", "radeon", "graphics card", "rx 6800", 
-                                  "rtx 4090", "video card", "nvidia", "amd gpu", "geforce"],
-                "CPUs": ["intel i7", "ryzen", "processor", "cpu", "i9", "i5", "amd cpu", 
-                        "intel chip", "core i7", "amd ryzen", "threadripper"],
-                "Laptops": ["macbook", "gaming laptop", "dell xps", "hp laptop", "thinkpad", 
-                           "chromebook", "notebook", "ultrabook", "laptop computer"],
-                "Monitors": ["gaming monitor", "lg ultragear", "27 inch monitor", "144hz", 
-                            "curved screen", "samsung monitor", "4k monitor", "ultrawide"],
-                "SSDs": ["ssd", "solid state drive", "m.2", "nvme", "samsung evo", 
-                        "crucial mx500", "western digital ssd", "san disk ssd"],
-                "Routers": ["wifi router", "netgear", "tp link", "gaming router", 
-                           "wireless modem", "wifi 6 router", "mesh wifi system"],
-                "Vintage Tech": ["walkman", "ipod classic", "flip phone", "cassette player", 
-                                "vintage computer", "old tech", "retro tech", "commodore"]
-            },
-            # Add more categories as needed...
-        }
-    
-    def generate_keywords(self, subcategory: str) -> List[str]:
-        """Generate keyword list for a subcategory."""
-        keywords = []
-        
-        # Get base keywords for subcategory
-        for cat, subcat_dict in self.comprehensive_keywords.items():
-            if subcategory in subcat_dict:
-                keywords.extend(subcat_dict[subcategory])
-                break
-        
-        # If no specific keywords found, use the subcategory itself
-        if not keywords:
-            keywords = [subcategory.lower()]
-        
-        return keywords
-
-async def process_subcategory(subcategory: str, scraper: Scraper, analyzer: ArbitrageAnalyzer, 
-                              keyword_gen: KeywordGenerator) -> List[Dict[str, Any]]:
-    """Process a single subcategory to find arbitrage opportunities."""
-    keywords = keyword_gen.generate_keywords(subcategory)
-    all_opportunities = []
-    
-    for keyword in keywords[:3]:  # Limit keywords per subcategory for speed
-        logger.info(f"Searching for: {keyword}")
-        
-        try:
-            # Fetch listings sorted by price (ascending and descending)
-            low_priced = await scraper.search_ebay(keyword, sort="price_asc")
-            await asyncio.sleep(1.5)  # Rate limiting
-            high_priced = await scraper.search_ebay(keyword, sort="price_desc")
-            
-            if low_priced and high_priced:
-                opportunities = analyzer.find_opportunities(low_priced, high_priced)
-                for opp in opportunities:
-                    opp['subcategory'] = subcategory
-                    opp['keyword'] = keyword
-                all_opportunities.extend(opportunities)
+                "Headphones": [
+                    # Apple AirPods variations
+                    "airpods", "airpod", "air pods", "air pod", "apple earbuds", "apple earpods",
+                    "airpods pro", "airpods max", "airpods 2", "airpods 3", "airpods pro 2",
+                    "airpds", "aripos", "aripods", "apods", "ap pods", "apple airpads",
+                    
+                    # Beats variations
+                    "beats", "beats headphones", "beats solo", "beats studio", "beats pro",
+                    "beats studio buds", "beats fit pro", "powerbeats", "powerbeats pro",
+                    "beets", "bats headphones", "beatz", "bts headphones",
+                    
+                    # Bose variations
+                    "bose", "bose headphones", "bose quietcomfort", "bose 700", "bose qc",
+                    "bose nc", "bose earbuds", "bose soundsport", "bose qc35", "bose qc45",
+                    "boss headphones", "boze", "bosee", "quiet comfort",
+                    
+                    # Sony variations
+                    "sony wh", "sony headphones", "sony wf", "sony xm4", "sony xm5",
+                    "sony wh-1000xm4", "sony wh-1000xm5", "sony wf-1000xm4",
+                    "sonny headphones", "soney", "sony x1000",
+                    
+                    # General terms and brands
+                    "wireless headphones", "bluetooth earbuds", "noise cancelling",
+                    "anc headphones", "true wireless", "earphones", "ear buds",
+                    "sennheiser", "jabra", "jbl", "marshall", "skullcandy",
+                    "samsung buds", "galaxy buds", "pixel buds"
+                ],
                 
-        except Exception as e:
-            logger.error(f"Error processing keyword '{keyword}': {str(e)}")
-            continue
-    
-    return all_opportunities
-
-async def fetch_all_arbitrage_opportunities(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """Fetch arbitrage opportunities for all subcategories."""
-    scraper = Scraper()
-    analyzer = ArbitrageAnalyzer()
-    keyword_gen = KeywordGenerator()
-    
-    try:
-        tasks = [
-            process_subcategory(subcat, scraper, analyzer, keyword_gen)
-            for subcat in subcategories
-        ]
-        results = await asyncio.gather(*tasks)
-        
-        # Combine results from all subcategories
-        all_opportunities = []
-        for result in results:
-            all_opportunities.extend(result)
-        
-        # Filter out potential duplicates
-        unique_opportunities = []
-        seen_pairs = set()
-        
-        for opp in all_opportunities:
-            pair_key = (opp['buyLink'], opp['sellLink'])
-            if pair_key not in seen_pairs:
-                seen_pairs.add(pair_key)
-                unique_opportunities.append(opp)
-        
-        # Sort by profit percentage and return top results
-        return sorted(unique_opportunities, key=lambda x: -x['profitPercentage'])[:20]
-        
-    finally:
-        await scraper.close_session()
-
-def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """Run an arbitrage scan across multiple online marketplaces."""
-    try:
-        logger.info(f"Starting arbitrage scan for subcategories: {subcategories}")
-        
-        # Create new event loop for the async operations
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        try:
-            start_time = time.time()
-            opportunities = loop.run_until_complete(fetch_all_arbitrage_opportunities(subcategories))
-            end_time = time.time()
-            
-            logger.info(f"Scan completed in {end_time - start_time:.2f} seconds")
-            
-            return opportunities
+                "Keyboards": [
+                    # Mechanical keyboards
+                    "mechanical keyboard", "mech keyboard", "gaming keyboard", "rgb keyboard",
+                    "cherry mx", "custom keyboard", "hot swap keyboard", "60% keyboard",
+                    "65% keyboard", "75% keyboard", "tkl keyboard", "full size keyboard",
+                    "mechancial", "mechanicl", "mech kybd", "mechanica keyboard",
+                    
+                    # Popular brands
+                    "logitech keyboard", "corsair keyboard", "razer keyboard", "keychron",
+                    "ducky keyboard", "das keyboard", "hyperx keyboard", "steelseries keyboard",
+                    "logitec", "corsare", "razor", "steel series", "keycrn",
+                    
+                    # Specific models
+                    "logitech g915", "corsair k70", "razer huntsman", "ducky one 2",
+                    "keychron k2", "anne pro", "gmmk pro", "keyboard and mouse combo",
+                    "corair k95", "razr black widow", "ducky on2", "anna pro",
+                    
+                    # Wireless options
+                    "wireless keyboard", "bluetooth keyboard", "wireless mechanical",
+                    "2.4ghz keyboard", "usb-c keyboard", "multi-device keyboard",
+                    "blutooth keyboard", "wi-fi keyboard", "usbc"
+                ],
                 
-        except Exception as e:
-            logger.error(f"Error running arbitrage scan: {str(e)}")
-            return []
-        finally:
-            loop.close()
-            
-    except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        return []
-
-if __name__ == "__main__":
-    # Test the arbitrage scanner
-    test_subcategories = ["Laptops", "Headphones"]
-    results = run_arbitrage_scan(test_subcategories)
-    
-    print(f"Found {len(results)} arbitrage opportunities")
-    for i, opp in enumerate(results[:5], 1):
-        print(f"\nOpportunity #{i}:")
-        print(f"Title: {opp['title']}")
-        print(f"Buy Price: ${opp['buyPrice']:.2f}")
-        print(f"Sell Price: ${opp['sellPrice']:.2f}")
-        print(f"Profit: ${opp['profit']:.2f} ({opp['profitPercentage']:.2f}%)")
-        print(f"Confidence: {opp['confidence']}%")
+                "Graphics Cards": [
+                    # NVIDIA cards
+                    "rtx 3080", "rtx 3070", "rtx 3060", "rtx 3090", "rtx 4090", "rtx 4080",
+                    "geforce rtx", "nvidia gpu", "gtx 1660", "gtx 1080", "gtx 1070",
+                    "rtx 3080ti", "rtx 3070ti", "rtx3090", "rtx4090", "nividia",
+                    "rtx thirty eighty", "rtx thirty ninety", "rtx forty ninety",
+                    
+                    # AMD cards
+                    "rx 6800", "rx 6900", "rx 6700", "rx 6600", "rx 7900", "radeon gpu",
+                    "amd radeon", "rx 580", "rx 570", "rx 5700", "vega 64", "vega 56",
+                    "radion", "amd gpu", "rdna 2", "rdna 3", "rx6800xt", "rx6900xt",
+                    
+                    # General terms
+                    "graphics card", "video card", "gpu", "gaming gpu", "mining gpu",
+                    "workstation gpu", "professional gpu", "quadro", "firepro",
+                    "grphics card", "grfx card", "videoscard", "vga card"
+                ],
+                
+                "CPUs": [
+                    # Intel processors
+                    "intel i7", "intel i9", "intel i5", "core i7", "core i9", "core i5",
+                    "i7-13700k", "i9-13900k", "i7-12700k", "i9-12900k", "lga 1700",
+                    "intel cpu", "intel processor", "pentium", "celeron",
+                    "intel eye7", "intl i7", "intell", "core eye 7",
+                    
+                    # AMD processors
+                    "ryzen 7", "ryzen 9", "ryzen 5", "amd cpu", "amd processor",
+                    "ryzen 7800x3d", "ryzen 7950x", "ryzen 5800x3d", "ryzen threadripper",
+                    "am4 cpu", "am5 cpu", "ryzen 5000", "ryzen 7000",
+                    "ryzan", "rizen", "amd ryzn", "ryen", "thred ripper",
+                    
+                    # General terms
+                    "processor", "cpu", "desktop cpu", "laptop cpu", "gaming cpu",
+                    "workstation cpu", "server cpu", "processer", "proccessor"
+                ],
+                
+                "Laptops": [
+                    # MacBooks
+                    "macbook", "macbook pro", "macbook air", "mac book", "macbookpro",
+                    "m1 macbook", "m2 macbook", "m3 macbook", "apple laptop",
+                    "mac pro", "mac air", "mackbook", "macbok", "mac book pro",
+                    
+                    # Gaming laptops
+                    "gaming laptop", "rog laptop", "legion laptop", "msi laptop",
+                    "alienware laptop", "razer blade", "asus rog", "predator laptop",
+                    "gamming laptop", "rogen laptop", "alisware", "razr blade",
+                    
+                    # Business laptops
+                    "thinkpad", "dell xps", "hp elitebook", "surface laptop",
+                    "business laptop", "ultrabook", "2-in-1 laptop", "chromebook",
+                    "think pad", "dell xbs", "hp elite", "surface book",
+                    
+                    # General terms
+                    "laptop computer", "notebook", "gaming notebook", "laptop pc",
+                    "labtop", "lap top", "note book", "leptop"
+                ],
+                
+                "Monitors": [
+                    # Gaming monitors
+                    "gaming monitor", "144hz monitor", "240hz monitor", "360hz monitor",
+                    "4k monitor", "1440p monitor", "ultrawide monitor", "curved monitor",
+                    "ips monitor", "va monitor", "tn monitor", "oled monitor",
+                    "gamign monitor", "144 hz", "240 hz", "fourk monitor",
+                    
+                    # Brands and models
+                    "lg ultragear", "samsung odyssey", "asus rog", "acer predator",
+                    "dell monitor", "hp monitor", "benq monitor", "viewsonic",
+                    "lg ultra gear", "samsuung", "rog swift", "predater monitor",
+                    
+                    # Professional monitors
+                    "4k professional", "color accurate monitor", "design monitor",
+                    "video editing monitor", "content creation monitor", "srgb monitor",
+                    "color acurate", "profesional monitor", "adobe rgb"
+                ],
+                
+                "SSDs": [
+                    # Popular brands
+                    "samsung evo", "crucial mx500", "western digital ssd", "wd black",
+                    "sandisk ssd", "kingston ssd", "nvme ssd",
