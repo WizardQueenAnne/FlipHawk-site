@@ -125,11 +125,15 @@ def serve_index():
 
 @app.route('/styles.css')
 def serve_css():
-    return send_from_directory(os.getcwd(), 'styles.css')
+    response = send_from_directory(os.getcwd(), 'styles.css')
+    response.headers['Content-Type'] = 'text/css'
+    return response
 
 @app.route('/script.js')
 def serve_js():
-    return send_from_directory(os.getcwd(), 'script.js')
+    response = send_from_directory(os.getcwd(), 'script.js')
+    response.headers['Content-Type'] = 'application/javascript'
+    return response
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
