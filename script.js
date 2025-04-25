@@ -1,561 +1,695 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Form Elements
-    const scanForm = document.getElementById('scanForm');
-    const categorySelect = document.getElementById('categorySelect');
-    const subcategoryContainer = document.getElementById('subcategoryContainer');
-    const subcategoryOptions = document.getElementById('subcategoryOptions');
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    const loadingMessage = document.getElementById('loadingMessage');
-    const resultsTitle = document.getElementById('resultsTitle');
-    const dealList = document.getElementById('dealList');
-    const noResultsMessage = document.getElementById('noResultsMessage');
-    const filterOptions = document.getElementById('filterOptions');
-    const sortOptions = document.getElementById('sortOptions');
-    const confidenceFilter = document.getElementById('confidenceFilter');
-    const progressFill = document.querySelector('.progress-fill');
+// Continue with other components...
+  
+  const OpportunityCard = ({ opportunity }) => {
+    const { ArrowUpRight, ArrowDownRight, Save, Share2 } = icons;
     
-    // Define all categories and subcategories
-    const categories = {
-        'Tech': [
-            'Headphones', 'Keyboards', 'Graphics Cards', 'CPUs', 'Laptops',
-            'Monitors', 'SSDs', 'Routers', 'Vintage Tech'
-        ],
-        'Collectibles': [
-            'Pokémon', 'Magic: The Gathering', 'Yu-Gi-Oh', 'Funko Pops', 'Sports Cards',
-            'Comic Books', 'Action Figures', 'LEGO Sets'
-        ],
-        'Vintage Clothing': [
-            'Jordans', 'Nike Dunks', 'Vintage Tees', 'Band Tees', 'Denim Jackets',
-            'Designer Brands', 'Carhartt', 'Patagonia'
-        ],
-        'Antiques': [
-            'Coins', 'Watches', 'Cameras', 'Typewriters', 'Vinyl Records',
-            'Vintage Tools', 'Old Maps', 'Antique Toys'
-        ],
-        'Gaming': [
-            'Consoles', 'Game Controllers', 'Rare Games', 'Arcade Machines', 
-            'Handhelds', 'Gaming Headsets', 'VR Gear'
-        ],
-        'Music Gear': [
-            'Electric Guitars', 'Guitar Pedals', 'Synthesizers', 'Vintage Amps',
-            'Microphones', 'DJ Equipment'
-        ],
-        'Tools & DIY': [
-            'Power Tools', 'Hand Tools', 'Welding Equipment', 'Toolboxes',
-            'Measuring Devices', 'Woodworking Tools'
-        ],
-        'Outdoors & Sports': [
-            'Bikes', 'Skateboards', 'Scooters', 'Camping Gear', 'Hiking Gear',
-            'Fishing Gear', 'Snowboards'
-        ]
-    };
+    const profitColor = opportunity.profitPercentage >= 50 ? 'text-green-600' : 
+                       opportunity.profitPercentage >= 30 ? 'text-yellow-600' : 
+                       'text-red-600';
     
-    // Category icons
-    const categoryIcons = {
-        'Tech': '💻',
-        'Collectibles': '🏆',
-        'Vintage Clothing': '👟',
-        'Antiques': '🕰️',
-        'Gaming': '🎮',
-        'Music Gear': '🎸',
-        'Tools & DIY': '🛠️',
-        'Outdoors & Sports': '🚲'
-    };
-    
-    // Subcategory icons
-    const subcategoryIcons = {
-        // Tech
-        'Headphones': '🎧',
-        'Keyboards': '⌨️',
-        'Graphics Cards': '🖥️',
-        'CPUs': '🔄',
-        'Laptops': '💻',
-        'Monitors': '🖥️',
-        'SSDs': '💾',
-        'Routers': '📡',
-        'Vintage Tech': '📟',
-        
-        // Collectibles
-        'Pokémon': '⚡',
-        'Magic: The Gathering': '🃏',
-        'Yu-Gi-Oh': '👹',
-        'Funko Pops': '🧸',
-        'Sports Cards': '🏆',
-        'Comic Books': '📚',
-        'Action Figures': '🦸',
-        'LEGO Sets': '🧱',
-        
-        // Vintage Clothing
-        'Jordans': '👟',
-        'Nike Dunks': '👟',
-        'Vintage Tees': '👕',
-        'Band Tees': '🎸',
-        'Denim Jackets': '🧥',
-        'Designer Brands': '👜',
-        'Carhartt': '👷',
-        'Patagonia': '🏔️',
-        
-        // Default icon for others
-        'default': '📦'
-    };
-    
-    // Update subcategories when category changes
-    categorySelect.addEventListener('change', function() {
-        const category = this.value;
-        if (category) {
-            populateSubcategories(category);
-            subcategoryContainer.style.display = 'block';
-        } else {
-            subcategoryContainer.style.display = 'none';
-        }
-    });
-    
-    // Populate subcategories based on selected category
-    function populateSubcategories(category) {
-        subcategoryOptions.innerHTML = '';
-        const options = categories[category] || [];
-        
-        options.forEach((subcategory, index) => {
-            const checkboxId = `subcategory-${index}`;
-            
-            const checkboxDiv = document.createElement('div');
-            checkboxDiv.className = 'checkbox-item';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = checkboxId;
-            checkbox.name = 'subcategories';
-            checkbox.value = subcategory;
-            
-            const label = document.createElement('label');
-            label.htmlFor = checkboxId;
-            
-            // Add icon if available
-            const icon = subcategoryIcons[subcategory] || subcategoryIcons['default'];
-            label.innerHTML = `${icon} ${subcategory}`;
-            
-            checkboxDiv.appendChild(checkbox);
-            checkboxDiv.appendChild(label);
-            subcategoryOptions.appendChild(checkboxDiv);
-        });
-        
-        // Add click handler to checkbox items for better UX
-        document.querySelectorAll('.checkbox-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                // Don't trigger if they clicked directly on the checkbox
-                if (e.target !== this.querySelector('input[type="checkbox"]')) {
-                    const checkbox = this.querySelector('input[type="checkbox"]');
-                    checkbox.checked = !checkbox.checked;
-                }
-            });
-        });
-    }
-    
-    // Handle form submission
-    scanForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Get the selected category
-        const category = categorySelect.value;
-        
-        if (!category) {
-            showAlert('Please select a category');
-            return;
-        }
-        
-        // Get selected subcategories
-        const selectedSubcategories = [];
-        document.querySelectorAll('input[name="subcategories"]:checked').forEach(checkbox => {
-            selectedSubcategories.push(checkbox.value);
-        });
-        
-        if (selectedSubcategories.length === 0) {
-            showAlert('Please select at least one subcategory');
-            return;
-        }
-        
-        if (selectedSubcategories.length > 5) {
-            showAlert('Please select up to 5 subcategories for optimal results');
-            return;
-        }
-        
-        // Show loading indicator and hide results
-        startLoading(selectedSubcategories);
-        resetResults();
-        
-        // Make API request to Flask backend
-        fetch('/run_scan', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                category: category,
-                subcategories: selectedSubcategories
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Hide loading indicator
-            stopLoading();
-            
-            // Display results
-            displayResults(data, selectedSubcategories);
-        })
-        .catch(error => {
-            stopLoading();
-            showError('Error connecting to server. Please try again.');
-            console.error('Error:', error);
-        });
-    });
-    
-    // Display resale opportunities
-    function displayResults(deals, selectedSubcategories) {
-        // Hide loading indicator completely
-        loadingIndicator.style.display = 'none';
-        
-        // Display results
-        if (deals && deals.length > 0) {
-            resultsTitle.style.display = 'block';
-            resultsTitle.textContent = 'Top Resale Opportunities';
-            filterOptions.style.display = 'flex';
-            displayDeals(deals);
-        } else {
-            noResultsMessage.style.display = 'block';
-            
-            // Make the message more specific with the selected subcategories
-            const subCatList = selectedSubcategories.join(', ');
-            document.querySelector('.no-results-content p:first-of-type').textContent = 
-                `We couldn't find any resale opportunities for ${subCatList} at the moment.`;
-        }
-    }
-    
-    // Display deals as cards
-    function displayDeals(deals) {
-        dealList.innerHTML = '';
-        
-        deals.forEach(deal => {
-            const card = document.createElement('div');
-            card.className = 'opportunity-card';
-            
-            // Format prices
-            const buyPrice = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(deal.buyPrice);
-            
-            const sellPrice = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(deal.sellPrice);
-            
-            const profit = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(deal.profit);
-            
-            const profitPercentage = Math.round(deal.profitPercentage);
-            
-            // Get confidence color
-            const confidenceColor = getConfidenceColor(deal.confidence);
-            
-            // Calculate estimated taxes (simplified, around 8%)
-            const estimatedTax = deal.buyPrice * 0.08;
-            const estimatedShipping = 5.99; // Example fixed shipping cost
-            
-            const totalCost = deal.buyPrice + estimatedTax + estimatedShipping;
-            const netProfit = deal.sellPrice - totalCost;
-            const netProfitPercentage = (netProfit / totalCost) * 100;
-            
-            const formattedNetProfit = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(netProfit);
-            
-            // Get icon for subcategory
-            const subcategoryIcon = getSubcategoryIcon(deal.subcategory);
-            
-            card.innerHTML = `
-                <div class="opportunity-header">
-                    <div class="opportunity-title">
-                        <h3>${deal.title}</h3>
-                        <span class="confidence-badge" style="background-color: ${confidenceColor}">
-                            ${deal.confidence}% Match
-                        </span>
-                    </div>
-                </div>
-
-                <div class="product-comparison">
-                    <div class="product-card buy-card">
-                        <div class="product-image">
-                            <img src="${deal.image_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${deal.title}">
-                        </div>
-                        <div class="product-details">
-                            <div class="product-price">${buyPrice}</div>
-                            <div class="product-condition">${deal.buyCondition || 'New'}</div>
-                            <a href="${deal.buyLink}" target="_blank" class="product-btn buy-btn">
-                                <i class="fas fa-shopping-cart"></i> Buy Product
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="profit-details">
-                        <div class="profit-card">
-                            <div class="profit-header">Profit Details</div>
-                            <div class="profit-row">
-                                <span>Cost Price:</span>
-                                <span>${buyPrice}</span>
-                            </div>
-                            <div class="profit-row">
-                                <span>Est. Tax (8%):</span>
-                                <span>+$${estimatedTax.toFixed(2)}</span>
-                            </div>
-                            <div class="profit-row">
-                                <span>Est. Shipping:</span>
-                                <span>+$${estimatedShipping.toFixed(2)}</span>
-                            </div>
-                            <div class="profit-row">
-                                <span>Selling Price:</span>
-                                <span>${sellPrice}</span>
-                            </div>
-                            <div class="profit-total">
-                                <span>Net Profit:</span>
-                                <span>${formattedNetProfit}</span>
-                            </div>
-                            <div class="profit-roi">
-                                <span>ROI:</span>
-                                <span>${Math.round(netProfitPercentage)}%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="product-card sell-card">
-                        <div class="product-image">
-                            <img src="${deal.image_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${deal.title}">
-                        </div>
-                        <div class="product-details">
-                            <div class="product-price">${sellPrice}</div>
-                            <div class="product-condition">${deal.sellCondition || 'New'}</div>
-                            <a href="${deal.sellLink}" target="_blank" class="product-btn sell-btn">
-                                <i class="fas fa-external-link-alt"></i> View Listing
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="opportunity-footer">
-                    <div class="opportunity-category">
-                        <i class="fas fa-tag"></i> ${subcategoryIcon} ${deal.subcategory}
-                    </div>
-                    <div class="opportunity-actions">
-                        <button class="save-btn"><i class="far fa-bookmark"></i> Save</button>
-                        <button class="share-btn"><i class="fas fa-share-alt"></i> Share</button>
-                    </div>
-                </div>
-            `;
-            
-            dealList.appendChild(card);
-            
-            // Add save functionality
-            const saveBtn = card.querySelector('.save-btn');
-            saveBtn.addEventListener('click', function() {
-                const bookmarkIcon = this.querySelector('i');
-                if (bookmarkIcon.classList.contains('far')) {
-                    bookmarkIcon.classList.replace('far', 'fas');
-                    showAlert('Opportunity saved!');
-                } else {
-                    bookmarkIcon.classList.replace('fas', 'far');
-                    showAlert('Opportunity removed from saved items');
-                }
-            });
-            
-            // Add share functionality
-            const shareBtn = card.querySelector('.share-btn');
-            shareBtn.addEventListener('click', function() {
-                if (navigator.share) {
-                    navigator.share({
-                        title: 'FlipHawk Resale Opportunity',
-                        text: `Check out this profit opportunity: ${deal.title} - Buy: ${buyPrice}, Sell: ${sellPrice}, Profit: ${profit}`,
-                        url: window.location.href
-                    })
-                    .catch(() => showAlert('Copied to clipboard!'));
-                } else {
-                    // Fallback to copy to clipboard
-                    const shareText = `Resale opportunity: ${deal.title} - Buy: ${buyPrice}, Sell: ${sellPrice}, Profit: ${profit}`;
-                    
-                    // Create temporary textarea for copy
-                    const el = document.createElement('textarea');
-                    el.value = shareText;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    
-                    showAlert('Copied to clipboard!');
-                }
-            });
-        });
-    }
-    
-    // Get confidence color based on score
-    function getConfidenceColor(confidence) {
-        if (confidence >= 90) return "#4CAF50"; // Green
-        if (confidence >= 80) return "#8BC34A"; // Light Green
-        if (confidence >= 70) return "#FFC107"; // Amber
-        return "#FF5722"; // Deep Orange
-    }
-    
-    // Get icon for subcategory
-    function getSubcategoryIcon(subcategory) {
-        return subcategoryIcons[subcategory] || subcategoryIcons['default'];
-    }
-    
-    // Reset results area
-    function resetResults() {
-        resultsTitle.style.display = 'none';
-        filterOptions.style.display = 'none';
-        dealList.innerHTML = '';
-        noResultsMessage.style.display = 'none';
-    }
-    
-    // Start loading animation
-    function startLoading(subcategories) {
-        loadingIndicator.style.display = 'block';
-        loadingMessage.textContent = `Scanning marketplaces for ${subcategories.join(', ')} opportunities...`;
-        
-        // Reset and animate progress bar
-        progressFill.style.width = '0%';
-        setTimeout(() => {
-            progressFill.style.width = '95%';
-        }, 100);
-    }
-    
-    // Stop loading animation
-    function stopLoading() {
-        // Keep the loading indicator visible but update the message
-        loadingMessage.textContent = "Processing results...";
-        progressFill.style.width = '100%';
-        
-        // Hide loading after a delay
-        setTimeout(() => {
-            loadingIndicator.style.display = 'none';
-        }, 1000);
-    }
-    
-    // Show alert message
-    function showAlert(message) {
-        const alert = document.createElement('div');
-        alert.className = 'alert';
-        alert.innerHTML = `
-            <div class="alert-content">
-                <i class="fas fa-info-circle"></i>
-                <span>${message}</span>
-                <button class="alert-close">&times;</button>
+    return (
+      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-semibold line-clamp-2">{opportunity.title}</h3>
+            <span 
+              className="px-3 py-1 rounded-full text-sm font-medium text-white"
+              style={{ backgroundColor: getConfidenceColor(opportunity.confidence) }}
+            >
+              {opportunity.confidence}% Match
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <p className="text-sm text-gray-500">Buy Price</p>
+              <p className="text-lg font-semibold text-gray-900">${opportunity.buyPrice.toFixed(2)}</p>
             </div>
-        `;
-        
-        document.body.appendChild(alert);
-        
-        // Add remove functionality
-        alert.querySelector('.alert-close').addEventListener('click', function() {
-            document.body.removeChild(alert);
-        });
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (document.body.contains(alert)) {
-                document.body.removeChild(alert);
-            }
-        }, 5000);
-    }
-    
-    // Show error message
-    function showError(message) {
-        const alert = document.createElement('div');
-        alert.className = 'alert error';
-        alert.innerHTML = `
-            <div class="alert-content">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>${message}</span>
-                <button class="alert-close">&times;</button>
+            <div>
+              <p className="text-sm text-gray-500">Sell Price</p>
+              <p className="text-lg font-semibold text-gray-900">${opportunity.sellPrice.toFixed(2)}</p>
             </div>
-        `;
+          </div>
+          
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm text-gray-500">Net Profit</p>
+              <p className={`text-xl font-bold ${profitColor}`}>
+                ${opportunity.netProfit.toFixed(2)} ({opportunity.netProfitPercentage.toFixed(1)}%)
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              {opportunity.profitPercentage > 0 ? (
+                <ArrowUpRight className="w-5 h-5 text-green-500" />
+              ) : (
+                <ArrowDownRight className="w-5 h-5 text-red-500" />
+              )}
+            </div>
+          </div>
+          
+          <div className="flex space-x-3">
+            <a 
+              href={opportunity.buyLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md text-center hover:bg-green-700 transition-colors"
+            >
+              View Buy Listing
+            </a>
+            <a 
+              href={opportunity.sellLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-center hover:bg-blue-700 transition-colors"
+            >
+              View Sell Listing
+            </a>
+          </div>
+          
+          <div className="mt-4 flex justify-between items-center">
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => saveOpportunity(opportunity)}
+                className="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-full"
+              >
+                <Save className="w-5 h-5" />
+              </button>
+              <button 
+                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
+            <span className="text-sm text-gray-500">
+              {opportunity.subcategory}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const ScannerView = () => {
+    const { Search } = icons;
+    
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-2xl font-bold mb-4">Find Arbitrage Opportunities</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setSelectedSubcategories([]);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="">Select a category</option>
+                {Object.keys(categories).map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+            
+            {selectedCategory && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subcategories (select up to 5)
+                </label>
+                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border border-gray-200 rounded-md">
+                  {categories[selectedCategory].map(subcategory => (
+                    <label key={subcategory} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded">
+                      <input
+                        type="checkbox"
+                        checked={selectedSubcategories.includes(subcategory)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            if (selectedSubcategories.length < 5) {
+                              setSelectedSubcategories([...selectedSubcategories, subcategory]);
+                            }
+                          } else {
+                            setSelectedSubcategories(selectedSubcategories.filter(item => item !== subcategory));
+                          }
+                        }}
+                        disabled={selectedSubcategories.length >= 5 && !selectedSubcategories.includes(subcategory)}
+                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-sm">{subcategory}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <button
+            onClick={runScan}
+            disabled={isLoading || !selectedCategory || selectedSubcategories.length === 0}
+            className={`mt-6 w-full py-3 px-4 rounded-md text-white font-medium flex items-center justify-center ${
+              isLoading || !selectedCategory || selectedSubcategories.length === 0
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                Scanning...
+              </>
+            ) : (
+              <>
+                <Search className="w-5 h-5 mr-2" />
+                Find Opportunities
+              </>
+            )}
+          </button>
+        </div>
         
-        document.body.appendChild(alert);
+        {scanResults.length > 0 && (
+          <div className="mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h3 className="text-lg font-semibold">Filter Results</h3>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm text-gray-600">Min Profit:</label>
+                    <input
+                      type="number"
+                      value={filters.minProfit}
+                      onChange={(e) => setFilters(prev => ({ ...prev, minProfit: Number(e.target.value) }))}
+                      className="w-24 px-2 py-1 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm text-gray-600">Min Confidence:</label>
+                    <select
+                      value={filters.minConfidence}
+                      onChange={(e) => setFilters(prev => ({ ...prev, minConfidence: Number(e.target.value) }))}
+                      className="px-2 py-1 border border-gray-300 rounded-md"
+                    >
+                      <option value="0">All</option>
+                      <option value="70">70%+</option>
+                      <option value="80">80%+</option>
+                      <option value="90">90%+</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm text-gray-600">Sort by:</label>
+                    <select
+                      value={filters.sortBy}
+                      onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
+                      className="px-2 py-1 border border-gray-300 rounded-md"
+                    >
+                      <option value="profitPercentage">Profit %</option>
+                      <option value="profit">Profit $</option>
+                      <option value="confidence">Confidence</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredResults.map((opportunity, index) => (
+                <OpportunityCard key={index} opportunity={opportunity} />
+              ))}
+            </div>
+            
+            {filteredResults.length === 0 && (
+              <div className="text-center py-8 bg-white rounded-lg shadow-md">
+                <p className="text-gray-500">No opportunities match your filters</p>
+              </div>
+            )}
+          </div>
+        )}
         
-        // Add remove functionality
-        alert.querySelector('.alert-close').addEventListener('click', function() {
-            document.body.removeChild(alert);
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const DashboardView = () => {
+    const { Search, CheckCircle, Clock } = icons;
+    
+    return (
+      <div className="max-w-6xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6">Performance Dashboard</h2>
+        
+        {stats ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Total Scans</h3>
+                <Search className="w-6 h-6 text-green-500" />
+              </div>
+              <p className="text-3xl font-bold">{stats.total_scans}</p>
+              <p className="text-sm text-gray-500 mt-2">All time</p>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Success Rate</h3>
+                <CheckCircle className="w-6 h-6 text-green-500" />
+              </div>
+              <p className="text-3xl font-bold">{stats.success_rate}%</p>
+              <p className="text-sm text-gray-500 mt-2">Successful scans</p>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Avg Scan Time</h3>
+                <Clock className="w-6 h-6 text-green-500" />
+              </div>
+              <p className="text-3xl font-bold">{stats.avg_scan_duration.toFixed(2)}s</p>
+              <p className="text-sm text-gray-500 mt-2">Per scan</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+          </div>
+        )}
+        
+        {stats && stats.top_categories && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4">Top Categories</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.top_categories}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#22c55e" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <NavBar />
+      <NotificationPanel />
+      
+      <main className="container mx-auto px-4 py-8">
+        {view === 'scan' && <ScannerView />}
+        {view === 'dashboard' && <DashboardView />}
+        {view === 'saved' && (
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6">Saved Opportunities</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {savedOpportunities.map((saved, index) => (
+                <OpportunityCard key={index} opportunity={saved.opportunity} />
+              ))}
+            </div>
+            {savedOpportunities.length === 0 && (
+              <div className="text-center py-8 bg-white rounded-lg shadow-md">
+                <p className="text-gray-500">No saved opportunities yet</p>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+// Render the application
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  React.createElement(React.StrictMode, null,
+    React.createElement(FlipHawkUI)
+  )
+);
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('Service Worker registered:', registration);
+      })
+      .catch(error => {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+}
+
+// Performance monitoring
+if (window.performance) {
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const timing = window.performance.timing;
+      const loadTime = timing.loadEventEnd - timing.navigationStart;
+      console.log(`Page load time: ${loadTime}ms`);
+      
+      // Send metrics to analytics
+      if (window.gtag) {
+        gtag('event', 'timing_complete', {
+          'name': 'load',
+          'value': loadTime,
+          'event_category': 'Performance'
         });
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (document.body.contains(alert)) {
-                document.body.removeChild(alert);
-            }
-        }, 5000);
+      }
+    }, 0);
+  });
+}
+// FlipHawk Enhanced React Application
+const { useState, useEffect, useCallback } = React;
+const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } = Recharts;
+
+// Icon components from Lucide React
+const icons = {
+  AlertCircle: lucide.AlertCircle,
+  TrendingUp: lucide.TrendingUp,
+  DollarSign: lucide.DollarSign,
+  Package: lucide.Package,
+  Clock: lucide.Clock,
+  CheckCircle: lucide.CheckCircle,
+  XCircle: lucide.XCircle,
+  Search: lucide.Search,
+  Filter: lucide.Filter,
+  ArrowUpRight: lucide.ArrowUpRight,
+  ArrowDownRight: lucide.ArrowDownRight,
+  Save: lucide.Save,
+  Share2: lucide.Share2,
+  Bell: lucide.Bell,
+  Settings: lucide.Settings,
+  LogOut: lucide.LogOut,
+  Menu: lucide.Menu,
+  X: lucide.X,
+  ChevronDown: lucide.ChevronDown,
+  ChevronUp: lucide.ChevronUp
+};
+
+const FlipHawkUI = () => {
+  // State management
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubcategories, setSelectedSubcategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [scanResults, setScanResults] = useState([]);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    minProfit: 0,
+    minConfidence: 0,
+    sortBy: 'profitPercentage'
+  });
+  const [stats, setStats] = useState(null);
+  const [savedOpportunities, setSavedOpportunities] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [view, setView] = useState('scan');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  
+  // Categories and subcategories data
+  const categories = {
+    "Tech": [
+      "Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops",
+      "Monitors", "SSDs", "Routers", "Vintage Tech"
+    ],
+    "Collectibles": [
+      "Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards",
+      "Comic Books", "Action Figures", "LEGO Sets"
+    ],
+    "Vintage Clothing": [
+      "Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets",
+      "Designer Brands", "Carhartt", "Patagonia"
+    ],
+    "Antiques": [
+      "Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records",
+      "Vintage Tools", "Old Maps", "Antique Toys"
+    ],
+    "Gaming": [
+      "Consoles", "Game Controllers", "Rare Games", "Arcade Machines",
+      "Handhelds", "Gaming Headsets", "VR Gear"
+    ],
+    "Music Gear": [
+      "Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps",
+      "Microphones", "DJ Equipment"
+    ],
+    "Tools & DIY": [
+      "Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes",
+      "Measuring Devices", "Woodworking Tools"
+    ],
+    "Outdoors & Sports": [
+      "Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear",
+      "Fishing Gear", "Snowboards"
+    ]
+  };
+
+  // Fetch stats on component mount
+  useEffect(() => {
+    fetchStats();
+    loadSavedOpportunities();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/v1/stats');
+      const data = await response.json();
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     }
-    
-    // Add filtering functionality
-    sortOptions.addEventListener('change', function() {
-        const sortValue = this.value;
-        const confidenceLevel = parseInt(confidenceFilter.value);
-        
-        // Get all cards
-        const cards = Array.from(dealList.querySelectorAll('.opportunity-card'));
-        
-        // Sort the cards based on selected option
-        cards.sort((a, b) => {
-            if (sortValue === 'profit') {
-                const profitA = parseFloat(a.querySelector('.profit-total span:last-child').textContent.replace(/[^0-9.-]+/g, ''));
-                const profitB = parseFloat(b.querySelector('.profit-total span:last-child').textContent.replace(/[^0-9.-]+/g, ''));
-                return profitB - profitA;
-            } else if (sortValue === 'roi') {
-                const roiA = parseInt(a.querySelector('.profit-roi span:last-child').textContent);
-                const roiB = parseInt(b.querySelector('.profit-roi span:last-child').textContent);
-                return roiB - roiA;
-            } else if (sortValue === 'confidence') {
-                const confA = parseInt(a.querySelector('.confidence-badge').textContent);
-                const confB = parseInt(b.querySelector('.confidence-badge').textContent);
-                return confB - confA;
-            } else if (sortValue === 'price') {
-                const priceA = parseFloat(a.querySelector('.buy-card .product-price').textContent.replace(/[^0-9.-]+/g, ''));
-                const priceB = parseFloat(b.querySelector('.buy-card .product-price').textContent.replace(/[^0-9.-]+/g, ''));
-                return priceA - priceB;
-            }
-            return 0;
-        });
-        
-        // Filter by confidence level if needed
-        const filteredCards = confidenceLevel > 0 
-            ? cards.filter(card => {
-                const confidence = parseInt(card.querySelector('.confidence-badge').textContent);
-                return confidence >= confidenceLevel;
-              })
-            : cards;
-        
-        // Clear the current cards
-        dealList.innerHTML = '';
-        
-        // Add back the sorted/filtered cards
-        filteredCards.forEach(card => dealList.appendChild(card));
-        
-        // Show no results message if all cards are filtered out
-        if (filteredCards.length === 0) {
-            const noResults = document.createElement('div');
-            noResults.className = 'no-filtered-results';
-            noResults.innerHTML = '<p>No results match your filter criteria</p>';
-            dealList.appendChild(noResults);
-        }
+  };
+
+  const loadSavedOpportunities = async () => {
+    try {
+      const response = await fetch('/api/v1/my_opportunities');
+      const data = await response.json();
+      setSavedOpportunities(data);
+    } catch (error) {
+      console.error('Error loading saved opportunities:', error);
+    }
+  };
+
+  const runScan = async () => {
+    if (!selectedCategory || selectedSubcategories.length === 0) {
+      setError('Please select a category and at least one subcategory');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setScanResults([]);
+
+    try {
+      const response = await fetch('/api/v1/scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category: selectedCategory,
+          subcategories: selectedSubcategories
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Scan failed');
+      }
+
+      const data = await response.json();
+      setScanResults(data);
+      
+      // Add notification for completed scan
+      addNotification('Scan completed successfully', 'success');
+      
+    } catch (error) {
+      setError('Failed to run scan. Please try again.');
+      addNotification('Scan failed', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveOpportunity = async (opportunity) => {
+    try {
+      const response = await fetch('/api/v1/save_opportunity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ opportunity })
+      });
+
+      if (response.ok) {
+        addNotification('Opportunity saved successfully', 'success');
+        loadSavedOpportunities();
+      }
+    } catch (error) {
+      addNotification('Failed to save opportunity', 'error');
+    }
+  };
+
+  const addNotification = (message, type) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+    }, 5000);
+  };
+
+  const filteredResults = scanResults
+    .filter(result => result.profit >= filters.minProfit)
+    .filter(result => result.confidence >= filters.minConfidence)
+    .sort((a, b) => {
+      if (filters.sortBy === 'profitPercentage') {
+        return b.profitPercentage - a.profitPercentage;
+      } else if (filters.sortBy === 'profit') {
+        return b.profit - a.profit;
+      } else if (filters.sortBy === 'confidence') {
+        return b.confidence - a.confidence;
+      }
+      return 0;
     });
+
+  const getConfidenceColor = (confidence) => {
+    if (confidence >= 90) return '#22c55e';
+    if (confidence >= 80) return '#84cc16';
+    if (confidence >= 70) return '#eab308';
+    return '#ef4444';
+  };
+
+  // Components
+  const NavBar = () => {
+    const { Bell, Settings, Menu, X } = icons;
     
-    confidenceFilter.addEventListener('change', function() {
-        // Trigger the sort function which also handles filtering
-        sortOptions.dispatchEvent(new Event('change'));
-    });
-});
+    return (
+      <nav className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center">
+              <img src="/static/logo.png" alt="FlipHawk" className="h-10 w-auto" />
+            </div>
+            
+            <div className="hidden md:flex items-center space-x-6">
+              <button 
+                onClick={() => setView('scan')}
+                className={`px-3 py-2 rounded-md ${view === 'scan' ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}
+              >
+                Scanner
+              </button>
+              <button 
+                onClick={() => setView('dashboard')}
+                className={`px-3 py-2 rounded-md ${view === 'dashboard' ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}
+              >
+                Dashboard
+              </button>
+              <button 
+                onClick={() => setView('saved')}
+                className={`px-3 py-2 rounded-md ${view === 'saved' ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}
+              >
+                Saved
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+            >
+              <Bell className="w-5 h-5" />
+              {notifications.length > 0 && (
+                <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+            
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            
+            <button className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-full" onClick={() => setShowMobileMenu(!showMobileMenu)}>
+              {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+        
+        {/* Mobile menu */}
+        {showMobileMenu && (
+          <div className="md:hidden mt-3 border-t border-gray-200 pt-3">
+            <button 
+              onClick={() => { setView('scan'); setShowMobileMenu(false); }}
+              className={`block w-full text-left px-3 py-2 rounded-md ${view === 'scan' ? 'bg-green-50 text-green-700' : 'text-gray-600'}`}
+            >
+              Scanner
+            </button>
+            <button 
+              onClick={() => { setView('dashboard'); setShowMobileMenu(false); }}
+              className={`block w-full text-left px-3 py-2 rounded-md ${view === 'dashboard' ? 'bg-green-50 text-green-700' : 'text-gray-600'}`}
+            >
+              Dashboard
+            </button>
+            <button 
+              onClick={() => { setView('saved'); setShowMobileMenu(false); }}
+              className={`block w-full text-left px-3 py-2 rounded-md ${view === 'saved' ? 'bg-green-50 text-green-700' : 'text-gray-600'}`}
+            >
+              Saved
+            </button>
+          </div>
+        )}
+      </nav>
+    );
+  };
+
+  const NotificationPanel = () => {
+    const { CheckCircle, XCircle, AlertCircle } = icons;
+    
+    return showNotifications && (
+      <div className="absolute right-4 top-16 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+        <div className="p-4 border-b border-gray-200">
+          <h3 className="font-semibold">Notifications</h3>
+        </div>
+        <div className="max-h-96 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">No notifications</div>
+          ) : (
+            notifications.map(notif => (
+              <div 
+                key={notif.id} 
+                className={`p-4 border-b border-gray-100 flex items-start ${
+                  notif.type === 'success' ? 'bg-green-50' : 
+                  notif.type === 'error' ? 'bg-red-50' : 
+                  'bg-blue-50'
+                }`}
+              >
+                {notif.type === 'success' ? (
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                ) : notif.type === 'error' ? (
+                  <XCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" />
+                )}
+                <span className="text-sm">{notif.message}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Continue with other components...
+  
+  // (I'll continue in the next response due to length limits)
