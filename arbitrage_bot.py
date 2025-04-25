@@ -137,21 +137,23 @@ class Scraper:
             f"https://www.ebay.com/sch/i.html?_nkw={encoded_keyword}",
             f"_sop={sort_param}",
             "LH_BIN=1",  # Buy It Now only
-            "LH_ItemCondition=1000|1500|2000",  # New and Like New conditions only
-            "LH_PrefLoc=1",  # US only
+            "LH_ItemCondition=1000|1500|2000|2500|3000",  # New, Like New, Very Good, Good, Acceptable
             "rt=nc",  # Non-category specific search
             "_ipg=200"  # 200 items per page
         ]
         
-        if min_price:
-            url_parts.append(f"_udlo={min_price}")
-        if max_price:
-            url_parts.append(f"_udhi={max_price}")
+        # Add price filters based on sort order
+        if sort == "price_asc":
+            url_parts.append("_udhi=500")  # Max price $500 for low-priced items
+        else:
+            url_parts.append("_udlo=100")  # Min price $100 for high-priced items
         
         url = "&".join(url_parts)
+        logger.info(f"Searching eBay with URL: {url}")
         
         html = await self.fetch_page(url)
         if not html:
+            logger.error(f"No HTML returned for URL: {url}")
             return []
         
         soup = BeautifulSoup(html, 'html.parser')
@@ -159,16 +161,18 @@ class Scraper:
         
         # Find all search result items
         items = soup.select('li.s-item')
+        logger.info(f"Found {len(items)} items on eBay for keyword: {keyword}")
         
-        for item in items[:50]:  # Increased limit for better matching
+        for item in items[:30]:  # Process first 30 items
             try:
                 listing = self._parse_ebay_item(item)
-                if listing:
+                if listing and listing.price > 0:  # Ensure we have valid listings
                     listings.append(listing)
             except Exception as e:
                 logger.error(f"Error parsing eBay item: {str(e)}")
                 continue
         
+        logger.info(f"Successfully parsed {len(listings)} listings for keyword: {keyword}")
         return listings
     
     def _parse_ebay_item(self, item) -> Optional[Listing]:
@@ -357,8 +361,8 @@ class ArbitrageAnalyzer:
         return final_similarity
     
     def find_opportunities(self, low_priced: List[Listing], high_priced: List[Listing], 
-                           min_profit: float = 15.0, min_profit_percent: float = 25.0) -> List[Dict[str, Any]]:
-        """Find arbitrage opportunities with stricter matching criteria."""
+                           min_profit: float = 10.0, min_profit_percent: float = 20.0) -> List[Dict[str, Any]]:
+        """Find arbitrage opportunities with more lenient matching criteria."""
         opportunities = []
         
         for low in low_priced:
@@ -367,10 +371,10 @@ class ArbitrageAnalyzer:
                 if low.link == high.link:
                     continue
                 
-                # Calculate similarity with higher threshold
+                # Calculate similarity with more lenient threshold
                 similarity = self.calculate_similarity(low.normalized_title, high.normalized_title)
                 
-                if similarity >= 0.85:  # Increased threshold for stricter matching
+                if similarity >= 0.7:  # Lowered threshold for more matches
                     # Calculate profit metrics
                     buy_price = low.price + low.shipping_cost
                     sell_price = high.price
@@ -386,8 +390,8 @@ class ArbitrageAnalyzer:
                         low, high, similarity, profit_percentage
                     )
                     
-                    # Only include high-confidence matches
-                    if confidence >= 75:
+                    # Include more matches with varying confidence levels
+                    if confidence >= 60:
                         opportunity = {
                             'title': low.title,
                             'buyPrice': buy_price,
@@ -801,17 +805,22 @@ async def process_subcategory(subcategory: str, scraper: Scraper, analyzer: Arbi
     keywords = keyword_gen.generate_keywords(subcategory)
     all_opportunities = []
     
-    for keyword in keywords[:10]:  # Process top 10 keywords for better coverage
+    # Process only the top 5 most relevant keywords for speed
+    for keyword in keywords[:5]:
         logger.info(f"Searching for: {keyword}")
         
         try:
             # Fetch listings sorted by price (ascending and descending)
             low_priced = await scraper.search_ebay(keyword, sort="price_asc")
-            await asyncio.sleep(1.5)  # Rate limiting
+            await asyncio.sleep(1.0)  # Rate limiting
             high_priced = await scraper.search_ebay(keyword, sort="price_desc")
+            
+            logger.info(f"Found {len(low_priced)} low-priced and {len(high_priced)} high-priced listings for {keyword}")
             
             if low_priced and high_priced:
                 opportunities = analyzer.find_opportunities(low_priced, high_priced)
+                logger.info(f"Found {len(opportunities)} opportunities for {keyword}")
+                
                 for opp in opportunities:
                     opp['subcategory'] = subcategory
                     opp['keyword'] = keyword
