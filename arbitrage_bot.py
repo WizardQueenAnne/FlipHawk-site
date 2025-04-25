@@ -1,5 +1,3 @@
-# arbitrage_bot.py - Enhanced FlipHawk Scraper
-
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
@@ -478,7 +476,7 @@ class KeywordGenerator:
                                 "vintage computer", "old tech", "retro tech", "antique tech", 
                                 "legacy tech", "obsolete tech"]
             },
-            # Add more categories with comprehensive keywords...
+            # Add more categories...
         }
     
     def _load_typo_patterns(self) -> Dict[str, List[str]]:
@@ -502,7 +500,7 @@ class KeywordGenerator:
         
         # Add common variations
         variations = []
-        for keyword in keywords[:]:  # Copy to avoid modifying while iterating
+        for keyword in keywords[:]:
             # Singular/plural
             if keyword.endswith('s') and len(keyword) > 3:
                 variations.append(keyword[:-1])
@@ -525,7 +523,7 @@ class KeywordGenerator:
                             variations.append(keyword[:i] + char + keyword[i:])
         
         keywords.extend(variations)
-        return list(set(keywords))  # Remove duplicates
+        return list(set(keywords))
 
 async def process_subcategory(subcategory: str, scraper: Scraper, analyzer: ArbitrageAnalyzer, 
                               keyword_gen: KeywordGenerator) -> List[Dict[str, Any]]:
@@ -628,16 +626,62 @@ def generate_simulated_opportunities(subcategories: List[str]) -> List[Dict[str,
     simulated = []
     
     product_templates = {
-        # Add realistic product templates for each category...
-        # (Using the existing templates from the original code)
+        "Laptops": [
+            {"name": "Dell XPS 13 9310 13.4 inch FHD+ Laptop", "low": 699, "high": 999},
+            {"name": "MacBook Air M1 8GB RAM 256GB SSD", "low": 749, "high": 999},
+            {"name": "Lenovo ThinkPad X1 Carbon Gen 9", "low": 899, "high": 1349}
+        ],
+        "Headphones": [
+            {"name": "Sony WH-1000XM4 Wireless Noise Cancelling", "low": 249, "high": 349},
+            {"name": "Apple AirPods Pro with MagSafe Case", "low": 169, "high": 249},
+            {"name": "Bose QuietComfort 45 Noise Cancelling", "low": 229, "high": 329}
+        ],
+        "Graphics Cards": [
+            {"name": "NVIDIA GeForce RTX 4070 Graphics Card", "low": 549, "high": 699},
+            {"name": "AMD Radeon RX 7900 XT GPU", "low": 699, "high": 899},
+            {"name": "NVIDIA GeForce RTX 3060 Ti", "low": 299, "high": 399}
+        ]
     }
     
-    # Generate opportunities for the subcategories
-    for subcategory in subcategories:
-        # Use existing logic to generate simulated opportunities
-        pass
+    # Default products if category not found
+    default_products = [
+        {"name": "Premium Product Item", "low": 99, "high": 149},
+        {"name": "High-Quality Device", "low": 199, "high": 299},
+        {"name": "Professional Equipment", "low": 299, "high": 449}
+    ]
     
-    return simulated
+    for subcategory in subcategories:
+        templates = product_templates.get(subcategory, default_products)
+        
+        for _ in range(random.randint(2, 4)):
+            template = random.choice(templates)
+            
+            buy_price = template["low"] * random.uniform(0.9, 1.1)
+            sell_price = template["high"] * random.uniform(0.9, 1.1)
+            
+            profit = sell_price - buy_price
+            profit_percentage = (profit / buy_price) * 100
+            
+            confidence = random.randint(75, 95)
+            
+            opportunity = {
+                "title": template["name"],
+                "buyPrice": round(buy_price, 2),
+                "sellPrice": round(sell_price, 2),
+                "buyLink": f"https://www.ebay.com/sch/i.html?_nkw={template['name'].replace(' ', '+')}",
+                "sellLink": f"https://www.ebay.com/sch/i.html?_nkw={template['name'].replace(' ', '+')}&_sop=16",
+                "profit": round(profit, 2),
+                "profitPercentage": round(profit_percentage, 2),
+                "confidence": confidence,
+                "subcategory": subcategory,
+                "keyword": subcategory,
+                "image_url": "https://via.placeholder.com/300x200",
+                "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            simulated.append(opportunity)
+    
+    return sorted(simulated, key=lambda x: -x["profitPercentage"])[:20]
 
 if __name__ == "__main__":
     # Test the arbitrage scanner
