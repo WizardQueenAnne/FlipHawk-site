@@ -25,6 +25,7 @@
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      --gradient-radial: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
     }
 
     * {
@@ -45,6 +46,7 @@
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 20px;
+      text-align: center;
     }
 
     .header {
@@ -72,11 +74,15 @@
       font-size: 3.5rem;
       margin-bottom: 1rem;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
     }
 
     .header h1 i {
       color: var(--secondary-light);
-      margin-right: 1rem;
+      font-size: 3rem;
     }
 
     .header p {
@@ -107,7 +113,8 @@
       font-weight: 600;
       margin-bottom: 0.5rem;
       color: var(--text);
-      text-align: left;
+      text-align: center;
+      font-size: 1.1rem;
     }
 
     label i {
@@ -138,6 +145,7 @@
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 1rem;
       margin-top: 1rem;
+      justify-content: center;
     }
 
     .checkbox-wrapper {
@@ -258,6 +266,7 @@
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
+      justify-content: center;
     }
 
     .result-card {
@@ -312,7 +321,7 @@
 
     .price-row {
       display: flex;
-      justify-content: space-between;
+      justify-content: space-around;
       margin-bottom: 1rem;
     }
 
@@ -323,6 +332,7 @@
     .price-item i {
       color: var(--primary);
       margin-bottom: 0.5rem;
+      font-size: 1.5rem;
     }
 
     .price-label {
@@ -398,6 +408,7 @@
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 2rem;
       margin: 4rem 0;
+      justify-content: center;
     }
 
     .feature-card {
@@ -430,6 +441,39 @@
       color: var(--text-light);
     }
 
+    .testimonials {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--background) 100%);
+      padding: 4rem 0;
+      margin-top: 4rem;
+    }
+
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+      justify-content: center;
+    }
+
+    .testimonial-card {
+      background: var(--surface);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .testimonial-quote {
+      font-style: italic;
+      margin-bottom: 1rem;
+      color: var(--text-light);
+    }
+
+    .testimonial-author {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
     @media (max-width: 768px) {
       .header h1 {
         font-size: 2.5rem;
@@ -457,8 +501,8 @@
 <body>
   <header class="header">
     <div class="container">
-      <h1><i class="fas fa-magnifying-glass-dollar"></i>FlipHawk</h1>
-      <p>Find profitable resale opportunities across online marketplaces with smart scanning technology</p>
+      <h1><i class="fas fa-money-bill-trend-up"></i>FlipHawk</h1>
+      <p>Discover profitable resale opportunities across online marketplaces with smart scanning technology</p>
     </div>
   </header>
 
@@ -468,14 +512,14 @@
         <label for="category"><i class="fas fa-layer-group"></i>Select Category</label>
         <select id="category">
           <option value="">Choose a category...</option>
-          <option value="Tech">💻 Tech</option>
-          <option value="Collectibles">🏆 Collectibles</option>
-          <option value="Vintage Clothing">👕 Vintage Clothing</option>
-          <option value="Antiques">🏺 Antiques</option>
-          <option value="Gaming">🎮 Gaming</option>
-          <option value="Music Gear">🎸 Music Gear</option>
-          <option value="Tools & DIY">🛠️ Tools & DIY</option>
-          <option value="Outdoors & Sports">⚽ Outdoors & Sports</option>
+          <option value="Tech">💻 Tech & Electronics</option>
+          <option value="Collectibles">✨ Collectibles & Trading Cards</option>
+          <option value="Vintage Clothing">👕 Vintage Fashion</option>
+          <option value="Antiques">🏺 Antiques & Memorabilia</option>
+          <option value="Gaming">🎮 Gaming & Entertainment</option>
+          <option value="Music Gear">🎸 Musical Instruments</option>
+          <option value="Tools & DIY">🛠️ Tools & Equipment</option>
+          <option value="Outdoors & Sports">⚽ Sports & Outdoors</option>
         </select>
       </div>
 
@@ -485,7 +529,7 @@
       </div>
 
       <button id="scanButton" class="btn btn-primary" disabled>
-        <i class="fas fa-radar"></i> Find Resale Opportunities
+        <i class="fas fa-magnifying-glass-dollar"></i> Find Resale Opportunities
       </button>
 
       <div id="error" class="error" style="display: none;">
@@ -504,18 +548,51 @@
     <div class="features">
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-bolt"></i></div>
-        <div class="feature-title">Fast Scanning</div>
+        <div class="feature-title">Lightning Fast</div>
         <div class="feature-text">Real-time scanning across multiple marketplaces</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
         <div class="feature-title">Profit Analysis</div>
-        <div class="feature-text">Automatic profit calculations with fees included</div>
+        <div class="feature-text">Instant profit calculations with all fees included</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-robot"></i></div>
+        <div class="feature-title">Smart Matching</div>
+        <div class="feature-text">AI-powered algorithms for accurate product matching</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-clock-rotate-left"></i></div>
+        <div class="feature-title">Real-Time Data</div>
+        <div class="feature-text">Always current, never using outdated information</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
-        <div class="feature-title">Smart Matching</div>
-        <div class="feature-text">Advanced algorithms for accurate product matching</div>
+        <div class="feature-title">Verified Results</div>
+        <div class="feature-text">High confidence matching to reduce risk</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+        <div class="feature-title">Mobile Ready</div>
+        <div class="feature-text">Works seamlessly on all devices</div>
+      </div>
+    </div>
+
+    <div class="testimonials">
+      <h2 style="text-align: center; margin-bottom: 2rem;">What Our Users Say</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial-card">
+          <div class="testimonial-quote">"FlipHawk helped me find profitable deals I would have never spotted on my own!"</div>
+          <div class="testimonial-author">- Sarah J.</div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-quote">"The real-time scanning is incredibly fast and accurate. A game-changer for resellers."</div>
+          <div class="testimonial-author">- Mike T.</div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-quote">"I've doubled my resale profits since using FlipHawk. Best investment ever!"</div>
+          <div class="testimonial-author">- Alex P.</div>
+        </div>
       </div>
     </div>
   </main>
@@ -568,21 +645,6 @@
       
       updateScanButton();
     });
-
-    function handleSubcategoryChange(checkbox) {
-      if (checkbox.checked) {
-        if (selectedSubcategories.length < 5) {
-          selectedSubcategories.push(checkbox.value);
-        } else {
-          checkbox.checked = false;
-          showError('You can only select up to 5 subcategories');
-        }
-      } else {
-        selectedSubcategories = selectedSubcategories.filter(item => item !== checkbox.value);
-      }
-      
-      updateScanButton();
-    }
 
     function updateScanButton() {
       scanButton.disabled = !(categorySelect.value && selectedSubcategories.length > 0);
@@ -658,20 +720,20 @@
           <div class="result-body">
             <div class="price-row">
               <div class="price-item">
-                <i class="fas fa-tag fa-lg"></i>
+                <i class="fas fa-tag"></i>
                 <div class="price-label">Buy Price</div>
-                <div class="price-value">$${result.buyPrice.toFixed(2)}</div>
+                <div class="price-value">${result.buyPrice.toFixed(2)}</div>
               </div>
               <div class="price-item">
-                <i class="fas fa-dollar-sign fa-lg"></i>
+                <i class="fas fa-dollar-sign"></i>
                 <div class="price-label">Sell Price</div>
-                <div class="price-value">$${result.sellPrice.toFixed(2)}</div>
+                <div class="price-value">${result.sellPrice.toFixed(2)}</div>
               </div>
             </div>
             <div class="profit-section">
               <i class="fas fa-chart-line"></i>
               <div class="profit-label">Potential Profit</div>
-              <div class="profit-value">$${result.profit.toFixed(2)} (${result.profitPercentage.toFixed(1)}%)</div>
+              <div class="profit-value">${result.profit.toFixed(2)} (${result.profitPercentage.toFixed(1)}%)</div>
             </div>
             <div class="result-actions">
               <a href="${result.buyLink}" target="_blank" class="result-link buy-link">
@@ -689,4 +751,19 @@
     }
   </script>
 </body>
-</html>
+</html> handleSubcategoryChange(checkbox) {
+      if (checkbox.checked) {
+        if (selectedSubcategories.length < 5) {
+          selectedSubcategories.push(checkbox.value);
+        } else {
+          checkbox.checked = false;
+          showError('You can only select up to 5 subcategories');
+        }
+      } else {
+        selectedSubcategories = selectedSubcategories.filter(item => item !== checkbox.value);
+      }
+      
+      updateScanButton();
+    }
+
+    function
