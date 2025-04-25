@@ -67,6 +67,11 @@ def run_scan():
         scan_duration = (end_time - start_time).total_seconds()
         logger.info(f"Scan completed in {scan_duration:.2f} seconds with {len(results)} results")
         
+        # If no results found, return empty array
+        if not results:
+            logger.warning(f"No opportunities found for category: {category}, subcategories: {subcategories}")
+            return jsonify([])
+        
         # Process results to include all necessary data
         processed_results = []
         for result in results:
@@ -99,7 +104,7 @@ def run_scan():
         return jsonify(processed_results)
         
     except Exception as e:
-        logger.error(f"Error processing scan: {str(e)}")
+        logger.error(f"Error processing scan: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 def determine_shipping_cost(item):
