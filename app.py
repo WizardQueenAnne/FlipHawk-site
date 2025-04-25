@@ -48,7 +48,7 @@ def health_check():
 
 @app.route('/api/v1/scan', methods=['POST'])
 def run_scan():
-    """Enhanced scan endpoint for real-time arbitrage detection."""
+    """Enhanced scan endpoint for real-time resale opportunity detection."""
     try:
         data = request.get_json()
         category = data.get('category', '')
