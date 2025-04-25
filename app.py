@@ -1,5 +1,3 @@
-# app.py - Enhanced FlipHawk Backend
-
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 from flask_caching import Cache
