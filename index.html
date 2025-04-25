@@ -258,8 +258,20 @@
       margin: 0 auto 1rem;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background-color: var(--border);
+      border-radius: 4px;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--gradient);
+      transition: width 0.3s ease;
+      border-radius: 4px;
     }
 
     .error {
@@ -572,7 +584,11 @@
 
       <div id="loading" class="loading" style="display: none;">
         <div class="loading-spinner"></div>
-        <p>Scanning marketplaces for profitable resale opportunities...</p>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: 0%;"></div>
+        </div>
+        <p id="loading-status">Scanning marketplaces for profitable resale opportunities...</p>
+        <p id="loading-details" style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.5rem;"></p>
       </div>
     </div>
 
@@ -712,7 +728,33 @@
       resultsDiv.innerHTML = '';
       scanButton.disabled = true;
       
+      // Reset progress bar
+      const progressBar = document.querySelector('.progress-bar');
+      const loadingStatus = document.getElementById('loading-status');
+      const loadingDetails = document.getElementById('loading-details');
+      progressBar.style.width = '0%';
+      
       try {
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          if (progress < 90) {
+            progress += Math.random() * 10;
+            progressBar.style.width = `${Math.min(progress, 90)}%`;
+            
+            if (progress < 30) {
+              loadingStatus.textContent = 'Initializing scan...';
+              loadingDetails.textContent = 'Connecting to marketplace APIs...';
+            } else if (progress < 60) {
+              loadingStatus.textContent = 'Searching listings...';
+              loadingDetails.textContent = `Scanning ${selectedSubcategories.join(', ')}...`;
+            } else {
+              loadingStatus.textContent = 'Analyzing opportunities...';
+              loadingDetails.textContent = 'Comparing prices and calculating profits...';
+            }
+          }
+        }, 500);
+        
         const response = await fetch('/api/v1/scan', {
           method: 'POST',
           headers: {
@@ -724,18 +766,28 @@
           })
         });
         
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        loadingStatus.textContent = 'Scan complete!';
+        loadingDetails.textContent = 'Processing results...';
+        
         if (!response.ok) {
           throw new Error('Scan failed');
         }
         
         const data = await response.json();
-        displayResults(data);
+        setTimeout(() => {
+          displayResults(data);
+        }, 500);
         
       } catch (error) {
         showError('Failed to run scan. Please try again.');
+        console.error('Scan error:', error);
       } finally {
-        loadingDiv.style.display = 'none';
-        updateScanButton();
+        setTimeout(() => {
+          loadingDiv.style.display = 'none';
+          updateScanButton();
+        }, 500);
       }
     });
 
