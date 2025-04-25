@@ -8,7 +8,7 @@
   <!-- Meta Tags -->
   <meta name="description" content="FlipHawk - Find profitable resale opportunities with advanced AI-powered scanning">
   <meta name="keywords" content="arbitrage, resale, flipping, profit, ecommerce, deals">
-  <meta name="theme-color" content="#22c55e">
+  <meta name="theme_color" content="#22c55e">
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="/static/favicon.png">
@@ -42,43 +42,18 @@
   </noscript>
   
   <!-- React and Dependencies -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
   <!-- Icon Library -->
-  <script>
-    // Initialize Lucide icons globally
-    window.lucide = {
-      AlertCircle: function() {},
-      TrendingUp: function() {},
-      DollarSign: function() {},
-      Package: function() {},
-      Clock: function() {},
-      CheckCircle: function() {},
-      XCircle: function() {},
-      Search: function() {},
-      Filter: function() {},
-      ArrowUpRight: function() {},
-      ArrowDownRight: function() {},
-      Save: function() {},
-      Share2: function() {},
-      Bell: function() {},
-      Settings: function() {},
-      LogOut: function() {},
-      Menu: function() {},
-      X: function() {},
-      ChevronDown: function() {},
-      ChevronUp: function() {}
-    };
-  </script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.min.js"></script>
   
   <!-- Charts -->
   <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
   
-  <!-- Main Application -->
-  <script src="/script.js"></script>
+  <!-- Main Application - Note the type="text/babel" -->
+  <script type="text/babel" src="/script.js"></script>
   
   <!-- Service Worker Registration -->
   <script>
