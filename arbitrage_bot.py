@@ -317,7 +317,7 @@ class ArbitrageAnalyzer:
         ]
     
     def calculate_similarity(self, title1: str, title2: str) -> float:
-        """Calculate similarity using multiple methods with stricter matching."""
+        """Calculate similarity using multiple methods with better scoring for exact matches."""
         # Extract model numbers first
         models1 = set()
         models2 = set()
@@ -325,10 +325,6 @@ class ArbitrageAnalyzer:
         for pattern in self.model_patterns:
             models1.update(re.findall(pattern, title1))
             models2.update(re.findall(pattern, title2))
-        
-        # If model numbers don't match at all, return low similarity
-        if models1 and models2 and not models1.intersection(models2):
-            return 0.3
         
         # Basic sequence matching
         sequence_sim = SequenceMatcher(None, title1, title2).ratio()
@@ -340,23 +336,42 @@ class ArbitrageAnalyzer:
         except:
             cosine_sim = 0.0
         
-        # Model number matching
+        # Model number matching - if both have models and they match, boost score significantly
         model_sim = 0.0
         if models1 and models2:
             model_sim = len(models1.intersection(models2)) / len(models1.union(models2))
+            # If we have any model match, it's likely the same product
+            if model_sim > 0:
+                model_sim = min(1.0, model_sim * 1.5)  # Boost model matches
         
-        # Weighted combination with higher threshold
+        # Check for exact substring matches
+        words1 = set(title1.split())
+        words2 = set(title2.split())
+        word_overlap = len(words1.intersection(words2)) / len(words1.union(words2))
+        
+        # If titles are very similar or have significant overlap, boost the score
+        if sequence_sim > 0.8 or word_overlap > 0.7:
+            sequence_sim = min(1.0, sequence_sim * 1.2)
+            word_overlap = min(1.0, word_overlap * 1.2)
+        
+        # Weighted combination with improved scoring
         weights = {
-            'sequence': 0.3,
-            'cosine': 0.3,
-            'model': 0.4  # Increased weight for model matching
+            'sequence': 0.25,
+            'cosine': 0.25,
+            'model': 0.35,  # Higher weight for model matches
+            'word_overlap': 0.15
         }
         
         final_similarity = (
             weights['sequence'] * sequence_sim +
             weights['cosine'] * cosine_sim +
-            weights['model'] * model_sim
+            weights['model'] * model_sim +
+            weights['word_overlap'] * word_overlap
         )
+        
+        # Boost exact matches
+        if sequence_sim > 0.95:
+            final_similarity = min(1.0, final_similarity * 1.1)
         
         return final_similarity
     
@@ -417,14 +432,22 @@ class ArbitrageAnalyzer:
         return opportunities
     
     def _calculate_confidence(self, low: Listing, high: Listing, similarity: float, profit_percentage: float) -> float:
-        """Calculate confidence score with stricter criteria."""
-        # Base confidence from similarity
-        base_confidence = similarity * 100
+        """Calculate confidence score with better criteria for exact matches."""
+        # Base confidence from similarity - boost if high similarity
+        if similarity >= 0.9:
+            base_confidence = 95  # Very high confidence for nearly identical matches
+        elif similarity >= 0.8:
+            base_confidence = 85
+        else:
+            base_confidence = similarity * 100
         
-        # Condition must match exactly for high confidence
+        # Condition penalty - less severe for very high similarity
         condition_penalty = 0
         if low.condition != high.condition:
-            condition_penalty = 15  # Increased penalty
+            if similarity >= 0.9:
+                condition_penalty = 5  # Minor penalty for high similarity matches
+            else:
+                condition_penalty = 10
         
         # Bonus for high profit percentage
         profit_bonus = min(5, profit_percentage / 10)
@@ -432,14 +455,18 @@ class ArbitrageAnalyzer:
         # Bonus for sold count
         sold_bonus = min(5, high.sold_count / 10)
         
-        # Penalty for location mismatch
+        # Penalty for location mismatch - less severe for high similarity
         location_penalty = 0
         if low.location and high.location:
-            if low.location != high.location:
+            if low.location != high.location and similarity < 0.9:
                 location_penalty = 5
         
         # Calculate final confidence
         confidence = base_confidence - condition_penalty + profit_bonus + sold_bonus - location_penalty
+        
+        # Ensure confidence reflects true matches better
+        if similarity >= 0.9 and confidence < 90:
+            confidence = 90  # Minimum 90% confidence for very similar items
         
         return max(0, min(100, confidence))
 
@@ -456,27 +483,37 @@ class KeywordGenerator:
                     "airpods", "airpod", "air pods", "air pod", "apple earbuds", "apple earpods",
                     "airpods pro", "airpods max", "airpods 2", "airpods 3", "airpods pro 2",
                     "airpds", "aripos", "aripods", "apods", "ap pods", "apple airpads",
+                    "airpods 2nd gen", "airpods 3rd gen", "airpods generation", "airpod pros",
+                    "apple airpods pro 2", "airpods pro second generation", "airpods usb-c",
                     
                     # Beats variations
                     "beats", "beats headphones", "beats solo", "beats studio", "beats pro",
                     "beats studio buds", "beats fit pro", "powerbeats", "powerbeats pro",
-                    "beets", "bats headphones", "beatz", "bts headphones",
+                    "beets", "bats headphones", "beatz", "bts headphones", "beat headphones",
+                    "beats solo 3", "beats solo3", "beats studio 3", "beats studio3",
+                    "beats by dre", "beats by dr dre", "beats wireless", "beat earbuds",
                     
                     # Bose variations
                     "bose", "bose headphones", "bose quietcomfort", "bose 700", "bose qc",
                     "bose nc", "bose earbuds", "bose soundsport", "bose qc35", "bose qc45",
-                    "boss headphones", "boze", "bosee", "quiet comfort",
+                    "boss headphones", "boze", "bosee", "quiet comfort", "bose 35 ii",
+                    "bose qc35 ii", "bose qc 45", "bose 700 nc", "bose noise cancelling",
+                    "bose quietcomfort 35", "bose quietcomfort 45", "bose sport earbuds",
                     
                     # Sony variations
                     "sony wh", "sony headphones", "sony wf", "sony xm4", "sony xm5",
-                    "sony wh-1000xm4", "sony wh-1000xm5", "sony wf-1000xm4",
-                    "sonny headphones", "soney", "sony x1000",
+                    "sony wh-1000xm4", "sony wh-1000xm5", "sony wf-1000xm4", "sony wf-1000xm5",
+                    "sonny headphones", "soney", "sony x1000", "sony wh1000", "sony wf1000",
+                    "sony 1000xm4", "sony 1000xm5", "sony xb900n", "sony wh-xb900n",
+                    "sony whch710n", "sony wh-ch710n", "sony linkbuds", "sony earbuds",
                     
-                    # General terms and brands
+                    # General terms and other brands
                     "wireless headphones", "bluetooth earbuds", "noise cancelling",
                     "anc headphones", "true wireless", "earphones", "ear buds",
                     "sennheiser", "jabra", "jbl", "marshall", "skullcandy",
-                    "samsung buds", "galaxy buds", "pixel buds"
+                    "samsung buds", "galaxy buds", "pixel buds", "raycon", "anker soundcore",
+                    "bluetooth headset", "wireless earphones", "tws earbuds", "over ear headphones",
+                    "on ear headphones", "in ear headphones", "earbuds wireless", "earphone bluetooth"
                 ],
                 
                 "Keyboards": [
@@ -539,24 +576,42 @@ class KeywordGenerator:
                 ],
                 
                 "Laptops": [
-                    # MacBooks
+                    # MacBooks - expanded
                     "macbook", "macbook pro", "macbook air", "mac book", "macbookpro",
                     "m1 macbook", "m2 macbook", "m3 macbook", "apple laptop",
                     "mac pro", "mac air", "mackbook", "macbok", "mac book pro",
+                    "macbook pro 13", "macbook pro 14", "macbook pro 16", "macbook air 13",
+                    "macbook pro m1", "macbook pro m2", "macbook pro m3", "macbook air m1",
+                    "macbook air m2", "macbook 2020", "macbook 2021", "macbook 2022", "macbook 2023",
+                    "macbook pro 2020", "macbook pro 2021", "macbook pro 2022", "macbook pro 2023",
+                    "macbook pro retina", "macbook pro touchbar", "macbook pro 13 inch",
+                    "macbook pro 14 inch", "macbook pro 16 inch", "macbook air 13 inch",
                     
-                    # Gaming laptops
+                    # Gaming laptops - expanded
                     "gaming laptop", "rog laptop", "legion laptop", "msi laptop",
                     "alienware laptop", "razer blade", "asus rog", "predator laptop",
                     "gamming laptop", "rogen laptop", "alisware", "razr blade",
+                    "asus rog strix", "rog zephyrus", "rog flow", "msi ge76",
+                    "msi gs66", "legion 5", "legion 7", "alienware m15", "alienware x17",
+                    "razer blade 15", "razer blade 17", "acer predator helios",
+                    "rtx laptop", "rtx 3060 laptop", "rtx 3070 laptop", "rtx 3080 laptop",
+                    "gaming notebook", "gaming pc laptop", "gamer laptop",
                     
-                    # Business laptops
+                    # Business laptops - expanded
                     "thinkpad", "dell xps", "hp elitebook", "surface laptop",
                     "business laptop", "ultrabook", "2-in-1 laptop", "chromebook",
                     "think pad", "dell xbs", "hp elite", "surface book",
+                    "thinkpad x1", "thinkpad t14", "thinkpad p1", "dell xps 13",
+                    "dell xps 15", "dell xps 17", "hp spectre", "hp envy",
+                    "surface laptop 4", "surface laptop 5", "surface book 3",
+                    "lenovo yoga", "hp pavilion", "dell latitude", "dell precision",
                     
-                    # General terms
+                    # General terms - expanded
                     "laptop computer", "notebook", "gaming notebook", "laptop pc",
-                    "labtop", "lap top", "note book", "leptop"
+                    "labtop", "lap top", "note book", "leptop", "portable computer",
+                    "intel laptop", "amd laptop", "ryzen laptop", "i7 laptop",
+                    "i9 laptop", "16gb ram laptop", "32gb ram laptop", "touch screen laptop",
+                    "touchscreen laptop", "4k laptop", "oled laptop", "student laptop"
                 ],
                 
                 "Monitors": [
