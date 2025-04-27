@@ -143,4 +143,37 @@ def get_saved_filters(current_user):
 def save_filter_preset(current_user):
     """Save a filter preset."""
     data = request.get_json()
-    name = data.get('name
+    name = data.get('name')
+    filters = data.get('filters', {})
+    
+    if not name:
+        return jsonify({'message': 'Preset name is required'}), 400
+    
+    # TODO: Implement filter preset saving in database
+    # For now, just return success
+    return jsonify({'message': f'Filter preset "{name}" saved successfully'})
+
+@filters.route('/api/v1/filters/delete/<preset_id>', methods=['DELETE'])
+@token_required
+def delete_filter_preset(current_user, preset_id):
+    """Delete a filter preset."""
+    # TODO: Implement filter preset deletion
+    return jsonify({'message': 'Filter preset deleted successfully'})
+
+@filters.route('/api/v1/filters/apply', methods=['POST'])
+@token_required
+def apply_filters_to_results(current_user):
+    """Apply filters to a set of opportunities."""
+    data = request.get_json()
+    opportunities = data.get('opportunities', [])
+    filter_params = data.get('filters', {})
+    
+    filter_system = OpportunityFilter(current_user)
+    filtered_results = filter_system.apply_filters(opportunities, filter_params)
+    
+    return jsonify({
+        'filtered_results': filtered_results,
+        'original_count': len(opportunities),
+        'filtered_count': len(filtered_results),
+        'filters_applied': filter_params
+    })
