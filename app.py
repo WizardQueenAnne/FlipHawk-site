@@ -23,7 +23,9 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///fliphawk.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-CORS(app)
+# Enable CORS
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+
 db.init_app(app)
 app.register_blueprint(auth_bp)
 app.register_blueprint(subscription)
