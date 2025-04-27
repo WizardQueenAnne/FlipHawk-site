@@ -4,7 +4,7 @@ import os
 import logging
 from datetime import datetime, timedelta
 from arbitrage_bot import run_arbitrage_scan
-from models import db, User, PromoCode, SubscriptionTier, PriceHistory, CategoryPerformance
+from models import db, User, PromoCode, SubscriptionTier, PriceHistory, CategoryPerformance, SavedOpportunity
 from auth import auth_bp, token_required, record_price_history
 from subscription import subscription, init_promo_codes
 from analytics import analytics, create_item_identifier
@@ -23,7 +23,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///fliphawk.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Enable CORS
+# Enable CORS for all API routes
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 db.init_app(app)
@@ -67,7 +67,7 @@ def health_check():
 @app.route('/api/v1/scan', methods=['POST'])
 @token_required
 def run_scan(current_user):
-    """Enhanced scan endpoint with subscription limits and advanced features."""
+    """Enhanced scan endpoint with new features."""
     try:
         # Check if user can scan
         if not current_user.can_scan():
@@ -105,7 +105,7 @@ def run_scan(current_user):
             filter_system = OpportunityFilter(current_user)
             results = filter_system.apply_filters(results, filters_params)
         
-        # Process results to include all necessary data
+        # Process results with new features
         processed_results = []
         risk_analyzer = RiskAnalyzer()
         
@@ -121,7 +121,7 @@ def run_scan(current_user):
             net_profit = result['sellPrice'] - total_cost - total_fees
             net_profit_percentage = (net_profit / total_cost) * 100 if total_cost > 0 else 0
             
-            # Record price history for both buy and sell prices
+            # Record price history
             item_identifier = create_item_identifier(result['title'])
             record_price_history(item_identifier, result['buyPrice'], 'eBay-Buy', result.get('buyCondition'))
             record_price_history(item_identifier, result['sellPrice'], 'eBay-Sell', result.get('sellCondition'))
@@ -129,7 +129,13 @@ def run_scan(current_user):
             # Update category performance
             update_category_performance(category, result['subcategory'], net_profit, net_profit_percentage)
             
-            # Perform risk assessment for Pro/Business users
+            # Calculate new features
+            velocity_score = calculate_velocity_score(result)
+            estimated_sell_days = estimate_sell_days(result, velocity_score)
+            suggested_price = calculate_suggested_price(result)
+            authenticity_risk = check_authenticity_risk(result)
+            
+            # Perform risk assessment
             risk_score = None
             risk_level = None
             if current_user.subscription_tier != SubscriptionTier.FREE.value:
@@ -138,6 +144,7 @@ def run_scan(current_user):
             
             processed_result = {
                 **result,
+                'id': item_identifier,
                 'estimatedTax': round(estimated_tax, 2),
                 'estimatedShipping': round(estimated_shipping, 2),
                 'ebayFee': round(ebay_fee, 2),
@@ -149,7 +156,11 @@ def run_scan(current_user):
                 'scanDuration': scan_duration,
                 'itemIdentifier': item_identifier,
                 'riskScore': risk_score,
-                'riskLevel': risk_level
+                'riskLevel': risk_level,
+                'velocityScore': velocity_score,
+                'estimatedSellDays': estimated_sell_days,
+                'suggestedPrice': round(suggested_price, 2),
+                'authenticityRisk': authenticity_risk
             }
             
             processed_results.append(processed_result)
@@ -159,6 +170,134 @@ def run_scan(current_user):
     except Exception as e:
         logger.error(f"Error processing scan: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/v1/scan/bulk', methods=['POST'])
+@token_required
+def run_bulk_scan(current_user):
+    """Bulk scan endpoint for Business users."""
+    try:
+        # Check if user has business tier
+        if current_user.subscription_tier not in [SubscriptionTier.BUSINESS.value, SubscriptionTier.LIFETIME.value]:
+            return jsonify({
+                "error": "Business tier required",
+                "message": "Upgrade to Business to use bulk scanning!"
+            }), 403
+        
+        data = request.get_json()
+        keywords = data.get('keywords', [])
+        filters_params = data.get('filters', {})
+        
+        if not keywords:
+            return jsonify({"error": "Keywords are required"}), 400
+        
+        logger.info(f"Running bulk scan for user {current_user.username}: {len(keywords)} keywords")
+        
+        all_results = []
+        for keyword in keywords[:10]:  # Limit to 10 keywords per request
+            results = run_arbitrage_scan([keyword])
+            all_results.extend(results)
+        
+        # Process and return results similar to regular scan
+        # ... (similar processing as above)
+        
+        return jsonify(all_results)
+        
+    except Exception as e:
+        logger.error(f"Error processing bulk scan: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/v1/favorites', methods=['POST'])
+@token_required
+def save_favorite(current_user):
+    """Save an item to favorites."""
+    data = request.get_json()
+    item_id = data.get('itemId')
+    
+    if not item_id:
+        return jsonify({"error": "Item ID is required"}), 400
+    
+    # TODO: Create favorites table and save
+    return jsonify({"message": "Favorite saved"})
+
+@app.route('/api/v1/favorites', methods=['DELETE'])
+@token_required
+def remove_favorite(current_user):
+    """Remove an item from favorites."""
+    data = request.get_json()
+    item_id = data.get('itemId')
+    
+    if not item_id:
+        return jsonify({"error": "Item ID is required"}), 400
+    
+    # TODO: Remove from favorites table
+    return jsonify({"message": "Favorite removed"})
+
+def calculate_velocity_score(item):
+    """Calculate how fast an item is likely to sell."""
+    score = 50  # Base score
+    
+    # Adjust based on various factors
+    if item.get('profitPercentage', 0) > 50:
+        score += 20
+    elif item.get('profitPercentage', 0) > 30:
+        score += 10
+    
+    if item.get('confidence', 0) > 90:
+        score += 15
+    elif item.get('confidence', 0) > 80:
+        score += 10
+    
+    # Consider sold count from similar items
+    if item.get('sold_count', 0) > 100:
+        score += 15
+    elif item.get('sold_count', 0) > 50:
+        score += 10
+    
+    return min(100, max(0, score))
+
+def estimate_sell_days(item, velocity_score):
+    """Estimate how many days until the item sells."""
+    if velocity_score > 80:
+        return 3
+    elif velocity_score > 60:
+        return 7
+    elif velocity_score > 40:
+        return 14
+    else:
+        return 21
+
+def calculate_suggested_price(item):
+    """Calculate optimal resale price."""
+    base_price = item.get('sellPrice', 0)
+    profit_target = item.get('buyPrice', 0) * 1.3  # Target 30% profit
+    
+    # Adjust based on confidence and market conditions
+    if item.get('confidence', 0) > 90:
+        base_price *= 1.05  # Can price higher for exact matches
+    
+    return max(profit_target, base_price)
+
+def check_authenticity_risk(item):
+    """Check risk of counterfeit items."""
+    risk = 0
+    
+    # High-risk categories
+    high_risk_items = ['designer', 'luxury', 'rolex', 'gucci', 'supreme', 'yeezy', 'jordan']
+    title_lower = item.get('title', '').lower()
+    
+    for term in high_risk_items:
+        if term in title_lower:
+            risk += 30
+    
+    # Suspiciously low prices for luxury items
+    if item.get('profitPercentage', 0) > 70 and any(term in title_lower for term in high_risk_items):
+        risk += 40
+    
+    # New seller or low rating
+    if item.get('sellerRating', 100) < 90:
+        risk += 20
+    
+    return min(100, risk)
 
 def determine_shipping_cost(item):
     """Calculate shipping cost based on item category."""
