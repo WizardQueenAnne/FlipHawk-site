@@ -1,11 +1,12 @@
 from flask import Blueprint, request, jsonify
 from models import db, User, SubscriptionTier
 from auth import token_required
+from datetime import datetime, timedelta
 
 filters = Blueprint('filters', __name__)
 
 class OpportunityFilter:
-    """Filter class for applying advanced filters to arbitrage opportunities."""
+    """Enhanced filter class for applying advanced filters to arbitrage opportunities."""
     
     def __init__(self, user):
         self.user = user
@@ -21,6 +22,9 @@ class OpportunityFilter:
         
         if 'max_price' in filter_params:
             filtered = [opp for opp in filtered if opp.get('buyPrice', 0) <= filter_params['max_price']]
+        
+        if 'min_price' in filter_params:
+            filtered = [opp for opp in filtered if opp.get('buyPrice', 0) >= filter_params['min_price']]
         
         # Pro/Business filters
         if self.is_pro:
@@ -47,8 +51,30 @@ class OpportunityFilter:
             if 'risk_level' in filter_params:
                 allowed_risk = filter_params['risk_level']
                 filtered = [opp for opp in filtered if opp.get('riskLevel', 'medium').lower() in [r.lower() for r in allowed_risk]]
+            
+            # New advanced filters
+            if 'listing_age' in filter_params:
+                max_hours = filter_params['listing_age']
+                cutoff_time = datetime.utcnow() - timedelta(hours=max_hours)
+                filtered = [opp for opp in filtered if self._parse_listing_date(opp.get('listingDate')) >= cutoff_time]
+            
+            if 'min_velocity_score' in filter_params:
+                filtered = [opp for opp in filtered if opp.get('velocityScore', 0) >= filter_params['min_velocity_score']]
+            
+            if 'max_sell_days' in filter_params:
+                filtered = [opp for opp in filtered if opp.get('estimatedSellDays', 999) <= filter_params['max_sell_days']]
+            
+            if 'max_authenticity_risk' in filter_params:
+                filtered = [opp for opp in filtered if opp.get('authenticityRisk', 0) <= filter_params['max_authenticity_risk']]
         
         return filtered
+    
+    def _parse_listing_date(self, date_str):
+        """Parse listing date from various formats."""
+        try:
+            return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+        except:
+            return datetime.utcnow()  # Default to now if parsing fails
 
 @filters.route('/api/v1/filters/available', methods=['GET'])
 @token_required
@@ -58,6 +84,11 @@ def get_available_filters(current_user):
         'min_profit': {
             'type': 'number',
             'description': 'Minimum profit amount',
+            'default': 0
+        },
+        'min_price': {
+            'type': 'number',
+            'description': 'Minimum buy price',
             'default': 0
         },
         'max_price': {
@@ -80,8 +111,13 @@ def get_available_filters(current_user):
         },
         'locations': {
             'type': 'multiselect',
-            'options': ['United States', 'Canada', 'United Kingdom', 'Europe', 'Asia'],
+            'options': ['US', 'CA', 'UK', 'EU', 'ASIA'],
             'description': 'Seller location filter'
+        },
+        'listing_age': {
+            'type': 'select',
+            'options': [1, 6, 24, 72, 168],
+            'description': 'Listing age in hours'
         },
         'min_confidence': {
             'type': 'number',
@@ -102,6 +138,21 @@ def get_available_filters(current_user):
             'type': 'multiselect',
             'options': ['low', 'medium', 'high'],
             'description': 'Acceptable risk levels'
+        },
+        'min_velocity_score': {
+            'type': 'number',
+            'description': 'Minimum deal velocity score',
+            'default': 50
+        },
+        'max_sell_days': {
+            'type': 'number',
+            'description': 'Maximum estimated days to sell',
+            'default': 14
+        },
+        'max_authenticity_risk': {
+            'type': 'number',
+            'description': 'Maximum authenticity risk score',
+            'default': 50
         }
     }
     
@@ -123,7 +174,8 @@ def get_saved_filters(current_user):
                     'min_profit': 50,
                     'min_profit_margin': 30,
                     'conditions': ['New', 'Like New'],
-                    'min_confidence': 80
+                    'min_confidence': 80,
+                    'min_velocity_score': 70
                 }
             },
             {
@@ -132,7 +184,17 @@ def get_saved_filters(current_user):
                     'max_price': 100,
                     'min_profit_margin': 25,
                     'risk_level': ['low'],
-                    'max_shipping_days': 5
+                    'max_shipping_days': 5,
+                    'max_sell_days': 7
+                }
+            },
+            {
+                'name': 'Authentic Luxury',
+                'filters': {
+                    'min_profit': 100,
+                    'max_authenticity_risk': 30,
+                    'min_confidence': 85,
+                    'conditions': ['New', 'Like New']
                 }
             }
         ]
