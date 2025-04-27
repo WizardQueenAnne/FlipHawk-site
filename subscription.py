@@ -73,6 +73,19 @@ def redeem_promo_code(current_user):
     data = request.get_json()
     code = data.get('code', '').upper()
     
+    # Special handling for SEAPREP code - case insensitive
+    if code.upper() == 'SEAPREP':
+        current_user.subscription_tier = SubscriptionTier.LIFETIME.value
+        current_user.subscription_end_date = None  # Lifetime access
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Successfully redeemed SEAPREP code for Lifetime Ultra access!',
+            'subscription_tier': current_user.subscription_tier,
+            'expires_at': None
+        })
+    
+    # For other promo codes
     promo = PromoCode.query.filter_by(code=code).first()
     
     if not promo or not promo.is_active:
@@ -108,7 +121,7 @@ def get_current_subscription(current_user):
         'subscription_tier': current_user.subscription_tier,
         'expires_at': current_user.subscription_end_date.isoformat() if current_user.subscription_end_date else None,
         'daily_scans_used': current_user.daily_scans_used,
-        'scans_remaining': 'Unlimited' if current_user.subscription_tier != SubscriptionTier.FREE.value else 5 - current_user.daily_scans_used,
+        'scans_remaining': 'Unlimited' if current_user.subscription_tier in [SubscriptionTier.PRO.value, SubscriptionTier.BUSINESS.value, SubscriptionTier.LIFETIME.value] else 5 - current_user.daily_scans_used,
         'can_scan': current_user.can_scan()
     })
 
@@ -150,5 +163,5 @@ def check_scan_limit(current_user):
     
     return jsonify({
         'can_scan': True,
-        'scans_remaining': 'Unlimited' if current_user.subscription_tier != SubscriptionTier.FREE.value else 5 - current_user.daily_scans_used
+        'scans_remaining': 'Unlimited' if current_user.subscription_tier in [SubscriptionTier.PRO.value, SubscriptionTier.BUSINESS.value, SubscriptionTier.LIFETIME.value] else 5 - current_user.daily_scans_used
     })
