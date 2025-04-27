@@ -6,15 +6,17 @@
   <title>FlipHawk | Smart Resale Scanner</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    /* Original color scheme enhanced */
     :root {
-      --primary: #4f46e5;
-      --primary-dark: #4338ca;
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
       --primary-light: #eef2ff;
-      --secondary: #0ea5e9;
-      --secondary-dark: #0284c7;
-      --secondary-light: #f0f9ff;
-      --accent: #ec4899;
+      --secondary: #06b6d4;
+      --secondary-dark: #0891b2;
+      --secondary-light: #ecfeff;
+      --accent: #f43f5e;
       --success: #10b981;
       --warning: #f59e0b;
       --background: #f8fafc;
@@ -26,7 +28,6 @@
       --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
       --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      --gradient-radial: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
     }
 
     * {
@@ -36,26 +37,138 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, system-ui, sans-serif;
       background-color: var(--background);
       color: var(--text);
       line-height: 1.6;
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
     .container {
       max-width: 1280px;
       margin: 0 auto;
       padding: 0 24px;
-      text-align: center;
     }
 
+    /* Elegant navigation */
+    .nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1.5rem 0;
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .nav-btn {
+      padding: 0.5rem 1.25rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .user-menu {
+      position: relative;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.5rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      min-width: 200px;
+      padding: 0.5rem;
+      display: none;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s;
+    }
+
+    .user-dropdown.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .dropdown-item:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.5rem 0;
+    }
+
+    /* Enhanced header */
     .header {
       background: var(--gradient);
       color: white;
-      padding: 96px 0;
+      padding: 140px 0 100px;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -73,21 +186,17 @@
     }
 
     .header h1 {
-      font-family: 'Plus Jakarta Sans', sans-serif;
       font-size: 3.75rem;
       font-weight: 800;
       letter-spacing: -0.025em;
       margin-bottom: 1.5rem;
       position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
     }
 
     .header h1 i {
-      color: var(--secondary-light);
-      font-size: 3.25rem;
+      font-size: 3rem;
+      margin-right: 1rem;
+      vertical-align: middle;
     }
 
     .header p {
@@ -96,12 +205,12 @@
       max-width: 600px;
       margin: 0 auto;
       position: relative;
-      font-weight: 500;
     }
 
+    /* Main card matching original style */
     .main-card {
       background: var(--surface);
-      border-radius: 20px;
+      border-radius: 24px;
       box-shadow: var(--shadow-lg);
       padding: 2.5rem;
       margin: -60px auto 40px;
@@ -111,6 +220,31 @@
       border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
+    /* Subtle alerts */
+    .alert {
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .alert-warning {
+      background: var(--warning);
+      color: white;
+    }
+
+    .alert-warning .btn-sm {
+      background: white;
+      color: var(--warning);
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8rem;
+      border-radius: 6px;
+    }
+
+    /* Form elements matching original */
     .form-group {
       margin-bottom: 2rem;
     }
@@ -120,9 +254,7 @@
       font-weight: 600;
       margin-bottom: 0.75rem;
       color: var(--text);
-      text-align: center;
       font-size: 1.1rem;
-      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
     label i {
@@ -136,11 +268,10 @@
       border: 2px solid var(--border);
       border-radius: 12px;
       font-size: 1rem;
-      font-family: 'Inter', sans-serif;
+      font-family: inherit;
       transition: all 0.2s ease;
       background-color: var(--surface);
       cursor: pointer;
-      text-align: left;
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
@@ -159,7 +290,6 @@
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 1rem;
       margin-top: 1rem;
-      justify-content: center;
     }
 
     .checkbox-wrapper {
@@ -207,6 +337,68 @@
       font-size: 12px;
     }
 
+    /* Elegant advanced filters */
+    .filter-section {
+      margin-top: 2rem;
+      text-align: left;
+    }
+
+    .filter-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+
+    .filter-toggle:hover {
+      color: var(--primary-dark);
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem;
+      background: var(--background);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-item label {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .filter-input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: white;
+    }
+
+    .filter-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .pro-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: var(--primary);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* Button matching original */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -214,7 +406,6 @@
       padding: 1rem 2rem;
       font-size: 1rem;
       font-weight: 600;
-      font-family: 'Plus Jakarta Sans', sans-serif;
       border: none;
       border-radius: 12px;
       cursor: pointer;
@@ -243,6 +434,7 @@
       margin-right: 0.5rem;
     }
 
+    /* Loading state */
     .loading {
       text-align: center;
       padding: 3rem;
@@ -256,6 +448,10 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     .progress-bar-container {
@@ -274,9 +470,10 @@
       border-radius: 4px;
     }
 
+    /* Error state */
     .error {
-      background: #fee2e2;
-      color: #dc2626;
+      background: var(--accent);
+      color: white;
       padding: 1rem;
       border-radius: 12px;
       margin: 1rem 0;
@@ -290,12 +487,12 @@
       margin-right: 0.75rem;
     }
 
+    /* Results grid */
     .results {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
-      justify-content: center;
       padding-bottom: 4rem;
     }
 
@@ -305,7 +502,6 @@
       overflow: hidden;
       box-shadow: var(--shadow);
       transition: all 0.2s ease;
-      text-align: left;
       border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
@@ -327,7 +523,12 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .confidence-badge {
@@ -347,6 +548,20 @@
     .confidence-high { background: var(--success); }
     .confidence-medium { background: var(--warning); }
     .confidence-low { background: var(--accent); }
+
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    .risk-low { background: var(--success); }
+    .risk-medium { background: var(--warning); }
+    .risk-high { background: var(--accent); }
 
     .result-body {
       padding: 1.5rem;
@@ -378,7 +593,6 @@
     .price-value {
       font-size: 1.25rem;
       font-weight: 700;
-      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
     .profit-section {
@@ -405,7 +619,6 @@
     .profit-value {
       font-size: 1.5rem;
       font-weight: 700;
-      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
     .result-actions {
@@ -423,7 +636,6 @@
       text-decoration: none;
       font-weight: 600;
       transition: all 0.2s ease;
-      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
     .buy-link {
@@ -441,12 +653,12 @@
       box-shadow: var(--shadow);
     }
 
+    /* Features grid */
     .features {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 2rem;
       margin: 4rem 0;
-      justify-content: center;
     }
 
     .feature-card {
@@ -474,7 +686,6 @@
       font-size: 1.25rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
-      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
     .feature-text {
@@ -482,46 +693,172 @@
       font-size: 0.9375rem;
     }
 
-    .testimonials {
-      background: linear-gradient(180deg, var(--surface) 0%, var(--background) 100%);
-      padding: 4rem 0;
-      margin-top: 4rem;
-    }
-
-    .testimonial-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-top: 2rem;
+    /* Modals - modern and elegant */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
       justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    .testimonial-card {
+    .modal.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
       background: var(--surface);
+      border-radius: 24px;
       padding: 2rem;
-      border-radius: 16px;
-      box-shadow: var(--shadow);
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal.show .modal-content {
+      transform: scale(1);
+    }
+
+    .modal-header {
       text-align: center;
-      border: 1px solid rgba(0, 0, 0, 0.05);
+      margin-bottom: 2rem;
     }
 
-    .testimonial-quote {
-      font-style: italic;
-      margin-bottom: 1rem;
+    .modal-header h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-header p {
       color: var(--text-light);
-      font-size: 1.0625rem;
-      line-height: 1.6;
+      font-size: 0.9rem;
     }
 
-    .testimonial-author {
-      font-weight: 600;
+    .form-input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .btn-link {
+      background: none;
+      border: none;
       color: var(--primary);
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .btn-link:hover {
+      color: var(--primary-dark);
+    }
+
+    /* Subscription modal */
+    .subscription-modal {
+      max-width: 900px;
+    }
+
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .plan-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .plan-card.recommended {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: white;
+      padding: 0.25rem 1rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .plan-price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 1rem 0;
+    }
+
+    .plan-price small {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-light);
+    }
+
+    .plan-features {
+      text-align: left;
+      margin: 1.5rem 0;
+    }
+
+    .plan-feature {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+    }
+
+    .plan-feature i {
+      color: var(--success);
+    }
+
+    .promo-section {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .promo-input-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
     }
 
     @media (max-width: 768px) {
       .header h1 {
-        font-size: 2.75rem;
+        font-size: 2.5rem;
       }
       
       .main-card {
@@ -540,10 +877,57 @@
       .features {
         grid-template-columns: 1fr;
       }
+      
+      .nav-brand {
+        font-size: 1.25rem;
+      }
+      
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
+  <nav class="nav">
+    <div class="container">
+      <div class="nav-container">
+        <div class="nav-brand">
+          <i class="fas fa-money-bill-trend-up"></i>
+          FlipHawk
+        </div>
+        <div class="nav-right">
+          <div id="authSection">
+            <button id="loginButton" class="nav-btn">Login / Sign Up</button>
+          </div>
+          <div id="userSection" style="display: none;">
+            <div class="user-menu">
+              <div id="userAvatar" class="user-avatar"></div>
+              <div id="userDropdown" class="user-dropdown">
+                <a href="#" onclick="showDashboard()" class="dropdown-item">
+                  <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+                <a href="#" onclick="showSavedItems()" class="dropdown-item">
+                  <i class="fas fa-bookmark"></i> Saved Items
+                </a>
+                <a href="#" onclick="showProfile()" class="dropdown-item">
+                  <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="#" onclick="showSubscription()" class="dropdown-item">
+                  <i class="fas fa-crown"></i> Subscription
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#" onclick="logout()" class="dropdown-item">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
   <header class="header">
     <div class="container">
       <h1><i class="fas fa-money-bill-trend-up"></i>FlipHawk</h1>
@@ -553,6 +937,12 @@
 
   <main class="container">
     <div class="main-card">
+      <div id="scanLimitWarning" class="alert alert-warning" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="scanLimitText"></span>
+        <button onclick="showSubscription()" class="btn-sm">Upgrade</button>
+      </div>
+      
       <div class="form-group">
         <label for="category"><i class="fas fa-layer-group"></i>Select Category</label>
         <select id="category">
@@ -569,286 +959,4 @@
       </div>
 
       <div id="subcategoriesContainer" style="display: none;">
-        <label><i class="fas fa-check-square"></i>Select Subcategories (up to 5)</label>
-        <div class="subcategories" id="subcategories"></div>
-      </div>
-
-      <button id="scanButton" class="btn btn-primary" disabled>
-        <i class="fas fa-magnifying-glass-dollar"></i> Find Resale Opportunities
-      </button>
-
-      <div id="error" class="error" style="display: none;">
-        <i class="fas fa-exclamation-circle"></i>
-        <span></span>
-      </div>
-
-      <div id="loading" class="loading" style="display: none;">
-        <div class="loading-spinner"></div>
-        <div class="progress-bar-container">
-          <div class="progress-bar" style="width: 0%;"></div>
-        </div>
-        <p id="loading-status">Scanning marketplaces for profitable resale opportunities...</p>
-        <p id="loading-details" style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.5rem;"></p>
-      </div>
-    </div>
-
-    <div id="results" class="results"></div>
-
-    <div class="features">
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-bolt"></i></div>
-        <div class="feature-title">Lightning Fast</div>
-        <div class="feature-text">Real-time scanning across multiple marketplaces</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-        <div class="feature-title">Profit Analysis</div>
-        <div class="feature-text">Instant profit calculations with all fees included</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-robot"></i></div>
-        <div class="feature-title">Smart Matching</div>
-        <div class="feature-text">AI-powered algorithms for accurate product matching</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-clock-rotate-left"></i></div>
-        <div class="feature-title">Real-Time Data</div>
-        <div class="feature-text">Always current, never using outdated information</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
-        <div class="feature-title">Verified Results</div>
-        <div class="feature-text">High confidence matching to reduce risk</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
-        <div class="feature-title">Mobile Ready</div>
-        <div class="feature-text">Works seamlessly on all devices</div>
-      </div>
-    </div>
-
-    <div class="testimonials">
-      <h2 style="text-align: center; margin-bottom: 2rem; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;">What Our Users Say</h2>
-      <div class="testimonial-grid">
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"FlipHawk helped me find profitable deals I would have never spotted on my own!"</div>
-          <div class="testimonial-author">- Sarah J.</div>
-        </div>
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"The real-time scanning is incredibly fast and accurate. A game-changer for resellers."</div>
-          <div class="testimonial-author">- Mike T.</div>
-        </div>
-        <div class="testimonial-card">
-          <div class="testimonial-quote">"I've doubled my resale profits since using FlipHawk. Best investment ever!"</div>
-          <div class="testimonial-author">- Alex P.</div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <script>
-    // Categories data
-    const categories = {
-      "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
-      "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
-      "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
-      "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
-      "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
-      "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
-      "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
-      "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
-    };
-
-    const categorySelect = document.getElementById('category');
-    const subcategoriesContainer = document.getElementById('subcategoriesContainer');
-    const subcategoriesDiv = document.getElementById('subcategories');
-    const scanButton = document.getElementById('scanButton');
-    const errorDiv = document.getElementById('error');
-    const loadingDiv = document.getElementById('loading');
-    const resultsDiv = document.getElementById('results');
-    
-    let selectedSubcategories = [];
-
-    categorySelect.addEventListener('change', function() {
-      const category = this.value;
-      selectedSubcategories = [];
-      
-      if (category) {
-        subcategoriesContainer.style.display = 'block';
-        const subcats = categories[category];
-        let html = '';
-        subcats.forEach(subcat => {
-          html += `
-            <label class="checkbox-wrapper">
-              <input type="checkbox" value="${subcat}" onchange="handleSubcategoryChange(this)">
-              <div class="checkbox-custom"></div>
-              ${subcat}
-            </label>
-          `;
-        });
-        subcategoriesDiv.innerHTML = html;
-      } else {
-        subcategoriesContainer.style.display = 'none';
-        subcategoriesDiv.innerHTML = '';
-      }
-      
-      updateScanButton();
-    });
-
-    function handleSubcategoryChange(checkbox) {
-      if (checkbox.checked) {
-        if (selectedSubcategories.length < 5) {
-          selectedSubcategories.push(checkbox.value);
-        } else {
-          checkbox.checked = false;
-          showError('You can only select up to 5 subcategories');
-        }
-      } else {
-        selectedSubcategories = selectedSubcategories.filter(item => item !== checkbox.value);
-      }
-      
-      updateScanButton();
-    }
-
-    function updateScanButton() {
-      scanButton.disabled = !(categorySelect.value && selectedSubcategories.length > 0);
-    }
-
-    function showError(message) {
-      errorDiv.querySelector('span').textContent = message;
-      errorDiv.style.display = 'flex';
-      setTimeout(() => {
-        errorDiv.style.display = 'none';
-      }, 5000);
-    }
-
-    scanButton.addEventListener('click', async function() {
-      errorDiv.style.display = 'none';
-      loadingDiv.style.display = 'block';
-      resultsDiv.innerHTML = '';
-      scanButton.disabled = true;
-      
-      // Reset progress bar
-      const progressBar = document.querySelector('.progress-bar');
-      const loadingStatus = document.getElementById('loading-status');
-      const loadingDetails = document.getElementById('loading-details');
-      progressBar.style.width = '0%';
-      
-      try {
-        // Simulate progress
-        let progress = 0;
-        const progressInterval = setInterval(() => {
-          if (progress < 90) {
-            progress += Math.random() * 10;
-            progressBar.style.width = `${Math.min(progress, 90)}%`;
-            
-            if (progress < 30) {
-              loadingStatus.textContent = 'Initializing scan...';
-              loadingDetails.textContent = 'Connecting to marketplace APIs...';
-            } else if (progress < 60) {
-              loadingStatus.textContent = 'Searching listings...';
-              loadingDetails.textContent = `Scanning ${selectedSubcategories.join(', ')}...`;
-            } else {
-              loadingStatus.textContent = 'Analyzing opportunities...';
-              loadingDetails.textContent = 'Comparing prices and calculating profits...';
-            }
-          }
-        }, 500);
-        
-        const response = await fetch('/api/v1/scan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            category: categorySelect.value,
-            subcategories: selectedSubcategories
-          })
-        });
-        
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        loadingStatus.textContent = 'Scan complete!';
-        loadingDetails.textContent = 'Processing results...';
-        
-        if (!response.ok) {
-          throw new Error('Scan failed');
-        }
-        
-        const data = await response.json();
-        setTimeout(() => {
-          displayResults(data);
-        }, 500);
-        
-      } catch (error) {
-        showError('Failed to run scan. Please try again.');
-        console.error('Scan error:', error);
-      } finally {
-        setTimeout(() => {
-          loadingDiv.style.display = 'none';
-          updateScanButton();
-        }, 500);
-      }
-    });
-
-    function getConfidenceBadgeClass(confidence) {
-      if (confidence >= 90) return 'confidence-high';
-      if (confidence >= 70) return 'confidence-medium';
-      return 'confidence-low';
-    }
-
-    function displayResults(results) {
-      if (results.length === 0) {
-        resultsDiv.innerHTML = `
-          <div style="text-align: center; padding: 3rem;">
-            <i class="fas fa-search-minus" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
-            <h3 style="font-family: 'Plus Jakarta Sans', sans-serif;">No resale opportunities found</h3>
-            <p style="color: var(--text-light);">Try selecting different subcategories or check back later</p>
-          </div>
-        `;
-        return;
-      }
-      
-      const html = results.map(result => `
-        <div class="result-card">
-          <div class="result-header">
-            <h3>${result.title}</h3>
-            <span class="confidence-badge ${getConfidenceBadgeClass(result.confidence)}">
-              <i class="fas fa-check-circle"></i> ${result.confidence}% Match
-            </span>
-          </div>
-          <div class="result-body">
-            <div class="price-row">
-              <div class="price-item">
-                <i class="fas fa-tag"></i>
-                <div class="price-label">Buy Price</div>
-                <div class="price-value">$${result.buyPrice.toFixed(2)}</div>
-              </div>
-              <div class="price-item">
-                <i class="fas fa-dollar-sign"></i>
-                <div class="price-label">Sell Price</div>
-                <div class="price-value">$${result.sellPrice.toFixed(2)}</div>
-              </div>
-            </div>
-            <div class="profit-section">
-              <i class="fas fa-chart-line"></i>
-              <div class="profit-label">Potential Profit</div>
-              <div class="profit-value">$${result.profit.toFixed(2)} (${result.profitPercentage.toFixed(1)}%)</div>
-            </div>
-            <div class="result-actions">
-              <a href="${result.buyLink}" target="_blank" class="result-link buy-link">
-                <i class="fas fa-shopping-cart"></i> Buy
-              </a>
-              <a href="${result.sellLink}" target="_blank" class="result-link sell-link">
-                <i class="fas fa-store"></i> Sell
-              </a>
-            </div>
-          </div>
-        </div>
-      `).join('');
-      
-      resultsDiv.innerHTML = html;
-    }
-  </script>
-</body>
-</html>
+        <label><i class="fas fa-check-square"></i>Select
