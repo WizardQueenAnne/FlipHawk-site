@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from arbitrage_bot import run_arbitrage_scan
 from models import db, User, PromoCode, SubscriptionTier, PriceHistory, CategoryPerformance
-from auth import auth, token_required, record_price_history
+from auth import auth_bp, token_required, record_price_history
 from subscription import subscription, init_promo_codes
 from analytics import analytics, create_item_identifier
 from filters import filters, OpportunityFilter
@@ -25,7 +25,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 CORS(app)
 db.init_app(app)
-app.register_blueprint(auth)
+app.register_blueprint(auth_bp)
 app.register_blueprint(subscription)
 app.register_blueprint(analytics)
 app.register_blueprint(filters)
