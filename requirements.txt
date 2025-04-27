@@ -6,6 +6,10 @@ flask-limiter==3.5.0
 flask-sqlalchemy==3.0.5
 gunicorn==21.2.0
 
+# Authentication
+pyjwt==2.8.0
+bcrypt==4.0.1
+
 # Scraping and parsing
 beautifulsoup4==4.12.2
 aiohttp==3.8.5
@@ -52,3 +56,13 @@ flasgger==0.9.7.1  # Swagger UI for Flask
 
 # Compression
 Flask-Compress==1.14
+
+# Payment processing (for future integration)
+stripe==7.0.0
+
+# Email functionality
+flask-mail==0.9.1
+
+# Background tasks
+celery==5.3.4
+redis==5.0.0
