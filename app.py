@@ -2,8 +2,14 @@ from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from arbitrage_bot import run_arbitrage_scan
+from models import db, User, PromoCode, SubscriptionTier, PriceHistory, CategoryPerformance
+from auth import auth, token_required, record_price_history
+from subscription import subscription, init_promo_codes
+from analytics import analytics, create_item_identifier
+from filters import filters, OpportunityFilter
+from risk_assessment import risk, RiskAnalyzer
 
 # Set up logging
 logging.basicConfig(
@@ -13,7 +19,17 @@ logging.basicConfig(
 logger = logging.getLogger('app')
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///fliphawk.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 CORS(app)
+db.init_app(app)
+app.register_blueprint(auth)
+app.register_blueprint(subscription)
+app.register_blueprint(analytics)
+app.register_blueprint(filters)
+app.register_blueprint(risk)
 
 # Ensure we're in the right directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,33 +63,50 @@ def health_check():
     })
 
 @app.route('/api/v1/scan', methods=['POST'])
-def run_scan():
-    """Enhanced scan endpoint for real-time resale opportunity detection."""
+@token_required
+def run_scan(current_user):
+    """Enhanced scan endpoint with subscription limits and advanced features."""
     try:
+        # Check if user can scan
+        if not current_user.can_scan():
+            return jsonify({
+                "error": "Daily scan limit reached",
+                "message": "Upgrade to Pro for unlimited scans!",
+                "scans_used": current_user.daily_scans_used,
+                "limit": 5
+            }), 403
+        
         data = request.get_json()
         category = data.get('category', '')
         subcategories = data.get('subcategories', [])
+        filters_params = data.get('filters', {})
         
         if not category or not subcategories:
             return jsonify({"error": "Category and subcategories are required"}), 400
         
-        logger.info(f"Running scan for category: {category}, subcategories: {subcategories}")
+        logger.info(f"Running scan for user {current_user.username}: {category}, {subcategories}")
         
         # Run the real-time arbitrage scan
         start_time = datetime.now()
         results = run_arbitrage_scan(subcategories)
         end_time = datetime.now()
         
+        # Update user's scan count
+        current_user.daily_scans_used += 1
+        db.session.commit()
+        
         scan_duration = (end_time - start_time).total_seconds()
         logger.info(f"Scan completed in {scan_duration:.2f} seconds with {len(results)} results")
         
-        # If no results found, return empty array
-        if not results:
-            logger.warning(f"No opportunities found for category: {category}, subcategories: {subcategories}")
-            return jsonify([])
+        # Apply filters if specified
+        if filters_params:
+            filter_system = OpportunityFilter(current_user)
+            results = filter_system.apply_filters(results, filters_params)
         
         # Process results to include all necessary data
         processed_results = []
+        risk_analyzer = RiskAnalyzer()
+        
         for result in results:
             # Calculate additional metrics
             estimated_tax = result['buyPrice'] * 0.08
@@ -86,6 +119,21 @@ def run_scan():
             net_profit = result['sellPrice'] - total_cost - total_fees
             net_profit_percentage = (net_profit / total_cost) * 100 if total_cost > 0 else 0
             
+            # Record price history for both buy and sell prices
+            item_identifier = create_item_identifier(result['title'])
+            record_price_history(item_identifier, result['buyPrice'], 'eBay-Buy', result.get('buyCondition'))
+            record_price_history(item_identifier, result['sellPrice'], 'eBay-Sell', result.get('sellCondition'))
+            
+            # Update category performance
+            update_category_performance(category, result['subcategory'], net_profit, net_profit_percentage)
+            
+            # Perform risk assessment for Pro/Business users
+            risk_score = None
+            risk_level = None
+            if current_user.subscription_tier != SubscriptionTier.FREE.value:
+                risk_score, risk_factors = risk_analyzer.calculate_risk_score(result)
+                risk_level = 'low' if risk_score < 30 else 'medium' if risk_score < 60 else 'high'
+            
             processed_result = {
                 **result,
                 'estimatedTax': round(estimated_tax, 2),
@@ -96,7 +144,10 @@ def run_scan():
                 'totalFees': round(total_fees, 2),
                 'netProfit': round(net_profit, 2),
                 'netProfitPercentage': round(net_profit_percentage, 2),
-                'scanDuration': scan_duration
+                'scanDuration': scan_duration,
+                'itemIdentifier': item_identifier,
+                'riskScore': risk_score,
+                'riskLevel': risk_level
             }
             
             processed_results.append(processed_result)
@@ -149,9 +200,45 @@ def calculate_ebay_fee(sell_price):
     else:
         return 150 * 0.105 + 850 * 0.085 + (sell_price - 1000) * 0.065  # 6.5% for high-value
 
+def update_category_performance(category, subcategory, profit, profit_margin):
+    """Update category performance metrics."""
+    perf = CategoryPerformance.query.filter_by(
+        category=category,
+        subcategory=subcategory
+    ).first()
+    
+    if not perf:
+        perf = CategoryPerformance(
+            category=category,
+            subcategory=subcategory,
+            total_opportunities=0,
+            successful_flips=0,
+            average_profit=0.0,
+            average_profit_margin=0.0
+        )
+        db.session.add(perf)
+    
+    # Update metrics
+    perf.total_opportunities += 1
+    if profit > 0:
+        perf.successful_flips += 1
+    
+    # Update averages
+    total_ops = perf.total_opportunities
+    perf.average_profit = ((perf.average_profit * (total_ops - 1)) + profit) / total_ops
+    perf.average_profit_margin = ((perf.average_profit_margin * (total_ops - 1)) + profit_margin) / total_ops
+    perf.last_updated = datetime.utcnow()
+    
+    db.session.commit()
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_ENV") == "development"
     print(f"Starting server on port {port}")
     print(f"Debug mode: {debug}")
+    
+    with app.app_context():
+        db.create_all()  # Create database tables
+        init_promo_codes()  # Initialize the Seaprep promo code
+    
     app.run(host="0.0.0.0", port=port, debug=debug)
