@@ -487,6 +487,18 @@
       margin-right: 0.75rem;
     }
 
+    .success {
+      background: var(--success);
+      color: white;
+      padding: 1rem;
+      border-radius: 12px;
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+    }
+
     /* Results grid */
     .results {
       display: grid;
@@ -1225,7 +1237,7 @@
       categorySelect.addEventListener('change', handleCategoryChange);
       
       // Scan button
-      scanButton.addEventListener('click', runScan);
+      scanButton.addEventListener('click', handleScanClick);
       
       // Filter toggle
       filterToggle.addEventListener('click', () => {
@@ -1423,6 +1435,16 @@
       scanButton.disabled = !(categorySelect.value && selectedSubcategories.length > 0);
     }
 
+    function handleScanClick() {
+      if (!currentUser) {
+        showAuthModal();
+        return;
+      }
+      
+      // First show subscription modal to choose plan
+      showSubscription();
+    }
+
     async function runScan() {
       if (!currentUser) {
         showAuthModal();
@@ -1470,209 +1492,3 @@
             progressBar.style.width = `${Math.min(progress, 90)}%`;
             
             if (progress < 30) {
-              loadingStatus.textContent = 'Initializing scan...';
-              loadingDetails.textContent = 'Connecting to marketplace APIs...';
-            } else if (progress < 60) {
-              loadingStatus.textContent = 'Searching listings...';
-              loadingDetails.textContent = `Scanning ${selectedSubcategories.join(', ')}...`;
-            } else {
-              loadingStatus.textContent = 'Analyzing opportunities...';
-              loadingDetails.textContent = 'Comparing prices and calculating profits...';
-            }
-          }
-        }, 500);
-        
-        const response = await fetch('/api/v1/scan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            category: categorySelect.value,
-            subcategories: selectedSubcategories,
-            filters: filters
-          })
-        });
-        
-        clearInterval(progressInterval);
-        progressBar.style.width = '100%';
-        loadingStatus.textContent = 'Scan complete!';
-        loadingDetails.textContent = 'Processing results...';
-        
-        if (response.status === 403) {
-          const data = await response.json();
-          showError(data.message);
-          showSubscription();
-          return;
-        }
-        
-        if (!response.ok) {
-          throw new Error('Scan failed');
-        }
-        
-        const data = await response.json();
-        setTimeout(() => {
-          displayResults(data);
-        }, 500);
-        
-      } catch (error) {
-        showError('Failed to run scan. Please try again.');
-        console.error('Scan error:', error);
-      } finally {
-        setTimeout(() => {
-          loadingDiv.style.display = 'none';
-          updateScanButton();
-          checkSubscriptionStatus(); // Update scan count
-        }, 500);
-      }
-    }
-
-    function displayResults(results) {
-      if (results.length === 0) {
-        resultsDiv.innerHTML = `
-          <div style="text-align: center; padding: 3rem;">
-            <i class="fas fa-search-minus" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
-            <h3 style="font-family: 'Plus Jakarta Sans', sans-serif;">No resale opportunities found</h3>
-            <p style="color: var(--text-light);">Try adjusting your filters or selecting different subcategories</p>
-          </div>
-        `;
-        return;
-      }
-      
-      const html = results.map(result => `
-        <div class="result-card">
-          <div class="result-header">
-            <h3>${result.title}</h3>
-            <div class="badges">
-              <span class="confidence-badge ${getConfidenceBadgeClass(result.confidence)}">
-                <i class="fas fa-check-circle"></i> ${result.confidence}% Match
-              </span>
-              ${result.riskLevel ? `
-                <span class="risk-badge risk-${result.riskLevel}">
-                  <i class="fas fa-shield-alt"></i> ${result.riskLevel.charAt(0).toUpperCase() + result.riskLevel.slice(1)} Risk
-                </span>
-              ` : ''}
-            </div>
-          </div>
-          <div class="result-body">
-            <div class="price-row">
-              <div class="price-item">
-                <i class="fas fa-tag"></i>
-                <div class="price-label">Buy Price</div>
-                <div class="price-value">${result.buyPrice.toFixed(2)}</div>
-              </div>
-              <div class="price-item">
-                <i class="fas fa-dollar-sign"></i>
-                <div class="price-label">Sell Price</div>
-                <div class="price-value">${result.sellPrice.toFixed(2)}</div>
-              </div>
-            </div>
-            <div class="profit-section">
-              <i class="fas fa-chart-line"></i>
-              <div class="profit-label">Potential Profit</div>
-              <div class="profit-value">${result.profit.toFixed(2)} (${result.profitPercentage.toFixed(1)}%)</div>
-            </div>
-            <div class="result-actions">
-              <a href="${result.buyLink}" target="_blank" class="result-link buy-link">
-                <i class="fas fa-shopping-cart"></i> Buy
-              </a>
-              <a href="${result.sellLink}" target="_blank" class="result-link sell-link">
-                <i class="fas fa-store"></i> Resell
-              </a>
-            </div>
-          </div>
-        </div>
-      `).join('');
-      
-      resultsDiv.innerHTML = html;
-    }
-
-    function getConfidenceBadgeClass(confidence) {
-      if (confidence >= 90) return 'confidence-high';
-      if (confidence >= 70) return 'confidence-medium';
-      return 'confidence-low';
-    }
-
-    function showSubscription() {
-      subscriptionModal.classList.add('show');
-    }
-
-    async function redeemPromoCode() {
-      const code = document.getElementById('promoCode').value;
-      const token = safeGetItem('token');
-      
-      if (!code) {
-        showError('Please enter a promo code');
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/v1/subscription/redeem', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ code })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-          showSuccess(data.message);
-          closeModal();
-          checkSubscriptionStatus();
-        } else {
-          showError(data.message);
-        }
-      } catch (error) {
-        showError('Failed to redeem promo code');
-      }
-    }
-
-    function upgradeToPro() {
-      // Implement payment integration with Stripe/PayPal
-      alert('Pro upgrade feature coming soon!');
-    }
-
-    function upgradeToBusiness() {
-      // Implement payment integration with Stripe/PayPal
-      alert('Business upgrade feature coming soon!');
-    }
-
-    function showError(message) {
-      errorDiv.querySelector('span').textContent = message;
-      errorDiv.style.display = 'flex';
-      setTimeout(() => {
-        errorDiv.style.display = 'none';
-      }, 5000);
-    }
-
-    function showSuccess(message) {
-      // You can create a success notification element similar to error
-      alert(message); // Temporary solution
-    }
-
-    function closeModal() {
-      authModal.classList.remove('show');
-      subscriptionModal.classList.remove('show');
-    }
-
-    function showDashboard() {
-      // Redirect to dashboard page
-      window.location.href = '/dashboard';
-    }
-
-    function showSavedItems() {
-      // Redirect to saved items page
-      window.location.href = '/saved';
-    }
-
-    function showProfile() {
-      // Redirect to profile page  
-      window.location.href = '/profile';
-    }
-  </script>
-</body>
-</html>
