@@ -499,6 +499,10 @@
       font-weight: 500;
     }
 
+    .success i {
+      margin-right: 0.75rem;
+    }
+
     /* Results grid */
     .results {
       display: grid;
@@ -1311,7 +1315,7 @@
       
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const username = document.getElementById('username').value;
+      const username = isLoginMode ? null : document.getElementById('username').value;
       
       const endpoint = isLoginMode ? '/api/v1/auth/login' : '/api/v1/auth/register';
       const payload = isLoginMode ? { email, password } : { email, password, username };
@@ -1319,7 +1323,10 @@
       try {
         const response = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify(payload)
         });
         
@@ -1332,16 +1339,21 @@
             currentUser = { email: data.email, username: data.username };
             showUserInterface();
             checkSubscriptionStatus();
+            closeModal();
           } else {
-            // After registration, automatically log in
+            // After registration, switch to login mode
             toggleAuthMode();
             showSuccess('Account created successfully! Please log in.');
+            // Clear form fields
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('username').value = '';
           }
-          closeModal();
         } else {
           showError(data.message || 'Authentication failed');
         }
       } catch (error) {
+        console.error('Auth error:', error);
         showError('An error occurred. Please try again.');
       }
     }
@@ -1397,17 +1409,19 @@
       if (category) {
         subcategoriesContainer.style.display = 'block';
         const subcats = categories[category];
-        let html = '';
-        subcats.forEach(subcat => {
-          html += `
-            <label class="checkbox-wrapper">
-              <input type="checkbox" value="${subcat}" onchange="handleSubcategoryChange(this)">
-              <div class="checkbox-custom"></div>
-              ${subcat}
-            </label>
-          `;
-        });
-        subcategoriesDiv.innerHTML = html;
+        if (subcats) {
+          let html = '';
+          subcats.forEach(subcat => {
+            html += `
+              <label class="checkbox-wrapper">
+                <input type="checkbox" value="${subcat}" onchange="handleSubcategoryChange(this)">
+                <div class="checkbox-custom"></div>
+                ${subcat}
+              </label>
+            `;
+          });
+          subcategoriesDiv.innerHTML = html;
+        }
       } else {
         subcategoriesContainer.style.display = 'none';
         subcategoriesDiv.innerHTML = '';
