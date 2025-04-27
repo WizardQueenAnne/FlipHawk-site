@@ -959,4 +959,720 @@
       </div>
 
       <div id="subcategoriesContainer" style="display: none;">
-        <label><i class="fas fa-check-square"></i>Select
+        <label><i class="fas fa-check-square"></i>Select Subcategories (up to 5)</label>
+        <div class="subcategories" id="subcategories"></div>
+      </div>
+
+      <div class="filter-section">
+        <div id="filterToggle" class="filter-toggle" style="display: none;">
+          <i class="fas fa-sliders-h"></i> Advanced Filters
+          <span class="pro-badge"><i class="fas fa-crown"></i> Pro</span>
+        </div>
+        <div id="filterPanel" class="filter-grid" style="display: none;">
+          <div class="filter-item">
+            <label>Min Profit %</label>
+            <input type="number" id="minProfitPercent" class="filter-input" placeholder="e.g., 20">
+          </div>
+          <div class="filter-item">
+            <label>Max Buy Price</label>
+            <input type="number" id="maxBuyPrice" class="filter-input" placeholder="e.g., 500">
+          </div>
+          <div class="filter-item">
+            <label>Condition</label>
+            <select id="conditionFilter" class="filter-input" multiple>
+              <option value="New">New</option>
+              <option value="Like New">Like New</option>
+              <option value="Very Good">Very Good</option>
+              <option value="Good">Good</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>Min Confidence</label>
+            <input type="range" id="minConfidence" class="filter-input" min="60" max="100" value="70">
+            <span id="confidenceValue">70%</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="scanButton" class="btn btn-primary" disabled>
+        <i class="fas fa-magnifying-glass-dollar"></i> Find Resale Opportunities
+      </button>
+
+      <div id="error" class="error" style="display: none;">
+        <i class="fas fa-exclamation-circle"></i>
+        <span></span>
+      </div>
+
+      <div id="loading" class="loading" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: 0%;"></div>
+        </div>
+        <p id="loading-status">Scanning marketplaces for profitable resale opportunities...</p>
+        <p id="loading-details" style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.5rem;"></p>
+      </div>
+    </div>
+
+    <div id="results" class="results"></div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+        <div class="feature-title">Lightning Fast</div>
+        <div class="feature-text">Real-time scanning across multiple marketplaces</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="feature-title">Profit Analysis</div>
+        <div class="feature-text">Instant profit calculations with all fees included</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-robot"></i></div>
+        <div class="feature-title">Smart Matching</div>
+        <div class="feature-text">AI-powered algorithms for accurate product matching</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-clock-rotate-left"></i></div>
+        <div class="feature-title">Real-Time Data</div>
+        <div class="feature-text">Always current, never using outdated information</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
+        <div class="feature-title">Verified Results</div>
+        <div class="feature-text">High confidence matching to reduce risk</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+        <div class="feature-title">Mobile Ready</div>
+        <div class="feature-text">Works seamlessly on all devices</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="authTitle">Welcome to FlipHawk</h2>
+        <p id="authSubtitle">Access advanced features and save your favorite opportunities</p>
+      </div>
+      <form id="authForm">
+        <div id="usernameGroup" class="form-group" style="display: none;">
+          <label for="username">Username</label>
+          <input type="text" id="username" class="form-input" placeholder="Choose a username">
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" class="form-input" required placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-input" required placeholder="Enter your password">
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <span id="authButtonText">Login</span>
+        </button>
+      </form>
+      <p style="text-align: center; margin-top: 1.5rem;">
+        <span id="authSwitchText">Don't have an account?</span>
+        <button id="authSwitchButton" class="btn-link">Sign Up</button>
+      </p>
+      <div style="text-align: center; margin-top: 1rem;">
+        <button onclick="closeModal()" class="btn-link">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscription Modal -->
+  <div id="subscriptionModal" class="modal">
+    <div class="modal-content subscription-modal">
+      <h2 style="text-align: center; margin-bottom: 2rem;">Choose Your Plan</h2>
+      <div class="plans-grid">
+        <div class="plan-card">
+          <h3>Free</h3>
+          <div class="plan-price">$0</div>
+          <div class="plan-features">
+            <div class="plan-feature"><i class="fas fa-check"></i> 5 scans per day</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Basic filters</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Limited price history</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Standard support</div>
+          </div>
+          <button class="btn btn-primary" disabled>Current Plan</button>
+        </div>
+        <div class="plan-card recommended">
+          <span class="popular-badge">Most Popular</span>
+          <h3>Pro</h3>
+          <div class="plan-price">$9.99<small>/mo</small></div>
+          <div class="plan-features">
+            <div class="plan-feature"><i class="fas fa-check"></i> Unlimited scans</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Advanced filters</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Full price history</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Risk assessment</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Priority support</div>
+          </div>
+          <button onclick="upgradeToPro()" class="btn btn-primary">Upgrade to Pro</button>
+        </div>
+        <div class="plan-card">
+          <h3>Business</h3>
+          <div class="plan-price">$29.99<small>/mo</small></div>
+          <div class="plan-features">
+            <div class="plan-feature"><i class="fas fa-check"></i> Everything in Pro</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> API access</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Bulk operations</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Team management</div>
+            <div class="plan-feature"><i class="fas fa-check"></i> Export capabilities</div>
+          </div>
+          <button onclick="upgradeToBusiness()" class="btn btn-primary">Upgrade to Business</button>
+        </div>
+      </div>
+      <div class="promo-section">
+        <p style="text-align: center;">Have a promo code?</p>
+        <div class="promo-input-group">
+          <input type="text" id="promoCode" class="form-input" placeholder="Enter promo code">
+          <button onclick="redeemPromoCode()" class="btn btn-primary">Redeem</button>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 2rem;">
+        <button onclick="closeModal()" class="btn-link">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Safe localStorage operations
+    function safeGetItem(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (e) {
+        console.warn('localStorage access denied:', e);
+        return null;
+      }
+    }
+
+    function safeSetItem(key, value) {
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (e) {
+        console.warn('localStorage access denied:', e);
+        return false;
+      }
+    }
+
+    function safeRemoveItem(key) {
+      try {
+        localStorage.removeItem(key);
+        return true;
+      } catch (e) {
+        console.warn('localStorage access denied:', e);
+        return false;
+      }
+    }
+
+    // Global variables
+    let currentUser = null;
+    let selectedSubcategories = [];
+    let isLoginMode = true;
+
+    // Categories data
+    const categories = {
+      "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
+      "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
+      "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
+      "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
+      "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
+      "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
+      "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
+      "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
+    };
+
+    // DOM Elements
+    const authModal = document.getElementById('authModal');
+    const subscriptionModal = document.getElementById('subscriptionModal');
+    const authSection = document.getElementById('authSection');
+    const userSection = document.getElementById('userSection');
+    const authForm = document.getElementById('authForm');
+    const scanButton = document.getElementById('scanButton');
+    const categorySelect = document.getElementById('category');
+    const subcategoriesContainer = document.getElementById('subcategoriesContainer');
+    const subcategoriesDiv = document.getElementById('subcategories');
+    const filterToggle = document.getElementById('filterToggle');
+    const filterPanel = document.getElementById('filterPanel');
+    const scanLimitWarning = document.getElementById('scanLimitWarning');
+    const errorDiv = document.getElementById('error');
+    const loadingDiv = document.getElementById('loading');
+    const resultsDiv = document.getElementById('results');
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
+      setupEventListeners();
+    });
+
+    function setupEventListeners() {
+      // Auth events
+      document.getElementById('loginButton').addEventListener('click', showAuthModal);
+      document.getElementById('authSwitchButton').addEventListener('click', toggleAuthMode);
+      authForm.addEventListener('submit', handleAuth);
+      
+      // User menu
+      const userAvatar = document.getElementById('userAvatar');
+      if (userAvatar) {
+        userAvatar.addEventListener('click', toggleUserMenu);
+      }
+      
+      // Category selection
+      categorySelect.addEventListener('change', handleCategoryChange);
+      
+      // Scan button
+      scanButton.addEventListener('click', runScan);
+      
+      // Filter toggle
+      filterToggle.addEventListener('click', () => {
+        filterPanel.style.display = filterPanel.style.display === 'none' ? 'block' : 'none';
+      });
+      
+      // Filter changes
+      document.getElementById('minConfidence').addEventListener('input', function() {
+        document.getElementById('confidenceValue').textContent = this.value + '%';
+      });
+      
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!event.target.closest('.user-menu')) {
+          const dropdown = document.getElementById('userDropdown');
+          if (dropdown) dropdown.classList.remove('active');
+        }
+      });
+    }
+
+    function checkAuth() {
+      const token = safeGetItem('token');
+      const userData = safeGetItem('user');
+      
+      if (token && userData) {
+        currentUser = JSON.parse(userData);
+        showUserInterface();
+        checkSubscriptionStatus();
+      } else {
+        showGuestInterface();
+      }
+    }
+
+    function showUserInterface() {
+      authSection.style.display = 'none';
+      userSection.style.display = 'block';
+      
+      const userAvatar = document.getElementById('userAvatar');
+      if (userAvatar && currentUser && currentUser.username) {
+        userAvatar.textContent = currentUser.username[0].toUpperCase();
+      }
+      
+      filterToggle.style.display = 'flex';
+    }
+
+    function showGuestInterface() {
+      authSection.style.display = 'block';
+      userSection.style.display = 'none';
+      filterToggle.style.display = 'none';
+      filterPanel.style.display = 'none';
+    }
+
+    function showAuthModal() {
+      authModal.classList.add('show');
+    }
+
+    function toggleAuthMode() {
+      isLoginMode = !isLoginMode;
+      document.getElementById('authTitle').textContent = isLoginMode ? 'Welcome to FlipHawk' : 'Create Your Account';
+      document.getElementById('authSubtitle').textContent = isLoginMode ? 
+        'Access advanced features and save your favorite opportunities' : 
+        'Start finding profitable resale opportunities today';
+      document.getElementById('usernameGroup').style.display = isLoginMode ? 'none' : 'block';
+      document.getElementById('authButtonText').textContent = isLoginMode ? 'Login' : 'Sign Up';
+      document.getElementById('authSwitchText').textContent = isLoginMode ? "Don't have an account?" : "Already have an account?";
+      document.getElementById('authSwitchButton').textContent = isLoginMode ? 'Sign Up' : 'Login';
+    }
+
+    async function handleAuth(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const username = document.getElementById('username').value;
+      
+      const endpoint = isLoginMode ? '/api/v1/auth/login' : '/api/v1/auth/register';
+      const payload = isLoginMode ? { email, password } : { email, password, username };
+      
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          if (isLoginMode) {
+            safeSetItem('token', data.token);
+            safeSetItem('user', JSON.stringify({ email: data.email, username: data.username }));
+            currentUser = { email: data.email, username: data.username };
+            showUserInterface();
+            checkSubscriptionStatus();
+          } else {
+            // After registration, automatically log in
+            toggleAuthMode();
+            showSuccess('Account created successfully! Please log in.');
+          }
+          closeModal();
+        } else {
+          showError(data.message || 'Authentication failed');
+        }
+      } catch (error) {
+        showError('An error occurred. Please try again.');
+      }
+    }
+
+    function toggleUserMenu() {
+      const dropdown = document.getElementById('userDropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('active');
+      }
+    }
+
+    function logout() {
+      safeRemoveItem('token');
+      safeRemoveItem('user');
+      currentUser = null;
+      showGuestInterface();
+    }
+
+    async function checkSubscriptionStatus() {
+      const token = safeGetItem('token');
+      if (!token) return;
+      
+      try {
+        const response = await fetch('/api/v1/subscription/current', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await response.json();
+        
+        if (data.subscription_tier === 'free') {
+          scanLimitWarning.style.display = 'flex';
+          document.getElementById('scanLimitText').textContent = 
+            `You have ${data.scans_remaining} scans remaining today.`;
+          
+          // Hide advanced filters for free users
+          const proBadge = filterToggle.querySelector('.pro-badge');
+          if (proBadge) proBadge.style.display = 'inline-flex';
+          filterPanel.style.display = 'none';
+        } else {
+          scanLimitWarning.style.display = 'none';
+          const proBadge = filterToggle.querySelector('.pro-badge');
+          if (proBadge) proBadge.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+      }
+    }
+
+    function handleCategoryChange() {
+      const category = categorySelect.value;
+      selectedSubcategories = [];
+      
+      if (category) {
+        subcategoriesContainer.style.display = 'block';
+        const subcats = categories[category];
+        let html = '';
+        subcats.forEach(subcat => {
+          html += `
+            <label class="checkbox-wrapper">
+              <input type="checkbox" value="${subcat}" onchange="handleSubcategoryChange(this)">
+              <div class="checkbox-custom"></div>
+              ${subcat}
+            </label>
+          `;
+        });
+        subcategoriesDiv.innerHTML = html;
+      } else {
+        subcategoriesContainer.style.display = 'none';
+        subcategoriesDiv.innerHTML = '';
+      }
+      
+      updateScanButton();
+    }
+
+    function handleSubcategoryChange(checkbox) {
+      if (checkbox.checked) {
+        if (selectedSubcategories.length < 5) {
+          selectedSubcategories.push(checkbox.value);
+        } else {
+          checkbox.checked = false;
+          showError('You can only select up to 5 subcategories');
+        }
+      } else {
+        selectedSubcategories = selectedSubcategories.filter(item => item !== checkbox.value);
+      }
+      
+      updateScanButton();
+    }
+
+    function updateScanButton() {
+      scanButton.disabled = !(categorySelect.value && selectedSubcategories.length > 0);
+    }
+
+    async function runScan() {
+      if (!currentUser) {
+        showAuthModal();
+        return;
+      }
+      
+      const token = safeGetItem('token');
+      if (!token) {
+        showAuthModal();
+        return;
+      }
+      
+      errorDiv.style.display = 'none';
+      loadingDiv.style.display = 'block';
+      resultsDiv.innerHTML = '';
+      scanButton.disabled = true;
+      
+      // Get filter values
+      const filters = {};
+      const minProfitPercent = document.getElementById('minProfitPercent').value;
+      if (minProfitPercent) filters.min_profit_margin = parseFloat(minProfitPercent);
+      
+      const maxBuyPrice = document.getElementById('maxBuyPrice').value;
+      if (maxBuyPrice) filters.max_price = parseFloat(maxBuyPrice);
+      
+      const conditionFilter = document.getElementById('conditionFilter');
+      const selectedConditions = Array.from(conditionFilter.selectedOptions).map(opt => opt.value);
+      if (selectedConditions.length) filters.conditions = selectedConditions;
+      
+      const minConfidence = document.getElementById('minConfidence').value;
+      filters.min_confidence = parseInt(minConfidence);
+      
+      // Reset progress bar
+      const progressBar = document.querySelector('.progress-bar');
+      const loadingStatus = document.getElementById('loading-status');
+      const loadingDetails = document.getElementById('loading-details');
+      progressBar.style.width = '0%';
+      
+      try {
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          if (progress < 90) {
+            progress += Math.random() * 10;
+            progressBar.style.width = `${Math.min(progress, 90)}%`;
+            
+            if (progress < 30) {
+              loadingStatus.textContent = 'Initializing scan...';
+              loadingDetails.textContent = 'Connecting to marketplace APIs...';
+            } else if (progress < 60) {
+              loadingStatus.textContent = 'Searching listings...';
+              loadingDetails.textContent = `Scanning ${selectedSubcategories.join(', ')}...`;
+            } else {
+              loadingStatus.textContent = 'Analyzing opportunities...';
+              loadingDetails.textContent = 'Comparing prices and calculating profits...';
+            }
+          }
+        }, 500);
+        
+        const response = await fetch('/api/v1/scan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            category: categorySelect.value,
+            subcategories: selectedSubcategories,
+            filters: filters
+          })
+        });
+        
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        loadingStatus.textContent = 'Scan complete!';
+        loadingDetails.textContent = 'Processing results...';
+        
+        if (response.status === 403) {
+          const data = await response.json();
+          showError(data.message);
+          showSubscription();
+          return;
+        }
+        
+        if (!response.ok) {
+          throw new Error('Scan failed');
+        }
+        
+        const data = await response.json();
+        setTimeout(() => {
+          displayResults(data);
+        }, 500);
+        
+      } catch (error) {
+        showError('Failed to run scan. Please try again.');
+        console.error('Scan error:', error);
+      } finally {
+        setTimeout(() => {
+          loadingDiv.style.display = 'none';
+          updateScanButton();
+          checkSubscriptionStatus(); // Update scan count
+        }, 500);
+      }
+    }
+
+    function displayResults(results) {
+      if (results.length === 0) {
+        resultsDiv.innerHTML = `
+          <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-search-minus" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+            <h3 style="font-family: 'Plus Jakarta Sans', sans-serif;">No resale opportunities found</h3>
+            <p style="color: var(--text-light);">Try adjusting your filters or selecting different subcategories</p>
+          </div>
+        `;
+        return;
+      }
+      
+      const html = results.map(result => `
+        <div class="result-card">
+          <div class="result-header">
+            <h3>${result.title}</h3>
+            <div class="badges">
+              <span class="confidence-badge ${getConfidenceBadgeClass(result.confidence)}">
+                <i class="fas fa-check-circle"></i> ${result.confidence}% Match
+              </span>
+              ${result.riskLevel ? `
+                <span class="risk-badge risk-${result.riskLevel}">
+                  <i class="fas fa-shield-alt"></i> ${result.riskLevel.charAt(0).toUpperCase() + result.riskLevel.slice(1)} Risk
+                </span>
+              ` : ''}
+            </div>
+          </div>
+          <div class="result-body">
+            <div class="price-row">
+              <div class="price-item">
+                <i class="fas fa-tag"></i>
+                <div class="price-label">Buy Price</div>
+                <div class="price-value">${result.buyPrice.toFixed(2)}</div>
+              </div>
+              <div class="price-item">
+                <i class="fas fa-dollar-sign"></i>
+                <div class="price-label">Sell Price</div>
+                <div class="price-value">${result.sellPrice.toFixed(2)}</div>
+              </div>
+            </div>
+            <div class="profit-section">
+              <i class="fas fa-chart-line"></i>
+              <div class="profit-label">Potential Profit</div>
+              <div class="profit-value">${result.profit.toFixed(2)} (${result.profitPercentage.toFixed(1)}%)</div>
+            </div>
+            <div class="result-actions">
+              <a href="${result.buyLink}" target="_blank" class="result-link buy-link">
+                <i class="fas fa-shopping-cart"></i> Buy
+              </a>
+              <a href="${result.sellLink}" target="_blank" class="result-link sell-link">
+                <i class="fas fa-store"></i> Resell
+              </a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      resultsDiv.innerHTML = html;
+    }
+
+    function getConfidenceBadgeClass(confidence) {
+      if (confidence >= 90) return 'confidence-high';
+      if (confidence >= 70) return 'confidence-medium';
+      return 'confidence-low';
+    }
+
+    function showSubscription() {
+      subscriptionModal.classList.add('show');
+    }
+
+    async function redeemPromoCode() {
+      const code = document.getElementById('promoCode').value;
+      const token = safeGetItem('token');
+      
+      if (!code) {
+        showError('Please enter a promo code');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/v1/subscription/redeem', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ code })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message);
+          closeModal();
+          checkSubscriptionStatus();
+        } else {
+          showError(data.message);
+        }
+      } catch (error) {
+        showError('Failed to redeem promo code');
+      }
+    }
+
+    function upgradeToPro() {
+      // Implement payment integration with Stripe/PayPal
+      alert('Pro upgrade feature coming soon!');
+    }
+
+    function upgradeToBusiness() {
+      // Implement payment integration with Stripe/PayPal
+      alert('Business upgrade feature coming soon!');
+    }
+
+    function showError(message) {
+      errorDiv.querySelector('span').textContent = message;
+      errorDiv.style.display = 'flex';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    function showSuccess(message) {
+      // You can create a success notification element similar to error
+      alert(message); // Temporary solution
+    }
+
+    function closeModal() {
+      authModal.classList.remove('show');
+      subscriptionModal.classList.remove('show');
+    }
+
+    function showDashboard() {
+      // Redirect to dashboard page
+      window.location.href = '/dashboard';
+    }
+
+    function showSavedItems() {
+      // Redirect to saved items page
+      window.location.href = '/saved';
+    }
+
+    function showProfile() {
+      // Redirect to profile page  
+      window.location.href = '/profile';
+    }
+  </script>
+</body>
+</html>
