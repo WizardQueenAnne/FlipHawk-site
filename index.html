@@ -719,11 +719,11 @@
 
         <div class="subcategory-container" id="subcategory-panel">
             <h3>Select Subcategories</h3>
-            <p>Choose up to 5 subcategories to narrow your search</p>
+            <p>Choose subcategories to narrow your search</p>
             <div class="subcategory-grid" id="subcategory-grid">
                 <!-- Subcategories will be dynamically inserted here -->
             </div>
-            <div class="selected-count" id="selected-count">0 of 5 subcategories selected</div>
+            <div class="selected-count" id="selected-count">0 subcategories selected</div>
         </div>
 
         <div style="text-align: center;">
@@ -861,9 +861,9 @@
         const categories = {
             "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
             "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
-            "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
+            "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
             "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
-            "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
+            "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
             "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
             "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
             "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
@@ -1035,7 +1035,21 @@
             });
         }
         
-        // Setup guest user
+        // Handle login - simplified
+        async function handleLogin() {
+            // Skip actual login - just continue as guest
+            setupGuestUser();
+            loginModal.classList.remove('active');
+        }
+
+        // Handle signup - simplified
+        async function handleSignup() {
+            // Skip actual signup - just continue as guest
+            setupGuestUser();
+            signupModal.classList.remove('active');
+        }
+
+        // Setup guest user - simplified
         function setupGuestUser() {
             currentUser = {
                 username: 'Guest',
@@ -1043,17 +1057,18 @@
                 isGuest: true
             };
             
+            localStorage.setItem('user', JSON.stringify(currentUser));
             updateUIForLoggedInUser();
-            showToast('Continuing as guest. You have 2 scans per day.', 'success');
+            currentPlan = 'free';
+            scansRemaining = 2;
         }
-
+        
         // Check if user is logged in
         function checkAuth() {
-            const token = localStorage.getItem('token');
             const userData = localStorage.getItem('user');
             const userPlan = localStorage.getItem('plan');
             
-            if (token && userData) {
+            if (userData) {
                 try {
                     currentUser = JSON.parse(userData);
                     if (userPlan) {
@@ -1063,14 +1078,13 @@
                     updateUIForLoggedInUser();
                 } catch (e) {
                     console.error('Error parsing user data:', e);
-                    localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     localStorage.removeItem('plan');
                 }
             }
         }
 
-        // Update UI for logged in user
+        // Update UI for logged in user - simplified
         function updateUIForLoggedInUser() {
             if (currentUser) {
                 // Show user menu, hide auth buttons
@@ -1081,9 +1095,6 @@
                 if (currentUser.username) {
                     userAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
                 }
-                
-                // Update subscription plan buttons
-                updatePlanButtons();
             } else {
                 // Show auth buttons, hide user menu
                 authButtons.style.display = 'flex';
@@ -1108,6 +1119,7 @@
             
             updatePlanButtons();
             showToast(`Successfully upgraded to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`, 'success');
+            subscriptionModal.classList.remove('active');
         }
         
         // Update plan buttons based on current plan
@@ -1129,32 +1141,23 @@
             });
         }
         
-        // Redeem promo code
+        // Redeem promo code - simplified
         function redeemPromoCode(code) {
-            redeemMessage.className = 'redeem-message';
-            redeemMessage.style.display = 'none';
+            // Always grant Pro access
+            currentPlan = 'pro';
+            localStorage.setItem('plan', 'pro');
             
-            // Check if code is 'Seaprep'
-            if (code.toUpperCase() === 'SEAPREP') {
-                currentPlan = 'pro';
-                localStorage.setItem('plan', 'pro');
-                scansRemaining = 999; // Unlimited
-                
-                redeemMessage.textContent = 'Success! You now have unlimited scans with the Pro plan.';
-                redeemMessage.classList.add('success');
-                redeemMessage.style.display = 'block';
-                
-                updatePlanButtons();
-                
-                // Clear input
-                promoCodeInput.value = '';
-                
-                showToast('Promo code successfully redeemed! Welcome to the Pro plan.', 'success');
-            } else {
-                redeemMessage.textContent = 'Invalid promo code. Please try again.';
-                redeemMessage.classList.add('error');
-                redeemMessage.style.display = 'block';
-            }
+            redeemMessage.textContent = 'Success! You now have unlimited scans with the Pro plan.';
+            redeemMessage.className = 'redeem-message success';
+            redeemMessage.style.display = 'block';
+            
+            // Clear input
+            promoCodeInput.value = '';
+            
+            showToast('Promo code successfully redeemed! Welcome to the Pro plan.', 'success');
+            
+            // Update plan buttons
+            updatePlanButtons();
         }
         
         // Update scans remaining
@@ -1191,39 +1194,27 @@
             subcategoryPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        // Toggle subcategory selection
+        // Toggle subcategory selection - simplified
         function toggleSubcategory(chip, subcategory) {
             if (chip.classList.contains('selected')) {
                 chip.classList.remove('selected');
                 selectedSubcategories = selectedSubcategories.filter(s => s !== subcategory);
-            } else if (selectedSubcategories.length < 5) {
+            } else {
+                // Always allow selection - no limit
                 chip.classList.add('selected');
                 selectedSubcategories.push(subcategory);
-            } else {
-                showToast('You can only select up to 5 subcategories', 'error');
             }
             updateSelectedCount();
             updateSearchButton();
         }
 
-        // Update selected count
+        // Update selected count - simplified
         function updateSelectedCount() {
-            selectedCount.textContent = `${selectedSubcategories.length} of 5 subcategories selected`;
-            
-            // Change color when approaching limit
-            if (selectedSubcategories.length >= 5) {
-                selectedCount.style.color = 'var(--primary-color)';
-                selectedCount.style.fontWeight = 'bold';
-            } else if (selectedSubcategories.length >= 3) {
-                selectedCount.style.color = 'var(--accent-color)';
-                selectedCount.style.fontWeight = 'normal';
-            } else {
-                selectedCount.style.color = 'var(--text-color)';
-                selectedCount.style.fontWeight = 'normal';
-            }
+            selectedCount.textContent = `${selectedSubcategories.length} subcategories selected`;
+            selectedCount.style.color = 'var(--accent-color)';
         }
 
-        // Update search button state
+        // Update search button state - simplified
         function updateSearchButton() {
             if (selectedSubcategories.length > 0) {
                 searchButton.classList.add('active');
@@ -1234,126 +1225,9 @@
             }
         }
 
-        // Handle login
-        async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            // Hide previous messages
-            loginError.style.display = 'none';
-            loginSuccess.style.display = 'none';
-            
-            // Disable submit button
-            const submitButton = loginForm.querySelector('.form-button');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Logging in...';
-            
-            try {
-                // Simulated login success for now
-                currentUser = {
-                    username: email.split('@')[0],
-                    email: email
-                };
-                
-                localStorage.setItem('user', JSON.stringify(currentUser));
-                localStorage.setItem('token', 'sample-token-123');
-                
-                // Show success message
-                loginSuccess.textContent = 'Login successful!';
-                loginSuccess.style.display = 'block';
-                
-                // Update UI
-                updateUIForLoggedInUser();
-                
-                // Close modal after delay
-                setTimeout(function() {
-                    loginModal.classList.remove('active');
-                }, 1000);
-                
-                // Reset form
-                submitButton.disabled = false;
-                submitButton.textContent = 'Login';
-                
-            } catch (error) {
-                console.error('Login error:', error);
-                loginError.textContent = 'A network error occurred. Please try again.';
-                loginError.style.display = 'block';
-                
-                // Reset button
-                submitButton.disabled = false;
-                submitButton.textContent = 'Login';
-            }
-        }
-
-        // Handle signup
-        async function handleSignup() {
-            const username = document.getElementById('signup-username').value;
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            
-            // Hide previous messages
-            signupError.style.display = 'none';
-            signupSuccess.style.display = 'none';
-            
-            // Validate inputs
-            if (password.length < 6) {
-                signupError.textContent = 'Password must be at least 6 characters long.';
-                signupError.style.display = 'block';
-                return;
-            }
-            
-            if (username.length < 3) {
-                signupError.textContent = 'Username must be at least 3 characters long.';
-                signupError.style.display = 'block';
-                return;
-            }
-            
-            // Disable submit button
-            const submitButton = signupForm.querySelector('.form-button');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Creating account...';
-            
-            try {
-                // Simulated signup success for now
-                currentUser = {
-                    username: username,
-                    email: email
-                };
-                
-                localStorage.setItem('user', JSON.stringify(currentUser));
-                localStorage.setItem('token', 'sample-token-123');
-                
-                // Show success message
-                signupSuccess.textContent = 'Account created successfully!';
-                signupSuccess.style.display = 'block';
-                
-                // Update UI
-                updateUIForLoggedInUser();
-                
-                // Close modal after delay
-                setTimeout(function() {
-                    signupModal.classList.remove('active');
-                }, 1000);
-                
-                // Reset form
-                submitButton.disabled = false;
-                submitButton.textContent = 'Create Account';
-                
-            } catch (error) {
-                console.error('Signup error:', error);
-                signupError.textContent = 'A network error occurred. Please try again.';
-                signupError.style.display = 'block';
-                
-                // Reset button
-                submitButton.disabled = false;
-                submitButton.textContent = 'Create Account';
-            }
-        }
-
         // Handle logout
         function handleLogout() {
             // Clear stored data
-            localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('plan');
             
@@ -1371,24 +1245,14 @@
             showToast('You have been logged out successfully', 'success');
         }
 
-        // Start scan function - This will trigger the real arbitrage bot
+        // Start scan function - Direct call to backend
         function startScan() {
+            // Always allow scan to proceed - no login required
+            
             // Check if category and subcategories are selected
             if (!selectedCategory || selectedSubcategories.length === 0) {
                 showToast('Please select a category and at least one subcategory', 'error');
                 return;
-            }
-            
-            // Check if user has scans remaining
-            if (scansRemaining <= 0) {
-                subscriptionModal.classList.add('active');
-                showToast('You have used all your daily scans. Please upgrade your plan.', 'error');
-                return;
-            }
-            
-            // Decrement scans (not for pro plan)
-            if (currentPlan !== 'pro') {
-                scansRemaining--;
             }
             
             // Clear previous results and show loading indicators
@@ -1400,16 +1264,13 @@
             loadingSpinner.style.display = 'block';
             progressContainer.style.display = 'block';
             scanStatus.style.display = 'block';
-            scanStatus.textContent = 'Preparing to scan...';
+            scanStatus.textContent = 'Running arbitrage bot...';
             progressBar.style.width = '0%';
             
             // Disable search button
             searchButton.disabled = true;
             searchButton.classList.remove('active');
             searchButton.textContent = 'Scanning...';
-            
-            // Get token for authentication (if logged in)
-            const token = localStorage.getItem('token') || '';
             
             // Simulate progress while scanning
             let progress = 0;
@@ -1433,8 +1294,7 @@
             fetch('/api/v1/scan', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : ''
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     category: selectedCategory,
@@ -1444,17 +1304,8 @@
             .then(response => {
                 clearInterval(progressInterval);
                 
-                // Check if response is ok
                 if (!response.ok) {
-                    // Check for specific error status
-                    if (response.status === 403) {
-                        // Daily scan limit reached
-                        throw new Error('Daily scan limit reached. Please upgrade your plan.');
-                    } else {
-                        return response.json().then(data => {
-                            throw new Error(data.message || 'Scan failed. Please try again.');
-                        });
-                    }
+                    throw new Error('Scan failed. Please try again.');
                 }
                 
                 return response.json();
@@ -1476,10 +1327,6 @@
                     loadingSpinner.style.display = 'none';
                     progressContainer.style.display = 'none';
                     scanStatus.style.display = 'none';
-                    
-                    // Show user remaining scans
-                    const scansMsg = currentPlan === 'pro' ? 'unlimited' : scansRemaining;
-                    showToast(`Scan complete. You have ${scansMsg} scans remaining today.`, 'success');
                 }, 500);
             })
             .catch(error => {
@@ -1495,7 +1342,7 @@
                 progressContainer.style.display = 'none';
                 
                 // Show error message
-                scanStatus.textContent = error.message || 'An error occurred during the scan.';
+                scanStatus.textContent = 'Error connecting to scanning service. Please try again later.';
                 scanStatus.style.color = 'var(--primary-color)';
                 scanStatus.style.display = 'block';
                 
