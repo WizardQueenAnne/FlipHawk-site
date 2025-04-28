@@ -1,1508 +1,1267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipHawk | Smart Resale Scanner</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    /* Original color scheme enhanced */
-    :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --primary-light: #eef2ff;
-      --secondary: #06b6d4;
-      --secondary-dark: #0891b2;
-      --secondary-light: #ecfeff;
-      --accent: #f43f5e;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --background: #f8fafc;
-      --surface: #ffffff;
-      --text: #0f172a;
-      --text-light: #64748b;
-      --border: #e2e8f0;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, system-ui, sans-serif;
-      background-color: var(--background);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
-
-    /* Elegant navigation */
-    .nav {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 1.5rem 0;
-    }
-
-    .nav-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      color: white;
-      font-size: 1.5rem;
-      font-weight: 700;
-      opacity: 0.9;
-    }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .nav-btn {
-      padding: 0.5rem 1.25rem;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
-      color: white;
-      font-weight: 500;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      backdrop-filter: blur(10px);
-    }
-
-    .nav-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-1px);
-    }
-
-    .user-menu {
-      position: relative;
-    }
-
-    .user-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.9);
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      cursor: pointer;
-      border: 2px solid rgba(255, 255, 255, 0.5);
-    }
-
-    .user-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 0.5rem;
-      background: white;
-      border-radius: 12px;
-      box-shadow: var(--shadow-lg);
-      min-width: 200px;
-      padding: 0.5rem;
-      display: none;
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: all 0.3s;
-    }
-
-    .user-dropdown.active {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 8px;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-    }
-
-    .dropdown-item:hover {
-      background: var(--primary-light);
-      color: var(--primary);
-    }
-
-    .dropdown-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 0.5rem 0;
-    }
-
-    /* Enhanced header */
-    .header {
-      background: var(--gradient);
-      color: white;
-      padding: 140px 0 100px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .header::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-      opacity: 0.1;
-    }
-
-    .header h1 {
-      font-size: 3.75rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      margin-bottom: 1.5rem;
-      position: relative;
-    }
-
-    .header h1 i {
-      font-size: 3rem;
-      margin-right: 1rem;
-      vertical-align: middle;
-    }
-
-    .header p {
-      font-size: 1.25rem;
-      opacity: 0.9;
-      max-width: 600px;
-      margin: 0 auto;
-      position: relative;
-    }
-
-    /* Main card matching original style */
-    .main-card {
-      background: var(--surface);
-      border-radius: 24px;
-      box-shadow: var(--shadow-lg);
-      padding: 2.5rem;
-      margin: -60px auto 40px;
-      position: relative;
-      max-width: 800px;
-      text-align: center;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    /* Subtle alerts */
-    .alert {
-      padding: 1rem;
-      border-radius: 12px;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-size: 0.9rem;
-    }
-
-    .alert-warning {
-      background: var(--warning);
-      color: white;
-    }
-
-    .alert-warning .btn-sm {
-      background: white;
-      color: var(--warning);
-      padding: 0.25rem 0.75rem;
-      font-size: 0.8rem;
-      border-radius: 6px;
-    }
-
-    /* Form elements matching original */
-    .form-group {
-      margin-bottom: 2rem;
-    }
-
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      color: var(--text);
-      font-size: 1.1rem;
-    }
-
-    label i {
-      color: var(--primary);
-      margin-right: 0.5rem;
-    }
-
-    select {
-      width: 100%;
-      padding: 0.875rem 1rem;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      font-size: 1rem;
-      font-family: inherit;
-      transition: all 0.2s ease;
-      background-color: var(--surface);
-      cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 1rem center;
-      background-size: 1.5rem;
-    }
-
-    select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-light);
-    }
-
-    .subcategories {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .checkbox-wrapper {
-      display: flex;
-      align-items: center;
-      padding: 0.875rem;
-      background: var(--background);
-      border-radius: 12px;
-      transition: all 0.2s ease;
-      cursor: pointer;
-      border: 2px solid transparent;
-    }
-
-    .checkbox-wrapper:hover {
-      background: var(--primary-light);
-      border-color: var(--primary);
-    }
-
-    .checkbox-wrapper input[type="checkbox"] {
-      display: none;
-    }
-
-    .checkbox-wrapper .checkbox-custom {
-      width: 22px;
-      height: 22px;
-      border: 2px solid var(--border);
-      border-radius: 6px;
-      margin-right: 0.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-custom {
-      background-color: var(--primary);
-      border-color: var(--primary);
-    }
-
-    .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-custom::after {
-      content: '\f00c';
-      font-family: 'Font Awesome 6 Free';
-      font-weight: 900;
-      color: white;
-      font-size: 12px;
-    }
-
-    /* Elegant advanced filters */
-    .filter-section {
-      margin-top: 2rem;
-      text-align: left;
-    }
-
-    .filter-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--primary);
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 1rem;
-    }
-
-    .filter-toggle:hover {
-      color: var(--primary-dark);
-    }
-
-    .filter-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      padding: 1.5rem;
-      background: var(--background);
-      border-radius: 12px;
-      margin-bottom: 1.5rem;
-    }
-
-    .filter-item label {
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .filter-input {
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.9rem;
-      background: white;
-    }
-
-    .filter-input:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    .pro-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      background: var(--primary);
-      color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    /* Button matching original */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      width: 100%;
-    }
-
-    .btn-primary {
-      background: var(--gradient);
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .btn-primary:disabled {
-      background: var(--text-light);
-      cursor: not-allowed;
-      transform: none;
-      opacity: 0.7;
-    }
-
-    .btn i {
-      margin-right: 0.5rem;
-    }
-
-    /* Loading state */
-    .loading {
-      text-align: center;
-      padding: 3rem;
-    }
-
-    .loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid var(--primary-light);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .progress-bar-container {
-      width: 100%;
-      height: 8px;
-      background-color: var(--border);
-      border-radius: 4px;
-      margin: 1rem 0;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%;
-      background: var(--gradient);
-      transition: width 0.3s ease;
-      border-radius: 4px;
-    }
-
-    /* Error state */
-    .error {
-      background: var(--accent);
-      color: white;
-      padding: 1rem;
-      border-radius: 12px;
-      margin: 1rem 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 500;
-    }
-
-    .error i {
-      margin-right: 0.75rem;
-    }
-
-    .success {
-      background: var(--success);
-      color: white;
-      padding: 1rem;
-      border-radius: 12px;
-      margin: 1rem 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 500;
-    }
-
-    .success i {
-      margin-right: 0.75rem;
-    }
-
-    /* Results grid */
-    .results {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-      padding-bottom: 4rem;
-    }
-
-    .result-card {
-      background: var(--surface);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      transition: all 0.2s ease;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .result-card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .result-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .result-header h3 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .badges {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .confidence-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: white;
-    }
-
-    .confidence-badge i {
-      margin-right: 0.5rem;
-    }
-
-    .confidence-high { background: var(--success); }
-    .confidence-medium { background: var(--warning); }
-    .confidence-low { background: var(--accent); }
-
-    .risk-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: white;
-    }
-
-    .risk-low { background: var(--success); }
-    .risk-medium { background: var(--warning); }
-    .risk-high { background: var(--accent); }
-
-    .result-body {
-      padding: 1.5rem;
-    }
-
-    .price-row {
-      display: flex;
-      justify-content: space-around;
-      margin-bottom: 1rem;
-    }
-
-    .price-item {
-      text-align: center;
-    }
-
-    .price-item i {
-      color: var(--primary);
-      margin-bottom: 0.5rem;
-      font-size: 1.5rem;
-    }
-
-    .price-label {
-      font-size: 0.875rem;
-      color: var(--text-light);
-      margin-bottom: 0.25rem;
-      font-weight: 500;
-    }
-
-    .price-value {
-      font-size: 1.25rem;
-      font-weight: 700;
-    }
-
-    .profit-section {
-      background: var(--success);
-      color: white;
-      padding: 1rem;
-      border-radius: 12px;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-
-    .profit-section i {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .profit-label {
-      font-size: 0.875rem;
-      opacity: 0.9;
-      margin-bottom: 0.25rem;
-      font-weight: 500;
-    }
-
-    .profit-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    .result-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .result-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.75rem;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-
-    .buy-link {
-      background: var(--primary);
-      color: white;
-    }
-
-    .sell-link {
-      background: var(--secondary);
-      color: white;
-    }
-
-    .result-link:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow);
-    }
-
-    /* Features grid */
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 2rem;
-      margin: 4rem 0;
-    }
-
-    .feature-card {
-      background: var(--surface);
-      padding: 2rem;
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      text-align: center;
-      transition: all 0.2s ease;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .feature-card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .feature-icon {
-      font-size: 2.5rem;
-      color: var(--primary);
-      margin-bottom: 1rem;
-    }
-
-    .feature-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .feature-text {
-      color: var(--text-light);
-      font-size: 0.9375rem;
-    }
-
-    /* Modals - modern and elegant */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .modal.show {
-      display: flex;
-      opacity: 1;
-    }
-
-    .modal-content {
-      background: var(--surface);
-      border-radius: 24px;
-      padding: 2rem;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: var(--shadow-lg);
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-    }
-
-    .modal.show .modal-content {
-      transform: scale(1);
-    }
-
-    .modal-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .modal-header h2 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .modal-header p {
-      color: var(--text-light);
-      font-size: 0.9rem;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 0.875rem 1rem;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      font-size: 1rem;
-      font-family: inherit;
-      transition: all 0.2s ease;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-light);
-    }
-
-    .btn-link {
-      background: none;
-      border: none;
-      color: var(--primary);
-      font-weight: 600;
-      cursor: pointer;
-      transition: color 0.2s ease;
-    }
-
-    .btn-link:hover {
-      color: var(--primary-dark);
-    }
-
-    /* Subscription modal */
-    .subscription-modal {
-      max-width: 900px;
-    }
-
-    .plans-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    .plan-card {
-      background: var(--surface);
-      border: 2px solid var(--border);
-      border-radius: 16px;
-      padding: 1.5rem;
-      text-align: center;
-      transition: all 0.2s ease;
-      position: relative;
-    }
-
-    .plan-card.recommended {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-light);
-    }
-
-    .popular-badge {
-      position: absolute;
-      top: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--primary);
-      color: white;
-      padding: 0.25rem 1rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-
-    .plan-price {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin: 1rem 0;
-    }
-
-    .plan-price small {
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-light);
-    }
-
-    .plan-features {
-      text-align: left;
-      margin: 1.5rem 0;
-    }
-
-    .plan-feature {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin: 0.75rem 0;
-      font-size: 0.9rem;
-    }
-
-    .plan-feature i {
-      color: var(--success);
-    }
-
-    .promo-section {
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .promo-input-group {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    @media (max-width: 768px) {
-      .header h1 {
-        font-size: 2.5rem;
-      }
-      
-      .main-card {
-        margin: -40px 20px 20px;
-        padding: 1.5rem;
-      }
-      
-      .subcategories {
-        grid-template-columns: 1fr;
-      }
-      
-      .results {
-        grid-template-columns: 1fr;
-      }
-      
-      .features {
-        grid-template-columns: 1fr;
-      }
-      
-      .nav-brand {
-        font-size: 1.25rem;
-      }
-      
-      .filter-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlipHawk | Smart Arbitrage Scanner</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FF6B6B;
+            --secondary-color: #4ECDC4;
+            --accent-color: #FFE66D;
+            --dark-bg: #1A1A2E;
+            --card-bg: #16213E;
+            --text-color: #E0E0E0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            padding: 20px 0;
+            background: linear-gradient(135deg, var(--card-bg) 0%, var(--dark-bg) 100%);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 2em;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .auth-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .auth-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .user-menu {
+            position: relative;
+            display: none;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 10px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            width: 200px;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: none;
+        }
+
+        .user-dropdown.active {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            display: block;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, rgba(255,107,107,0.1) 0%, rgba(78,205,196,0.1) 100%);
+            border-radius: 20px;
+            margin: 40px 0;
+        }
+
+        .hero h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .category-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-color: var(--secondary-color);
+        }
+
+        .category-card.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .category-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+        }
+
+        .subcategory-container {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .subcategory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .subcategory-chip {
+            background: rgba(78, 205, 196, 0.1);
+            border: 1px solid var(--secondary-color);
+            border-radius: 25px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .subcategory-chip:hover {
+            background: rgba(78, 205, 196, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .subcategory-chip.selected {
+            background: var(--secondary-color);
+            color: var(--dark-bg);
+            font-weight: 600;
+        }
+
+        .search-button {
+            background: linear-gradient(to right, #666, #777);
+            color: #999;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 30px;
+            cursor: not-allowed;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .search-button.active {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .search-button.active:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        #results-container {
+            margin-top: 40px;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .result-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .result-details {
+            flex: 1;
+        }
+
+        .profit-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .spinner {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 107, 107, 0.3);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .selected-count {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--accent-color);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .scan-status {
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 1em;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+
+        .form-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .form-link {
+            color: var(--secondary-color);
+            cursor: pointer;
+        }
+
+        .error-message {
+            background: rgba(255, 107, 107, 0.2);
+            border-left: 3px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(78, 205, 196, 0.2);
+            border-left: 3px solid var(--secondary-color);
+            color: var(--secondary-color);
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            animation: fadeIn 0.3s;
+            max-width: 300px;
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        @media (max-width: 768px) {
+            .result-card {
+                flex-direction: column;
+            }
+            
+            .result-image {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="container">
-      <div class="nav-container">
-        <div class="nav-brand">
-          <i class="fas fa-money-bill-trend-up"></i>
-          FlipHawk
-        </div>
-        <div class="nav-right">
-          <div id="authSection">
-            <button id="loginButton" class="nav-btn">Login / Sign Up</button>
-          </div>
-          <div id="userSection" style="display: none;">
-            <div class="user-menu">
-              <div id="userAvatar" class="user-avatar"></div>
-              <div id="userDropdown" class="user-dropdown">
-                <a href="#" onclick="showDashboard()" class="dropdown-item">
-                  <i class="fas fa-chart-line"></i> Dashboard
-                </a>
-                <a href="#" onclick="showSavedItems()" class="dropdown-item">
-                  <i class="fas fa-bookmark"></i> Saved Items
-                </a>
-                <a href="#" onclick="showProfile()" class="dropdown-item">
-                  <i class="fas fa-user"></i> Profile
-                </a>
-                <a href="#" onclick="showSubscription()" class="dropdown-item">
-                  <i class="fas fa-crown"></i> Subscription
-                </a>
-                <div class="dropdown-divider"></div>
-                <a href="#" onclick="logout()" class="dropdown-item">
-                  <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-              </div>
+    <header>
+        <div class="header-content">
+            <div class="logo">FlipHawk</div>
+            <div class="auth-buttons" id="auth-buttons">
+                <button class="auth-button" id="login-button">Login</button>
+                <button class="auth-button" id="signup-button">Sign Up</button>
             </div>
-          </div>
+            <div class="user-menu" id="user-menu">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-dropdown" id="user-dropdown">
+                    <a href="#" class="dropdown-item">Dashboard</a>
+                    <a href="#" class="dropdown-item">Saved Opportunities</a>
+                    <a href="#" class="dropdown-item">Settings</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item" id="logout-button">Logout</a>
+                </div>
+            </div>
         </div>
-      </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>Find Profitable Flips Instantly</h1>
+            <p>Select a category to discover arbitrage opportunities across multiple marketplaces</p>
+        </section>
+
+        <div class="category-grid">
+            <div class="category-card" data-category="Tech">
+                <div class="category-icon">💻</div>
+                <h3>Tech</h3>
+                <p>Electronics & Gadgets</p>
+            </div>
+            <div class="category-card" data-category="Collectibles">
+                <div class="category-icon">🎴</div>
+                <h3>Collectibles</h3>
+                <p>Cards & Memorabilia</p>
+            </div>
+            <div class="category-card" data-category="Vintage Clothing">
+                <div class="category-icon">👟</div>
+                <h3>Vintage Clothing</h3>
+                <p>Fashion & Sneakers</p>
+            </div>
+            <div class="category-card" data-category="Antiques">
+                <div class="category-icon">🕰️</div>
+                <h3>Antiques</h3>
+                <p>Rare & Vintage Items</p>
+            </div>
+            <div class="category-card" data-category="Gaming">
+                <div class="category-icon">🎮</div>
+                <h3>Gaming</h3>
+                <p>Consoles & Games</p>
+            </div>
+            <div class="category-card" data-category="Music Gear">
+                <div class="category-icon">🎸</div>
+                <h3>Music Gear</h3>
+                <p>Instruments & Audio</p>
+            </div>
+            <div class="category-card" data-category="Tools & DIY">
+                <div class="category-icon">🛠️</div>
+                <h3>Tools & DIY</h3>
+                <p>Power & Hand Tools</p>
+            </div>
+            <div class="category-card" data-category="Outdoors & Sports">
+                <div class="category-icon">🚲</div>
+                <h3>Outdoors & Sports</h3>
+                <p>Gear & Equipment</p>
+            </div>
+        </div>
+
+        <div class="subcategory-container" id="subcategory-panel">
+            <h3>Select Subcategories</h3>
+            <p>Choose up to 5 subcategories to narrow your search</p>
+            <div class="subcategory-grid" id="subcategory-grid">
+                <!-- Subcategories will be dynamically inserted here -->
+            </div>
+            <div class="selected-count" id="selected-count">0 of 5 subcategories selected</div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="search-button" id="search-button" disabled>Begin Resale Search</button>
+        </div>
+
+        <div id="results-container">
+            <div class="spinner" id="loading-spinner"></div>
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="scan-status" id="scan-status">Preparing scan...</div>
+            <!-- Results will be dynamically inserted here -->
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <button class="close-modal" id="close-login">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Login to FlipHawk</h2>
+                <p>Access your account to save opportunities</p>
+            </div>
+            <div class="error-message" id="login-error"></div>
+            <div class="success-message" id="login-success"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Email</label>
+                    <input type="email" class="form-input" id="login-email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" class="form-input" id="login-password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="form-button">Login</button>
+            </form>
+            <div class="form-footer">
+                <p>Don't have an account? <span class="form-link" id="switch-to-signup">Sign up</span></p>
+            </div>
+        </div>
     </div>
-  </nav>
 
-  <header class="header">
-    <div class="container">
-      <h1><i class="fas fa-money-bill-trend-up"></i>FlipHawk</h1>
-      <p>Discover profitable resale opportunities across online marketplaces with smart scanning technology</p>
-    </div>
-  </header>
-
-  <main class="container">
-    <div class="main-card">
-      <div id="scanLimitWarning" class="alert alert-warning" style="display: none;">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span id="scanLimitText"></span>
-        <button onclick="showSubscription()" class="btn-sm">Upgrade</button>
-      </div>
-      
-      <div class="form-group">
-        <label for="category"><i class="fas fa-layer-group"></i>Select Category</label>
-        <select id="category">
-          <option value="">Choose a category...</option>
-          <option value="Tech">💻 Tech & Electronics</option>
-          <option value="Collectibles">✨ Collectibles & Trading Cards</option>
-          <option value="Vintage Clothing">👕 Vintage Fashion</option>
-          <option value="Antiques">🏺 Antiques & Memorabilia</option>
-          <option value="Gaming">🎮 Gaming & Entertainment</option>
-          <option value="Music Gear">🎸 Musical Instruments</option>
-          <option value="Tools & DIY">🛠️ Tools & Equipment</option>
-          <option value="Outdoors & Sports">⚽ Sports & Outdoors</option>
-        </select>
-      </div>
-
-      <div id="subcategoriesContainer" style="display: none;">
-        <label><i class="fas fa-check-square"></i>Select Subcategories (up to 5)</label>
-        <div class="subcategories" id="subcategories"></div>
-      </div>
-
-      <div class="filter-section">
-        <div id="filterToggle" class="filter-toggle" style="display: none;">
-          <i class="fas fa-sliders-h"></i> Advanced Filters
-          <span class="pro-badge"><i class="fas fa-crown"></i> Pro</span>
+    <!-- Signup Modal -->
+    <div class="modal" id="signup-modal">
+        <div class="modal-content">
+            <button class="close-modal" id="close-signup">&times;</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Create an Account</h2>
+                <p>Join FlipHawk to track your opportunities</p>
+            </div>
+            <div class="error-message" id="signup-error"></div>
+            <div class="success-message" id="signup-success"></div>
+            <form id="signup-form">
+                <div class="form-group">
+                    <label class="form-label" for="signup-username">Username</label>
+                    <input type="text" class="form-input" id="signup-username" placeholder="Choose a username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signup-email">Email</label>
+                    <input type="email" class="form-input" id="signup-email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="signup-password">Password</label>
+                    <input type="password" class="form-input" id="signup-password" placeholder="Choose a password (min. 6 characters)" required>
+                </div>
+                <button type="submit" class="form-button">Create Account</button>
+            </form>
+            <div class="form-footer">
+                <p>Already have an account? <span class="form-link" id="switch-to-login">Login</span></p>
+            </div>
         </div>
-        <div id="filterPanel" class="filter-grid" style="display: none;">
-          <div class="filter-item">
-            <label>Min Profit %</label>
-            <input type="number" id="minProfitPercent" class="filter-input" placeholder="e.g., 20">
-          </div>
-          <div class="filter-item">
-            <label>Max Buy Price</label>
-            <input type="number" id="maxBuyPrice" class="filter-input" placeholder="e.g., 500">
-          </div>
-          <div class="filter-item">
-            <label>Condition</label>
-            <select id="conditionFilter" class="filter-input" multiple>
-              <option value="New">New</option>
-              <option value="Like New">Like New</option>
-              <option value="Very Good">Very Good</option>
-              <option value="Good">Good</option>
-            </select>
-          </div>
-          <div class="filter-item">
-            <label>Min Confidence</label>
-            <input type="range" id="minConfidence" class="filter-input" min="60" max="100" value="70">
-            <span id="confidenceValue">70%</span>
-          </div>
-        </div>
-      </div>
-
-      <button id="scanButton" class="btn btn-primary" disabled>
-        <i class="fas fa-magnifying-glass-dollar"></i> Find Resale Opportunities
-      </button>
-
-      <div id="error" class="error" style="display: none;">
-        <i class="fas fa-exclamation-circle"></i>
-        <span></span>
-      </div>
-
-      <div id="loading" class="loading" style="display: none;">
-        <div class="loading-spinner"></div>
-        <div class="progress-bar-container">
-          <div class="progress-bar" style="width: 0%;"></div>
-        </div>
-        <p id="loading-status">Scanning marketplaces for profitable resale opportunities...</p>
-        <p id="loading-details" style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.5rem;"></p>
-      </div>
     </div>
 
-    <div id="results" class="results"></div>
+    <script>
+        // Categories and subcategories data
+        const categories = {
+            "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
+            "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
+            "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
+            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
+            "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
+            "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
+            "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
+            "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
+        };
 
-    <div class="features">
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-bolt"></i></div>
-        <div class="feature-title">Lightning Fast</div>
-        <div class="feature-text">Real-time scanning across multiple marketplaces</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-        <div class="feature-title">Profit Analysis</div>
-        <div class="feature-text">Instant profit calculations with all fees included</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-robot"></i></div>
-        <div class="feature-title">Smart Matching</div>
-        <div class="feature-text">AI-powered algorithms for accurate product matching</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-clock-rotate-left"></i></div>
-        <div class="feature-title">Real-Time Data</div>
-        <div class="feature-text">Always current, never using outdated information</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
-        <div class="feature-title">Verified Results</div>
-        <div class="feature-text">High confidence matching to reduce risk</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
-        <div class="feature-title">Mobile Ready</div>
-        <div class="feature-text">Works seamlessly on all devices</div>
-      </div>
-    </div>
-  </main>
+        // Global variables
+        let selectedCategory = '';
+        let selectedSubcategories = [];
+        let currentUser = null;
 
-  <!-- Auth Modal -->
-  <div id="authModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="authTitle">Welcome to FlipHawk</h2>
-        <p id="authSubtitle">Access advanced features and save your favorite opportunities</p>
-      </div>
-      <form id="authForm">
-        <div id="usernameGroup" class="form-group" style="display: none;">
-          <label for="username">Username</label>
-          <input type="text" id="username" class="form-input" placeholder="Choose a username">
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" class="form-input" required placeholder="Enter your email">
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" class="form-input" required placeholder="Enter your password">
-        </div>
-        <button type="submit" class="btn btn-primary">
-          <span id="authButtonText">Login</span>
-        </button>
-      </form>
-      <p style="text-align: center; margin-top: 1.5rem;">
-        <span id="authSwitchText">Don't have an account?</span>
-        <button id="authSwitchButton" class="btn-link">Sign Up</button>
-      </p>
-      <div style="text-align: center; margin-top: 1rem;">
-        <button onclick="closeModal()" class="btn-link">Cancel</button>
-      </div>
-    </div>
-  </div>
+        // DOM Elements
+        const authButtons = document.getElementById('auth-buttons');
+        const userMenu = document.getElementById('user-menu');
+        const userAvatar = document.getElementById('user-avatar');
+        const userDropdown = document.getElementById('user-dropdown');
+        const loginButton = document.getElementById('login-button');
+        const signupButton = document.getElementById('signup-button');
+        const logoutButton = document.getElementById('logout-button');
+        const loginModal = document.getElementById('login-modal');
+        const signupModal = document.getElementById('signup-modal');
+        const closeLogin = document.getElementById('close-login');
+        const closeSignup = document.getElementById('close-signup');
+        const switchToSignup = document.getElementById('switch-to-signup');
+        const switchToLogin = document.getElementById('switch-to-login');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const loginError = document.getElementById('login-error');
+        const signupError = document.getElementById('signup-error');
+        const loginSuccess = document.getElementById('login-success');
+        const signupSuccess = document.getElementById('signup-success');
+        const subcategoryPanel = document.getElementById('subcategory-panel');
+        const subcategoryGrid = document.getElementById('subcategory-grid');
+        const selectedCount = document.getElementById('selected-count');
+        const searchButton = document.getElementById('search-button');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const scanStatus = document.getElementById('scan-status');
+        const resultsContainer = document.getElementById('results-container');
 
-  <!-- Subscription Modal -->
-  <div id="subscriptionModal" class="modal">
-    <div class="modal-content subscription-modal">
-      <h2 style="text-align: center; margin-bottom: 2rem;">Choose Your Plan</h2>
-      <div class="plans-grid">
-        <div class="plan-card">
-          <h3>Free</h3>
-          <div class="plan-price">$0</div>
-          <div class="plan-features">
-            <div class="plan-feature"><i class="fas fa-check"></i> 5 scans per day</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Basic filters</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Limited price history</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Standard support</div>
-          </div>
-          <button class="btn btn-primary" disabled>Current Plan</button>
-        </div>
-        <div class="plan-card recommended">
-          <span class="popular-badge">Most Popular</span>
-          <h3>Pro</h3>
-          <div class="plan-price">$9.99<small>/mo</small></div>
-          <div class="plan-features">
-            <div class="plan-feature"><i class="fas fa-check"></i> Unlimited scans</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Advanced filters</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Full price history</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Risk assessment</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Priority support</div>
-          </div>
-          <button onclick="upgradeToPro()" class="btn btn-primary">Upgrade to Pro</button>
-        </div>
-        <div class="plan-card">
-          <h3>Business</h3>
-          <div class="plan-price">$29.99<small>/mo</small></div>
-          <div class="plan-features">
-            <div class="plan-feature"><i class="fas fa-check"></i> Everything in Pro</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> API access</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Bulk operations</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Team management</div>
-            <div class="plan-feature"><i class="fas fa-check"></i> Export capabilities</div>
-          </div>
-          <button onclick="upgradeToBusiness()" class="btn btn-primary">Upgrade to Business</button>
-        </div>
-      </div>
-      <div class="promo-section">
-        <p style="text-align: center;">Have a promo code?</p>
-        <div class="promo-input-group">
-          <input type="text" id="promoCode" class="form-input" placeholder="Enter promo code">
-          <button onclick="redeemPromoCode()" class="btn btn-primary">Redeem</button>
-        </div>
-      </div>
-      <div style="text-align: center; margin-top: 2rem;">
-        <button onclick="closeModal()" class="btn-link">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Safe localStorage operations
-    function safeGetItem(key) {
-      try {
-        return localStorage.getItem(key);
-      } catch (e) {
-        console.warn('localStorage access denied:', e);
-        return null;
-      }
-    }
-
-    function safeSetItem(key, value) {
-      try {
-        localStorage.setItem(key, value);
-        return true;
-      } catch (e) {
-        console.warn('localStorage access denied:', e);
-        return false;
-      }
-    }
-
-    function safeRemoveItem(key) {
-      try {
-        localStorage.removeItem(key);
-        return true;
-      } catch (e) {
-        console.warn('localStorage access denied:', e);
-        return false;
-      }
-    }
-
-    // Global variables
-    let currentUser = null;
-    let selectedSubcategories = [];
-    let isLoginMode = true;
-
-    // Categories data
-    const categories = {
-      "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
-      "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
-      "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
-      "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
-      "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
-      "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
-      "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
-      "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
-    };
-
-    // DOM Elements
-    const authModal = document.getElementById('authModal');
-    const subscriptionModal = document.getElementById('subscriptionModal');
-    const authSection = document.getElementById('authSection');
-    const userSection = document.getElementById('userSection');
-    const authForm = document.getElementById('authForm');
-    const scanButton = document.getElementById('scanButton');
-    const categorySelect = document.getElementById('category');
-    const subcategoriesContainer = document.getElementById('subcategoriesContainer');
-    const subcategoriesDiv = document.getElementById('subcategories');
-    const filterToggle = document.getElementById('filterToggle');
-    const filterPanel = document.getElementById('filterPanel');
-    const scanLimitWarning = document.getElementById('scanLimitWarning');
-    const errorDiv = document.getElementById('error');
-    const loadingDiv = document.getElementById('loading');
-    const resultsDiv = document.getElementById('results');
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-      checkAuth();
-      setupEventListeners();
-    });
-
-    function setupEventListeners() {
-      // Auth events
-      document.getElementById('loginButton').addEventListener('click', showAuthModal);
-      document.getElementById('authSwitchButton').addEventListener('click', toggleAuthMode);
-      authForm.addEventListener('submit', handleAuth);
-      
-      // User menu
-      const userAvatar = document.getElementById('userAvatar');
-      if (userAvatar) {
-        userAvatar.addEventListener('click', toggleUserMenu);
-      }
-      
-      // Category selection
-      categorySelect.addEventListener('change', handleCategoryChange);
-      
-      // Scan button
-      scanButton.addEventListener('click', handleScanClick);
-      
-      // Filter toggle
-      filterToggle.addEventListener('click', () => {
-        filterPanel.style.display = filterPanel.style.display === 'none' ? 'block' : 'none';
-      });
-      
-      // Filter changes
-      document.getElementById('minConfidence').addEventListener('input', function() {
-        document.getElementById('confidenceValue').textContent = this.value + '%';
-      });
-      
-      // Close dropdowns when clicking outside
-      document.addEventListener('click', function(event) {
-        if (!event.target.closest('.user-menu')) {
-          const dropdown = document.getElementById('userDropdown');
-          if (dropdown) dropdown.classList.remove('active');
-        }
-      });
-    }
-
-    function checkAuth() {
-      const token = safeGetItem('token');
-      const userData = safeGetItem('user');
-      
-      if (token && userData) {
-        currentUser = JSON.parse(userData);
-        showUserInterface();
-        checkSubscriptionStatus();
-      } else {
-        showGuestInterface();
-      }
-    }
-
-    function showUserInterface() {
-      authSection.style.display = 'none';
-      userSection.style.display = 'block';
-      
-      const userAvatar = document.getElementById('userAvatar');
-      if (userAvatar && currentUser && currentUser.username) {
-        userAvatar.textContent = currentUser.username[0].toUpperCase();
-      }
-      
-      filterToggle.style.display = 'flex';
-    }
-
-    function showGuestInterface() {
-      authSection.style.display = 'block';
-      userSection.style.display = 'none';
-      filterToggle.style.display = 'none';
-      filterPanel.style.display = 'none';
-    }
-
-    function showAuthModal() {
-      authModal.classList.add('show');
-    }
-
-    function toggleAuthMode() {
-      isLoginMode = !isLoginMode;
-      document.getElementById('authTitle').textContent = isLoginMode ? 'Welcome to FlipHawk' : 'Create Your Account';
-      document.getElementById('authSubtitle').textContent = isLoginMode ? 
-        'Access advanced features and save your favorite opportunities' : 
-        'Start finding profitable resale opportunities today';
-      document.getElementById('usernameGroup').style.display = isLoginMode ? 'none' : 'block';
-      document.getElementById('authButtonText').textContent = isLoginMode ? 'Login' : 'Sign Up';
-      document.getElementById('authSwitchText').textContent = isLoginMode ? "Don't have an account?" : "Already have an account?";
-      document.getElementById('authSwitchButton').textContent = isLoginMode ? 'Sign Up' : 'Login';
-    }
-
-    async function handleAuth(event) {
-      event.preventDefault();
-      
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const username = isLoginMode ? null : document.getElementById('username').value;
-      
-      const endpoint = isLoginMode ? '/api/v1/auth/login' : '/api/v1/auth/register';
-      const payload = isLoginMode ? { email, password } : { email, password, username };
-      
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            checkAuth();
         });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-          if (isLoginMode) {
-            safeSetItem('token', data.token);
-            safeSetItem('user', JSON.stringify({ email: data.email, username: data.username }));
-            currentUser = { email: data.email, username: data.username };
-            showUserInterface();
-            checkSubscriptionStatus();
-            closeModal();
-          } else {
-            // After registration, switch to login mode
-            toggleAuthMode();
-            showSuccess('Account created successfully! Please log in.');
-            // Clear form fields
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('username').value = '';
-          }
-        } else {
-          showError(data.message || 'Authentication failed');
+
+        // Add event listeners
+        function setupEventListeners() {
+            // Category selection
+            document.querySelectorAll('.category-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedCategory = this.dataset.category;
+                    showSubcategories(selectedCategory);
+                });
+            });
+
+            // Search button
+            searchButton.addEventListener('click', function() {
+                if (currentUser) {
+                    startScan();
+                } else {
+                    loginModal.classList.add('active');
+                }
+            });
+
+            // Auth buttons
+            loginButton.addEventListener('click', function() {
+                loginModal.classList.add('active');
+            });
+
+            signupButton.addEventListener('click', function() {
+                signupModal.classList.add('active');
+            });
+
+            // Modal close buttons
+            closeLogin.addEventListener('click', function() {
+                loginModal.classList.remove('active');
+            });
+
+            closeSignup.addEventListener('click', function() {
+                signupModal.classList.remove('active');
+            });
+
+            // Switch between login and signup
+            switchToSignup.addEventListener('click', function() {
+                loginModal.classList.remove('active');
+                signupModal.classList.add('active');
+            });
+
+            switchToLogin.addEventListener('click', function() {
+                signupModal.classList.remove('active');
+                loginModal.classList.add('active');
+            });
+
+            // Form submissions
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleLogin();
+            });
+
+            signupForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleSignup();
+            });
+
+            // User menu toggle
+            userAvatar.addEventListener('click', function() {
+                userDropdown.classList.toggle('active');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!userAvatar.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+
+            // Logout
+            logoutButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                handleLogout();
+            });
         }
-      } catch (error) {
-        console.error('Auth error:', error);
-        showError('An error occurred. Please try again.');
-      }
-    }
 
-    function toggleUserMenu() {
-      const dropdown = document.getElementById('userDropdown');
-      if (dropdown) {
-        dropdown.classList.toggle('active');
-      }
-    }
-
-    function logout() {
-      safeRemoveItem('token');
-      safeRemoveItem('user');
-      currentUser = null;
-      showGuestInterface();
-    }
-
-    async function checkSubscriptionStatus() {
-      const token = safeGetItem('token');
-      if (!token) return;
-      
-      try {
-        const response = await fetch('/api/v1/subscription/current', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const data = await response.json();
-        
-        if (data.subscription_tier === 'free') {
-          scanLimitWarning.style.display = 'flex';
-          document.getElementById('scanLimitText').textContent = 
-            `You have ${data.scans_remaining} scans remaining today.`;
-          
-          // Hide advanced filters for free users
-          const proBadge = filterToggle.querySelector('.pro-badge');
-          if (proBadge) proBadge.style.display = 'inline-flex';
-          filterPanel.style.display = 'none';
-        } else {
-          scanLimitWarning.style.display = 'none';
-          const proBadge = filterToggle.querySelector('.pro-badge');
-          if (proBadge) proBadge.style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-      }
-    }
-
-    function handleCategoryChange() {
-      const category = categorySelect.value;
-      selectedSubcategories = [];
-      
-      if (category) {
-        subcategoriesContainer.style.display = 'block';
-        const subcats = categories[category];
-        if (subcats) {
-          let html = '';
-          subcats.forEach(subcat => {
-            html += `
-              <label class="checkbox-wrapper">
-                <input type="checkbox" value="${subcat}" onchange="handleSubcategoryChange(this)">
-                <div class="checkbox-custom"></div>
-                ${subcat}
-              </label>
-            `;
-          });
-          subcategoriesDiv.innerHTML = html;
-        }
-      } else {
-        subcategoriesContainer.style.display = 'none';
-        subcategoriesDiv.innerHTML = '';
-      }
-      
-      updateScanButton();
-    }
-
-    function handleSubcategoryChange(checkbox) {
-      if (checkbox.checked) {
-        if (selectedSubcategories.length < 5) {
-          selectedSubcategories.push(checkbox.value);
-        } else {
-          checkbox.checked = false;
-          showError('You can only select up to 5 subcategories');
-        }
-      } else {
-        selectedSubcategories = selectedSubcategories.filter(item => item !== checkbox.value);
-      }
-      
-      updateScanButton();
-    }
-
-    function updateScanButton() {
-      scanButton.disabled = !(categorySelect.value && selectedSubcategories.length > 0);
-    }
-
-    function handleScanClick() {
-      if (!currentUser) {
-        showAuthModal();
-        return;
-      }
-      
-      // First show subscription modal to choose plan
-      showSubscription();
-    }
-
-    async function runScan() {
-      if (!currentUser) {
-        showAuthModal();
-        return;
-      }
-      
-      const token = safeGetItem('token');
-      if (!token) {
-        showAuthModal();
-        return;
-      }
-      
-      errorDiv.style.display = 'none';
-      loadingDiv.style.display = 'block';
-      resultsDiv.innerHTML = '';
-      scanButton.disabled = true;
-      
-      // Get filter values
-      const filters = {};
-      const minProfitPercent = document.getElementById('minProfitPercent').value;
-      if (minProfitPercent) filters.min_profit_margin = parseFloat(minProfitPercent);
-      
-      const maxBuyPrice = document.getElementById('maxBuyPrice').value;
-      if (maxBuyPrice) filters.max_price = parseFloat(maxBuyPrice);
-      
-      const conditionFilter = document.getElementById('conditionFilter');
-      const selectedConditions = Array.from(conditionFilter.selectedOptions).map(opt => opt.value);
-      if (selectedConditions.length) filters.conditions = selectedConditions;
-      
-      const minConfidence = document.getElementById('minConfidence').value;
-      filters.min_confidence = parseInt(minConfidence);
-      
-      // Reset progress bar
-      const progressBar = document.querySelector('.progress-bar');
-      const loadingStatus = document.getElementById('loading-status');
-      const loadingDetails = document.getElementById('loading-details');
-      progressBar.style.width = '0%';
-      
-      try {
-        // Simulate progress
-        let progress = 0;
-        const progressInterval = setInterval(() => {
-          if (progress < 90) {
-            progress += Math.random() * 10;
-            progressBar.style.width = `${Math.min(progress, 90)}%`;
+        // Check if user is logged in
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const userData = localStorage.getItem('user');
             
-            if (progress < 30) {
+            if (token && userData) {
+                try {
+                    currentUser = JSON.parse(userData);
+                    updateUIForLoggedInUser();
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
+            }
+        }
+
+        // Update UI for logged in user
+        function updateUIForLoggedInUser() {
+            if (currentUser) {
+                // Show user menu, hide auth buttons
+                authButtons.style.display = 'none';
+                userMenu.style.display = 'block';
+                
+                // Set avatar text to first letter of username
+                if (currentUser.username) {
+                    userAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+                }
+            } else {
+                // Show auth buttons, hide user menu
+                authButtons.style.display = 'flex';
+                userMenu.style.display = 'none';
+            }
+        }
+
+        // Show subcategories for selected category
+        function showSubcategories(category) {
+            const subcats = categories[category];
+            if (!subcats) return;
+            
+            subcategoryGrid.innerHTML = '';
+            subcats.forEach(subcategory => {
+                const chip = document.createElement('div');
+                chip.className = 'subcategory-chip';
+                chip.textContent = subcategory;
+                chip.addEventListener('click', () => toggleSubcategory(chip, subcategory));
+                subcategoryGrid.appendChild(chip);
+            });
+            
+            subcategoryPanel.style.display = 'block';
+            selectedSubcategories = [];
+            updateSelectedCount();
+            updateSearchButton();
+
+            // Scroll to subcategories
+            subcategoryPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Toggle subcategory selection
+        function toggleSubcategory(chip, subcategory) {
+            if (chip.classList.contains('selected')) {
+                chip.classList.remove('selected');
+                selectedSubcategories = selectedSubcategories.filter(s => s !== subcategory);
+            } else if (selectedSubcategories.length < 5) {
+                chip.classList.add('selected');
+                selectedSubcategories.push(subcategory);
+            } else {
+                showToast('You can only select up to 5 subcategories', 'error');
+            }
+            updateSelectedCount();
+            updateSearchButton();
+        }
+
+        // Update selected count
+        function updateSelectedCount() {
+            selectedCount.textContent = `${selectedSubcategories.length} of 5 subcategories selected`;
+            
+            // Change color when approaching limit
+            if (selectedSubcategories.length >= 5) {
+                selectedCount.style.color = 'var(--primary-color)';
+                selectedCount.style.fontWeight = 'bold';
+            } else if (selectedSubcategories.length >= 3) {
+                selectedCount.style.color = 'var(--accent-color)';
+                selectedCount.style.fontWeight = 'normal';
+            } else {
+                selectedCount.style.color = 'var(--text-color)';
+                selectedCount.style.fontWeight = 'normal';
+            }
+        }
+
+        // Update search button state
+        function updateSearchButton() {
+            if (selectedSubcategories.length > 0) {
+                searchButton.classList.add('active');
+                searchButton.disabled = false;
+            } else {
+                searchButton.classList.remove('active');
+                searchButton.disabled = true;
+            }
+        }
+
+        // Handle login
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            // Hide previous messages
+            loginError.style.display = 'none';
+            loginSuccess.style.display = 'none';
+            
+            // Disable submit button
+            const submitButton = loginForm.querySelector('.form-button');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Logging in...';
+            
+            try {
+                const response = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Save token and user data
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify({
+                        email: data.email,
+                        username: data.username
+                    }));
+                    
+                    // Set current user
+                    currentUser = {
+                        email: data.email,
+                        username: data.username
+                    };
+                    
+                    // Show success message
+                    loginSuccess.textContent = 'Login successful!';
+                    loginSuccess.style.display = 'block';
+                    
+                    // Update UI
+                    updateUIForLoggedInUser();
+                    
+                    // Close modal after delay
+                    setTimeout(function() {
+                        loginModal.classList.remove('active');
+                    }, 1000);
+                } else {
+                    // Show error message
+                    loginError.textContent = data.message || 'Login failed. Please check your credentials.';
+                    loginError.style.display = 'block';
+                    
+                    // Reset button
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Login';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginError.textContent = 'A network error occurred. Please try again.';
+                loginError.style.display = 'block';
+                
+                // Reset button
+                submitButton.disabled = false;
+                submitButton.textContent = 'Login';
+            }
+        }
+
+        // Handle signup
+        async function handleSignup() {
+            const username = document.getElementById('signup-username').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            
+            // Hide previous messages
+            signupError.style.display = 'none';
+            signupSuccess.style.display = 'none';
+            
+            // Validate inputs
+            if (password.length < 6) {
+                signupError.textContent = 'Password must be at least 6 characters long.';
+                signupError.style.display = 'block';
+                return;
+            }
+            
+            if (username.length < 3) {
+                signupError.textContent = 'Username must be at least 3 characters long.';
+                signupError.style.display = 'block';
+                return;
+            }
+            
+            // Disable submit button
+            const submitButton = signupForm.querySelector('.form-button');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Creating account...';
+            
+            try {
+                const response = await fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Show success message
+                    signupSuccess.textContent = 'Account created successfully! You can now log in.';
+                    signupSuccess.style.display = 'block';
+                    
+                    // Switch to login after delay
+                    setTimeout(function() {
+                        signupModal.classList.remove('active');
+                        loginModal.classList.add('active');
+                        
+                        // Pre-fill email for convenience
+                        document.getElementById('login-email').value = email;
+                    }, 2000);
+                } else {
+                    // Show error message
+                    signupError.textContent = data.message || 'Registration failed. Please try again.';
+                    signupError.style.display = 'block';
+                    
+                    // Reset button
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Create Account';
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                signupError.textContent = 'A network error occurred. Please try again.';
+                signupError.style.display = 'block';
+                
+                // Reset button
+                submitButton.disabled = false;
+                submitButton.textContent = 'Create Account';
+            }
+        }
+
+        // Handle logout
+        function handleLogout() {
+            // Clear stored data
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Reset current user
+            currentUser = null;
+            
+            // Update UI
+            updateUIForLoggedInUser();
+            
+            // Close dropdown
+            userDropdown.classList.remove('active');
+            
+            // Show success toast
+            showToast('You have been logged out successfully', 'success');
+        }
+
+        // Start the scan process
+        async function startScan() {
+            // Ensure user is logged in
+            if (!currentUser) {
+                loginModal.classList.add('active');
+                return;
+            }
+            
+            // Check if category and subcategories are selected
+            if (!selectedCategory || selectedSubcategories.length === 0) {
+                showToast('Please select a category and at least one subcategory', 'error');
+                return;
+            }
+            
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(loadingSpinner);
+            resultsContainer.appendChild(progressContainer);
+            resultsContainer.appendChild(scanStatus);
+            
+            // Show loading state
+            loadingSpinner.style.display = 'block';
+            progressContainer.style.display = 'block';
+            scanStatus.style.display = 'block';
+            scanStatus.textContent = 'Preparing to scan...';
+            progressBar.style.width = '0%';
+            
+            // Disable search button
+            searchButton.disabled = true;
+            searchButton.classList.remove('active');
+            searchButton.textContent = 'Scanning...';
+            
+            // Get token
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('Authentication error. Please log in again.', 'error');
+                handleLogout();
+                return;
+            }
+            
+            try {
+                // Simulate progress while scanning
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 5;
+                    if (progress < 95) {
+                        progressBar.style.width = `${progress}%`;
+                        
+                        // Update scan status message
+                        if (progress < 30) {
+                            scanStatus.textContent = `Scanning marketplaces for ${selectedSubcategories.join(', ')}...`;
+                        } else if (progress < 60) {
+                            scanStatus.textContent = 'Finding matching products across platforms...';
+                        } else {
+                            scanStatus.textContent = 'Calculating potential profits...';
+                        }
+                    }
+                }, 300);
+                
+                // Make API request
+                const response = await fetch('/api/v1/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        category: selectedCategory,
+                        subcategories: selectedSubcategories
+                    })
+                });
+                
+                clearInterval(progressInterval);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Scan failed. Please try again.');
+                }
+                
+                const results = await response.json();
+                
+                // Complete progress bar
+                progressBar.style.width = '100%';
+                
+                // Show results after a short delay
+                setTimeout(() => {
+                    displayResults(results);
+                    
+                    // Reset search button
+                    searchButton.disabled = false;
+                    searchButton.classList.add('active');
+                    searchButton.textContent = 'Begin Resale Search';
+                    
+                    // Hide loading state
+                    loadingSpinner.style.display = 'none';
+                    progressContainer.style.display = 'none';
+                    scanStatus.style.display = 'none';
+                }, 500);
+                
+            } catch (error) {
+                console.error('Scan error:', error);
+                
+                // Reset search button
+                searchButton.disabled = false;
+                searchButton.classList.add('active');
+                searchButton.textContent = 'Begin Resale Search';
+                
+                // Hide loading state
+                loadingSpinner.style.display = 'none';
+                progressContainer.style.display = 'none';
+                
+                // Show error message
+                scanStatus.textContent = error.message || 'An error occurred during the scan.';
+                scanStatus.style.color = 'var(--primary-color)';
+                scanStatus.style.display = 'block';
+                
+                setTimeout(() => {
+                    scanStatus.style.display = 'none';
+                    scanStatus.style.color = 'var(--text-color)';
+                }, 5000);
+            }
+        }
+
+        // Display scan results
+        function displayResults(results) {
+            if (!results || results.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.style.textAlign = 'center';
+                noResults.style.padding = '40px 20px';
+                noResults.style.background = 'var(--card-bg)';
+                noResults.style.borderRadius = '15px';
+                noResults.style.marginTop = '30px';
+                
+                noResults.innerHTML = `
+                    <div style="font-size: 3em; margin-bottom: 20px;">😢</div>
+                    <h3>No Opportunities Found</h3>
+                    <p>Try selecting different subcategories or come back later for new listings.</p>
+                `;
+                
+                resultsContainer.innerHTML = '';
+                resultsContainer.appendChild(noResults);
+                return;
+            }
+            
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+            
+            // Create results header
+            const resultsHeader = document.createElement('div');
+            resultsHeader.style.background = 'var(--card-bg)';
+            resultsHeader.style.padding = '20px';
+            resultsHeader.style.borderRadius = '15px';
+            resultsHeader.style.marginBottom = '20px';
+            resultsHeader.innerHTML = `
+                <h2>Found ${results.length} Opportunities</h2>
+                <p>Category: ${selectedCategory} • Subcategories: ${selectedSubcategories.join(', ')}</p>
+            `;
+            
+            resultsContainer.appendChild(resultsHeader);
+            
+            // Create result cards
+            results.forEach(result => {
+                const resultCard = document.createElement('div');
+                resultCard.className = 'result-card';
+                
+                // Create image element if available
+                let imageHtml = '';
+                if (result.image_url) {
+                    imageHtml = `<img src="${result.image_url}" alt="${result.title}" class="result-image">`;
+                }
+                
+                resultCard.innerHTML = `
+                    ${imageHtml}
+                    <div class="result-details">
+                        <div class="profit-badge">${result.profit.toFixed(2)} profit</div>
+                        <h3>${result.title}</h3>
+                        <p>Buy for: ${result.buyPrice.toFixed(2)} | Sell for: ${result.sellPrice.toFixed(2)}</p>
+                        <p>ROI: ${result.profitPercentage.toFixed(1)}%</p>
+                        <p>Category: ${selectedCategory} > ${result.subcategory || selectedSubcategories[0]}</p>
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <a href="${result.buyLink}" target="_blank" style="
+                                background: var(--primary-color);
+                                color: white;
+                                padding: 8px 15px;
+                                border-radius: 8px;
+                                text-decoration: none;
+                                font-weight: 600;
+                            ">Buy Now</a>
+                            <a href="${result.sellLink}" target="_blank" style="
+                                background: var(--secondary-color);
+                                color: white;
+                                padding: 8px 15px;
+                                border-radius: 8px;
+                                text-decoration: none;
+                                font-weight: 600;
+                            ">View Listing</a>
+                        </div>
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(resultCard);
+            });
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'error') {
+            // Remove existing toasts
+            document.querySelectorAll('.toast').forEach(toast => {
+                document.body.removeChild(toast);
+            });
+            
+            // Create toast
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            // Add to document
+            document.body.appendChild(toast);
+            
+            // Remove after delay
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s ease';
+                
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
