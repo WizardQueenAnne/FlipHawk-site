@@ -134,3 +134,31 @@ class VelocityMetrics(db.Model):
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
     
     __table_args__ = (db.Index('idx_velocity_item', 'item_identifier'),)
+
+# Add the missing RiskAssessment model class
+class RiskAssessment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    opportunity_id = db.Column(db.String(256), nullable=False)
+    risk_score = db.Column(db.Float, nullable=False)
+    fraud_probability = db.Column(db.Float, default=0.0)
+    seller_reliability_score = db.Column(db.Float, default=0.0)
+    market_volatility_score = db.Column(db.Float, default=0.0)
+    competition_level = db.Column(db.String(20), default='medium')
+    risk_factors = db.Column(db.JSON)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.Index('idx_risk_opportunity', 'opportunity_id'),)
+
+# Add the missing SellerRating model class
+class SellerRating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    seller_identifier = db.Column(db.String(100), nullable=False, unique=True)
+    platform = db.Column(db.String(50), nullable=False)
+    rating = db.Column(db.Float)
+    total_reviews = db.Column(db.Integer, default=0)
+    positive_feedback_percent = db.Column(db.Float)
+    return_policy = db.Column(db.String(100))
+    shipping_speed_days = db.Column(db.Float)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.Index('idx_seller_identifier', 'seller_identifier'),)
