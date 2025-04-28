@@ -689,7 +689,7 @@
             checkAuth();
         });
 
-        // Add event listeners
+        // Set up event listeners
         function setupEventListeners() {
             // Category selection
             document.querySelectorAll('.category-card').forEach(card => {
@@ -1031,8 +1031,8 @@
             showToast('You have been logged out successfully', 'success');
         }
 
-        // Start the scan process
-        async function startScan() {
+        // Start scan function
+        function startScan() {
             // Ensure user is logged in
             if (!currentUser) {
                 loginModal.classList.add('active');
@@ -1045,13 +1045,12 @@
                 return;
             }
             
-            // Clear previous results
+            // Clear previous results and show loading indicators
             resultsContainer.innerHTML = '';
             resultsContainer.appendChild(loadingSpinner);
             resultsContainer.appendChild(progressContainer);
             resultsContainer.appendChild(scanStatus);
             
-            // Show loading state
             loadingSpinner.style.display = 'block';
             progressContainer.style.display = 'block';
             scanStatus.style.display = 'block';
@@ -1071,47 +1070,48 @@
                 return;
             }
             
-            try {
-                // Simulate progress while scanning
-                let progress = 0;
-                const progressInterval = setInterval(() => {
-                    progress += Math.random() * 5;
-                    if (progress < 95) {
-                        progressBar.style.width = `${progress}%`;
-                        
-                        // Update scan status message
-                        if (progress < 30) {
-                            scanStatus.textContent = `Scanning marketplaces for ${selectedSubcategories.join(', ')}...`;
-                        } else if (progress < 60) {
-                            scanStatus.textContent = 'Finding matching products across platforms...';
-                        } else {
-                            scanStatus.textContent = 'Calculating potential profits...';
-                        }
+            // Simulate progress while scanning
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 5;
+                if (progress < 95) {
+                    progressBar.style.width = `${progress}%`;
+                    
+                    // Update scan status message
+                    if (progress < 30) {
+                        scanStatus.textContent = `Scanning marketplaces for ${selectedSubcategories.join(', ')}...`;
+                    } else if (progress < 60) {
+                        scanStatus.textContent = 'Finding matching products across platforms...';
+                    } else {
+                        scanStatus.textContent = 'Calculating potential profits...';
                     }
-                }, 300);
-                
-                // Make API request
-                const response = await fetch('/api/v1/scan', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        category: selectedCategory,
-                        subcategories: selectedSubcategories
-                    })
-                });
-                
+                }
+            }, 300);
+            
+            // Make API request
+            fetch('/api/v1/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    category: selectedCategory,
+                    subcategories: selectedSubcategories
+                })
+            })
+            .then(response => {
                 clearInterval(progressInterval);
                 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Scan failed. Please try again.');
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Scan failed. Please try again.');
+                    });
                 }
                 
-                const results = await response.json();
-                
+                return response.json();
+            })
+            .then(results => {
                 // Complete progress bar
                 progressBar.style.width = '100%';
                 
@@ -1129,8 +1129,8 @@
                     progressContainer.style.display = 'none';
                     scanStatus.style.display = 'none';
                 }, 500);
-                
-            } catch (error) {
+            })
+            .catch(error => {
                 console.error('Scan error:', error);
                 
                 // Reset search button
@@ -1151,11 +1151,14 @@
                     scanStatus.style.display = 'none';
                     scanStatus.style.color = 'var(--text-color)';
                 }, 5000);
-            }
+            });
         }
 
         // Display scan results
         function displayResults(results) {
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+            
             if (!results || results.length === 0) {
                 const noResults = document.createElement('div');
                 noResults.style.textAlign = 'center';
@@ -1170,13 +1173,9 @@
                     <p>Try selecting different subcategories or come back later for new listings.</p>
                 `;
                 
-                resultsContainer.innerHTML = '';
                 resultsContainer.appendChild(noResults);
                 return;
             }
-            
-            // Clear previous results
-            resultsContainer.innerHTML = '';
             
             // Create results header
             const resultsHeader = document.createElement('div');
