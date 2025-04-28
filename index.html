@@ -862,8 +862,8 @@
             "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
             "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
             "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
-            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
-            "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
+            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys",],
+            "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
             "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
             "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
             "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
@@ -938,11 +938,13 @@
 
             // Auth buttons
             loginButton.addEventListener('click', function() {
-                loginModal.classList.add('active');
+                setupGuestUser(); // Auto login as guest
+                showToast('Logged in as guest user', 'success');
             });
 
             signupButton.addEventListener('click', function() {
-                signupModal.classList.add('active');
+                setupGuestUser(); // Auto signup as guest
+                showToast('Signed up as guest user', 'success');
             });
 
             // Modal close buttons
@@ -983,12 +985,14 @@
             // Form submissions
             loginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                handleLogin();
+                setupGuestUser(); // Auto login as guest
+                loginModal.classList.remove('active');
             });
 
             signupForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                handleSignup();
+                setupGuestUser(); // Auto signup as guest
+                signupModal.classList.remove('active');
             });
 
             // User menu toggle
@@ -1035,21 +1039,7 @@
             });
         }
         
-        // Handle login - simplified
-        async function handleLogin() {
-            // Skip actual login - just continue as guest
-            setupGuestUser();
-            loginModal.classList.remove('active');
-        }
-
-        // Handle signup - simplified
-        async function handleSignup() {
-            // Skip actual signup - just continue as guest
-            setupGuestUser();
-            signupModal.classList.remove('active');
-        }
-
-        // Setup guest user - simplified
+        // Setup guest user
         function setupGuestUser() {
             currentUser = {
                 username: 'Guest',
@@ -1073,7 +1063,13 @@
                     currentUser = JSON.parse(userData);
                     if (userPlan) {
                         currentPlan = userPlan;
-                        updateScansRemaining();
+                        if (currentPlan === 'free') {
+                            scansRemaining = 2;
+                        } else if (currentPlan === 'premium') {
+                            scansRemaining = 10;
+                        } else if (currentPlan === 'pro') {
+                            scansRemaining = 999; // Unlimited
+                        }
                     }
                     updateUIForLoggedInUser();
                 } catch (e) {
@@ -1084,7 +1080,7 @@
             }
         }
 
-        // Update UI for logged in user - simplified
+        // Update UI for logged in user
         function updateUIForLoggedInUser() {
             if (currentUser) {
                 // Show user menu, hide auth buttons
@@ -1104,7 +1100,6 @@
         
         // Update subscription plan
         function updateSubscriptionPlan(plan) {
-            // In a real app, this would call an API to update the subscription
             currentPlan = plan;
             localStorage.setItem('plan', plan);
             
@@ -1117,6 +1112,7 @@
                 scansRemaining = 999; // Unlimited
             }
             
+            // Update UI
             updatePlanButtons();
             showToast(`Successfully upgraded to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`, 'success');
             subscriptionModal.classList.remove('active');
@@ -1141,12 +1137,14 @@
             });
         }
         
-        // Redeem promo code - simplified
+        // Redeem promo code - simplified to just give Pro access
         function redeemPromoCode(code) {
             // Always grant Pro access
             currentPlan = 'pro';
             localStorage.setItem('plan', 'pro');
+            scansRemaining = 999; // Unlimited
             
+            // Show success message
             redeemMessage.textContent = 'Success! You now have unlimited scans with the Pro plan.';
             redeemMessage.className = 'redeem-message success';
             redeemMessage.style.display = 'block';
@@ -1154,21 +1152,29 @@
             // Clear input
             promoCodeInput.value = '';
             
-            showToast('Promo code successfully redeemed! Welcome to the Pro plan.', 'success');
-            
-            // Update plan buttons
+            // Update UI
             updatePlanButtons();
+            showToast('Promo code successfully redeemed! Welcome to the Pro plan.', 'success');
         }
-        
-        // Update scans remaining
-        function updateScansRemaining() {
-            if (currentPlan === 'free') {
-                scansRemaining = 2;
-            } else if (currentPlan === 'premium') {
-                scansRemaining = 10;
-            } else if (currentPlan === 'pro') {
-                scansRemaining = 999; // Unlimited
-            }
+
+        // Handle logout
+        function handleLogout() {
+            // Clear stored data
+            localStorage.removeItem('user');
+            localStorage.removeItem('plan');
+            
+            // Reset current user
+            currentUser = null;
+            currentPlan = 'free';
+            
+            // Update UI
+            updateUIForLoggedInUser();
+            
+            // Close dropdown
+            userDropdown.classList.remove('active');
+            
+            // Show success toast
+            showToast('You have been logged out successfully', 'success');
         }
 
         // Show subcategories for selected category
@@ -1194,13 +1200,12 @@
             subcategoryPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        // Toggle subcategory selection - simplified
+        // Toggle subcategory selection - no limit on selections
         function toggleSubcategory(chip, subcategory) {
             if (chip.classList.contains('selected')) {
                 chip.classList.remove('selected');
                 selectedSubcategories = selectedSubcategories.filter(s => s !== subcategory);
             } else {
-                // Always allow selection - no limit
                 chip.classList.add('selected');
                 selectedSubcategories.push(subcategory);
             }
@@ -1208,13 +1213,13 @@
             updateSearchButton();
         }
 
-        // Update selected count - simplified
+        // Update selected count
         function updateSelectedCount() {
             selectedCount.textContent = `${selectedSubcategories.length} subcategories selected`;
             selectedCount.style.color = 'var(--accent-color)';
         }
 
-        // Update search button state - simplified
+        // Update search button state
         function updateSearchButton() {
             if (selectedSubcategories.length > 0) {
                 searchButton.classList.add('active');
@@ -1225,30 +1230,8 @@
             }
         }
 
-        // Handle logout
-        function handleLogout() {
-            // Clear stored data
-            localStorage.removeItem('user');
-            localStorage.removeItem('plan');
-            
-            // Reset current user
-            currentUser = null;
-            currentPlan = 'free';
-            
-            // Update UI
-            updateUIForLoggedInUser();
-            
-            // Close dropdown
-            userDropdown.classList.remove('active');
-            
-            // Show success toast
-            showToast('You have been logged out successfully', 'success');
-        }
-
-        // Start scan function - Direct call to backend
+        // Start scan function
         function startScan() {
-            // Always allow scan to proceed - no login required
-            
             // Check if category and subcategories are selected
             if (!selectedCategory || selectedSubcategories.length === 0) {
                 showToast('Please select a category and at least one subcategory', 'error');
@@ -1290,7 +1273,7 @@
                 }
             }, 300);
             
-            // Make API request to run the actual arbitrage bot
+            // Make API request to run the arbitrage bot
             fetch('/api/v1/scan', {
                 method: 'POST',
                 headers: {
