@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlipHawk | Smart Arbitrage Scanner</title>
+    <title>FlipHawk | Smart Resale Scanner</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -22,12 +22,15 @@
             margin: 0;
             padding: 0;
             line-height: 1.6;
+            overflow-x: hidden; /* Prevent horizontal scroll */
         }
 
         .container {
+            width: 100%;
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
+            box-sizing: border-box;
         }
 
         header {
@@ -36,6 +39,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            width: 100%;
         }
 
         .header-content {
@@ -131,7 +135,7 @@
 
         .hero {
             text-align: center;
-            padding: 80px 20px;
+            padding: 60px 20px;
             background: linear-gradient(135deg, rgba(255,107,107,0.1) 0%, rgba(78,205,196,0.1) 100%);
             border-radius: 20px;
             margin: 40px 0;
@@ -204,41 +208,44 @@
 
         .subcategory-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 15px;
             margin-top: 20px;
             justify-content: center;
         }
 
         .subcategory-chip {
-            background: rgba(78, 205, 196, 0.1);
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.08) 0%, rgba(78, 205, 196, 0.15) 100%);
             border: 1px solid var(--secondary-color);
-            border-radius: 25px;
-            padding: 12px 18px;
-            font-size: 0.95em;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 1em;
             cursor: pointer;
             text-align: center;
             transition: all 0.3s ease;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-weight: 500;
+            letter-spacing: 0.4px;
         }
 
         .subcategory-chip:hover {
-            background: rgba(78, 205, 196, 0.2);
-            transform: translateY(-3px);
-            box-shadow: 0 5px 12px rgba(78, 205, 196, 0.2);
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.15) 0%, rgba(78, 205, 196, 0.3) 100%);
+            transform: translateY(-4px);
+            box-shadow: 0 6px 15px rgba(78, 205, 196, 0.3);
         }
 
         .subcategory-chip.selected {
-            background: var(--secondary-color);
+            background: linear-gradient(to right, var(--secondary-color), #3ac0b8);
             color: var(--dark-bg);
             font-weight: 600;
             box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            border-color: transparent;
         }
 
         .selected-count {
             margin-top: 20px;
-            font-size: 0.95em;
+            font-size: 1em;
             color: var(--accent-color);
             text-align: center;
             font-weight: 500;
@@ -255,6 +262,8 @@
             margin-top: 30px;
             transition: all 0.3s ease;
             display: inline-block;
+            position: relative;
+            overflow: hidden;
         }
 
         .search-button.active {
@@ -269,8 +278,33 @@
             box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
         }
 
+        .search-button.loading::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                var(--primary-color), 
+                var(--secondary-color), 
+                var(--accent-color), 
+                var(--secondary-color), 
+                var(--primary-color));
+            background-size: 400% 100%;
+            animation: gradientShift 3s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
         #results-container {
             margin-top: 40px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .result-card {
@@ -281,6 +315,8 @@
             display: flex;
             gap: 20px;
             animation: slideIn 0.5s ease-out;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         @keyframes slideIn {
@@ -327,25 +363,53 @@
 
         .progress-container {
             width: 100%;
-            height: 8px;
+            height: 12px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            margin: 1rem 0;
+            border-radius: 6px;
+            margin: 1.5rem 0;
             display: none;
+            overflow: hidden;
         }
         
         .progress-bar {
             width: 0%;
             height: 100%;
             background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            border-radius: 4px;
-            transition: width 0.3s ease;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            100% {
+                left: 100%;
+            }
         }
 
         .scan-status {
             text-align: center;
-            margin-top: 10px;
+            margin-top: 15px;
+            margin-bottom: 20px;
             display: none;
+            font-size: 1.1em;
+            font-weight: 500;
         }
 
         /* Modal styles */
@@ -360,6 +424,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            overflow-y: auto;
         }
 
         .modal.active {
@@ -373,6 +438,7 @@
             width: 400px;
             max-width: 90%;
             position: relative;
+            margin: 40px 0;
         }
 
         .close-modal {
@@ -415,6 +481,7 @@
             border-radius: 8px;
             color: var(--text-color);
             font-size: 1em;
+            box-sizing: border-box;
         }
 
         .form-input:focus {
@@ -509,6 +576,7 @@
             text-align: center;
             border: 2px solid transparent;
             transition: all 0.3s ease;
+            margin-bottom: 20px;
         }
 
         .plan-card:hover {
@@ -548,6 +616,7 @@
         .plan-features {
             margin: 20px 0;
             text-align: left;
+            padding-left: 15px;
         }
 
         .plan-features li {
@@ -626,6 +695,10 @@
         }
 
         @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5em;
+            }
+            
             .result-card {
                 flex-direction: column;
             }
@@ -633,6 +706,7 @@
             .result-image {
                 width: 100%;
                 height: auto;
+                max-height: 250px;
             }
 
             .plans-container {
@@ -642,7 +716,58 @@
 
             .plan-card {
                 width: 100%;
-                max-width: 300px;
+                max-width: 280px;
+            }
+            
+            .subcategory-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            }
+            
+            .subcategory-chip {
+                padding: 12px 16px;
+                font-size: 0.95em;
+            }
+            
+            .search-button {
+                padding: 12px 30px;
+                font-size: 1.1em;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+                margin: 20px 0;
+            }
+            
+            .subscription-modal .modal-content {
+                margin: 20px auto;
+                overflow-y: auto;
+                max-height: 90vh;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2em;
+            }
+            
+            .category-grid {
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+                gap: 15px;
+            }
+            
+            .subcategory-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+            }
+            
+            .category-card {
+                padding: 15px;
+            }
+            
+            .subcategory-chip {
+                padding: 10px 12px;
+                font-size: 0.9em;
             }
         }
     </style>
@@ -671,7 +796,7 @@
     <main class="container">
         <section class="hero">
             <h1>Find Profitable Flips Instantly</h1>
-            <p>Select a category to discover arbitrage opportunities across multiple marketplaces</p>
+            <p>Select a category to discover resale opportunities across multiple marketplaces</p>
         </section>
 
         <div class="category-grid">
@@ -791,7 +916,7 @@
                     <label class="form-label" for="signup-password">Password</label>
                     <input type="password" class="form-input" id="signup-password" placeholder="Choose a password (min. 6 characters)" required>
                 </div>
-                <button type="submit" class="form-button">Create Account</button>
+<button type="submit" class="form-button">Create Account</button>
             </form>
             <div class="form-footer">
                 <p>Already have an account? <span class="form-link" id="switch-to-login">Login</span></p>
@@ -862,7 +987,7 @@
             "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
             "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
             "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
-            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys",],
+            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps", "Antique Toys"],
             "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
             "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
             "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
@@ -1230,7 +1355,7 @@
             }
         }
 
-        // Start scan function
+        // Start scan function with enhanced loading visuals
         function startScan() {
             // Check if category and subcategories are selected
             if (!selectedCategory || selectedSubcategories.length === 0) {
@@ -1247,18 +1372,19 @@
             loadingSpinner.style.display = 'block';
             progressContainer.style.display = 'block';
             scanStatus.style.display = 'block';
-            scanStatus.textContent = 'Running arbitrage bot...';
+            scanStatus.textContent = 'Running resale scanner...';
             progressBar.style.width = '0%';
             
-            // Disable search button
+            // Disable search button and add loading animation
             searchButton.disabled = true;
             searchButton.classList.remove('active');
+            searchButton.classList.add('loading');
             searchButton.textContent = 'Scanning...';
             
             // Simulate progress while scanning
             let progress = 0;
             const progressInterval = setInterval(() => {
-                progress += Math.random() * 5;
+                progress += Math.random() * 3;
                 if (progress < 95) {
                     progressBar.style.width = `${progress}%`;
                     
@@ -1273,7 +1399,7 @@
                 }
             }, 300);
             
-            // Make API request to run the arbitrage bot
+            // Make API request to run the resale scanner
             fetch('/api/v1/scan', {
                 method: 'POST',
                 headers: {
@@ -1304,6 +1430,7 @@
                     // Reset search button
                     searchButton.disabled = false;
                     searchButton.classList.add('active');
+                    searchButton.classList.remove('loading');
                     searchButton.textContent = 'Begin Resale Search';
                     
                     // Hide loading state
@@ -1318,6 +1445,7 @@
                 // Reset search button
                 searchButton.disabled = false;
                 searchButton.classList.add('active');
+                searchButton.classList.remove('loading');
                 searchButton.textContent = 'Begin Resale Search';
                 
                 // Hide loading state
