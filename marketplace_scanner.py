@@ -254,43 +254,49 @@ async def scan_marketplaces(subcategories: List[str]) -> Tuple[List[Dict[str, An
     """
     logger.info(f"Starting marketplace scan for subcategories: {subcategories}")
     
-    # Run marketplace searches concurrently
     try:
         # Create tasks for all marketplaces
         amazon_task = asyncio.create_task(run_amazon_search(subcategories))
         ebay_task = asyncio.create_task(run_ebay_search(subcategories))
-        walmart_task = asyncio.create_task(run_walmart_search(subcategories))
-        stockx_task = asyncio.create_task(run_stockx_search(subcategories))
-        facebook_task = asyncio.create_task(run_facebook_search(subcategories))
+        
+        # Only include other marketplaces if needed
+        # This helps reduce load and avoid rate limiting
+        include_walmart = any(subcat in ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "SSDs", "Monitors"] for subcat in subcategories)
+        include_stockx = any(subcat in ["Jordans", "Nike Dunks", "Vintage Tees", "Consoles"] for subcat in subcategories)
+        include_facebook = any(subcat in ["Vintage Tech", "Cameras", "Vinyl Records", "Consoles", "Camping Gear"] for subcat in subcategories)
         
         # Determine if we should include TCGPlayer based on subcategories
-        tcg_subcategories = ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Trading Cards"]
+        tcg_subcategories = ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Trading Cards", "Sports Cards"]
         include_tcgplayer = any(subcat in tcg_subcategories for subcat in subcategories)
         
+        # Create the necessary marketplace tasks
+        marketplace_tasks = [amazon_task, ebay_task]
+        
+        if include_walmart:
+            walmart_task = asyncio.create_task(run_walmart_search(subcategories))
+            marketplace_tasks.append(walmart_task)
+        
+        if include_stockx:
+            stockx_task = asyncio.create_task(run_stockx_search(subcategories))
+            marketplace_tasks.append(stockx_task)
+        
+        if include_facebook:
+            facebook_task = asyncio.create_task(run_facebook_search(subcategories))
+            marketplace_tasks.append(facebook_task)
+            
         if include_tcgplayer:
             tcgplayer_task = asyncio.create_task(run_tcgplayer_search(subcategories))
-            # Wait for all searches to complete
-            amazon_results, ebay_results, walmart_results, stockx_results, facebook_results, tcgplayer_results = await asyncio.gather(
-                amazon_task, ebay_task, walmart_task, stockx_task, facebook_task, tcgplayer_task
-            )
-        else:
-            # Wait for all searches to complete (excluding TCGPlayer)
-            amazon_results, ebay_results, walmart_results, stockx_results, facebook_results = await asyncio.gather(
-                amazon_task, ebay_task, walmart_task, stockx_task, facebook_task
-            )
-            tcgplayer_results = []
+            marketplace_tasks.append(tcgplayer_task)
+        
+        # Wait for all active tasks to complete
+        results = await asyncio.gather(*marketplace_tasks)
         
         # Combine all listings
-        all_listings = amazon_results + ebay_results + walmart_results + stockx_results + facebook_results + tcgplayer_results
+        all_listings = []
+        for result in results:
+            all_listings.extend(result)
         
         logger.info(f"Total listings found: {len(all_listings)}")
-        logger.info(f"- Amazon: {len(amazon_results)} listings")
-        logger.info(f"- eBay: {len(ebay_results)} listings")
-        logger.info(f"- Walmart: {len(walmart_results)} listings")
-        logger.info(f"- StockX: {len(stockx_results)} listings")
-        logger.info(f"- Facebook Marketplace: {len(facebook_results)} listings")
-        if include_tcgplayer:
-            logger.info(f"- TCGPlayer: {len(tcgplayer_results)} listings")
         
         # Find arbitrage opportunities
         analyzer = ArbitrageAnalyzer()
@@ -493,22 +499,3 @@ def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Unexpected error in arbitrage scan: {str(e)}")
         return []
-
-# Entry point for direct execution
-if __name__ == "__main__":
-    # Test the arbitrage scanner
-    test_subcategories = ["Headphones", "Mechanical Keyboards"]
-    results = run_arbitrage_scan(test_subcategories)
-    
-    print(f"Found {len(results)} arbitrage opportunities")
-    for i, opp in enumerate(results[:5], 1):
-        print(f"\nOpportunity #{i}:")
-        print(f"Title: {opp['title']}")
-        print(f"Buy: ${opp['buyPrice']:.2f} from {opp['buyMarketplace']}")
-        print(f"Sell: ${opp['sellPrice']:.2f} on {opp['sellMarketplace']}")
-        print(f"Profit: ${opp['netProfit']:.2f} ({opp['netProfitPercentage']:.2f}% ROI)")
-        print(f"Confidence: {opp['confidence']}%")
-        print(f"Velocity Score: {opp['velocityScore']}")
-        print(f"Estimated Sell Time: {opp['estimatedSellDays']} days")
-        print(f"Buy Link: {opp['buyLink']}")
-        print(f"Sell Link: {opp['sellLink']}")
