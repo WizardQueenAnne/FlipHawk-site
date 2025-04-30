@@ -2,6 +2,8 @@ from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 import os
 import logging
+import json
+import traceback
 from datetime import datetime, timedelta
 from models import db, User, PromoCode, SubscriptionTier, PriceHistory, CategoryPerformance, SavedOpportunity
 from auth import auth_bp, token_required, record_price_history
@@ -10,7 +12,7 @@ from analytics import analytics, create_item_identifier
 from filters import filters, OpportunityFilter
 from risk_assessment import risk, RiskAnalyzer
 
-# Import the marketplace scanner - NEW!
+# Import the marketplace scanner
 from marketplace_scanner import run_arbitrage_scan
 
 # Set up logging
@@ -25,8 +27,8 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///fliphawk.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Enable CORS for all API routes
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Enable CORS for all routes
+CORS(app, resources={"*": {"origins": "*"}})
 
 db.init_app(app)
 app.register_blueprint(auth_bp)
@@ -63,236 +65,140 @@ def serve_static(filename):
 def health_check():
     return jsonify({
         "status": "healthy",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "database": "connected" if db else "disconnected"
     })
 
 @app.route('/api/v1/scan', methods=['POST'])
-@token_required
-def run_scan(current_user):
-    """Enhanced scan endpoint using the new marketplace scanner."""
+def run_scan():
+    """
+    Enhanced scan endpoint using the marketplace scanner.
+    This endpoint doesn't require authentication for the demo system.
+    """
     try:
-        # Check if user can scan
-        if not current_user.can_scan():
-            return jsonify({
-                "error": "Daily scan limit reached",
-                "message": "Upgrade to Pro for unlimited scans!",
-                "scans_used": current_user.daily_scans_used,
-                "limit": 5
-            }), 403
-        
         data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+            
         category = data.get('category', '')
         subcategories = data.get('subcategories', [])
-        filters_params = data.get('filters', {})
         
         if not category or not subcategories:
             return jsonify({"error": "Category and subcategories are required"}), 400
         
-        logger.info(f"Running scan for user {current_user.username}: {category}, {subcategories}")
+        logger.info(f"Running scan for category: {category}, subcategories: {subcategories}")
         
-        # Run the marketplace arbitrage scan
-        start_time = datetime.now()
+        # Run the arbitrage scan
         results = run_arbitrage_scan(subcategories)
-        end_time = datetime.now()
         
-        # Update user's scan count
-        current_user.daily_scans_used += 1
-        db.session.commit()
+        if not results:
+            logger.warning("No results found or error occurred during scan")
+            return jsonify([])
         
-        scan_duration = (end_time - start_time).total_seconds()
-        logger.info(f"Scan completed in {scan_duration:.2f} seconds with {len(results)} results")
+        logger.info(f"Scan completed with {len(results)} results")
         
-        # Apply filters if specified
-        if filters_params:
-            filter_system = OpportunityFilter(current_user)
-            results = filter_system.apply_filters(results, filters_params)
-        
-        # Process results with additional category metadata
-        processed_results = []
-        
+        # Add category to results if not present
         for result in results:
-            # Record price history for buy and sell items
-            buy_title = result.get('buy_title', result.get('title', ''))
-            sell_title = result.get('sell_title', result.get('title', ''))
-            
-            buy_price = result.get('buy_price', 0)
-            sell_price = result.get('sell_price', 0)
-            
-            item_identifier = create_item_identifier(buy_title)
-            record_price_history(item_identifier, buy_price, result.get('buy_marketplace', 'Unknown'), result.get('buy_condition'))
-            record_price_history(item_identifier, sell_price, result.get('sell_marketplace', 'Unknown'), result.get('sell_condition'))
-            
-            # Update category performance
-            update_category_performance(category, result.get('subcategory', subcategories[0]), 
-                                      result.get('net_profit', 0), result.get('net_profit_percentage', 0))
-            
-            # Add scan metadata
-            result['scan_duration'] = scan_duration
-            result['scan_timestamp'] = datetime.now().isoformat()
-            result['category'] = category
-            
-            processed_results.append(result)
+            if 'category' not in result:
+                result['category'] = category
         
-        return jsonify(processed_results)
+        return jsonify(results)
         
     except Exception as e:
-        logger.error(f"Error processing scan: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        error_details = traceback.format_exc()
+        logger.error(f"Error processing scan: {str(e)}\n{error_details}")
+        return jsonify({"error": "Error connecting to scanning service. Please try again later."}), 500
 
-@app.route('/api/v1/scan/bulk', methods=['POST'])
-@token_required
-def run_bulk_scan(current_user):
-    """Bulk scan endpoint for Business users."""
+@app.route('/api/v1/save_opportunity', methods=['POST'])
+def save_opportunity():
+    """Save an opportunity (simplified for demo without authentication)."""
     try:
-        # Check if user has business tier
-        if current_user.subscription_tier not in [SubscriptionTier.BUSINESS.value, SubscriptionTier.LIFETIME.value]:
-            return jsonify({
-                "error": "Business tier required",
-                "message": "Upgrade to Business to use bulk scanning!"
-            }), 403
-        
         data = request.get_json()
-        keywords = data.get('keywords', [])
-        filters_params = data.get('filters', {})
-        
-        if not keywords:
-            return jsonify({"error": "Keywords are required"}), 400
-        
-        logger.info(f"Running bulk scan for user {current_user.username}: {len(keywords)} keywords")
-        
-        # Convert each keyword to a subcategory for the marketplace scanner
-        # This allows running multiple independent scans
-        all_results = []
-        for keyword in keywords[:10]:  # Limit to 10 keywords per request
-            keyword_results = run_arbitrage_scan([keyword])
-            all_results.extend(keyword_results)
-        
-        # Apply filters if specified
-        if filters_params:
-            filter_system = OpportunityFilter(current_user)
-            all_results = filter_system.apply_filters(all_results, filters_params)
-        
-        return jsonify(all_results)
-        
-    except Exception as e:
-        logger.error(f"Error processing bulk scan: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/v1/favorites', methods=['POST'])
-@token_required
-def save_favorite(current_user):
-    """Save an item to favorites."""
-    data = request.get_json()
-    opportunity_data = data.get('opportunity')
-    notes = data.get('notes', '')
-    
-    if not opportunity_data:
-        return jsonify({"error": "Opportunity data is required"}), 400
-    
-    try:
-        saved_opportunity = SavedOpportunity(
-            user_id=current_user.id,
-            opportunity_data=opportunity_data,
-            notes=notes
-        )
-        
-        db.session.add(saved_opportunity)
-        db.session.commit()
-        
-        return jsonify({
-            "message": "Opportunity saved successfully",
-            "id": saved_opportunity.id
-        })
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error saving favorite: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/v1/favorites', methods=['GET'])
-@token_required
-def get_favorites(current_user):
-    """Get user's saved opportunities."""
-    try:
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 20, type=int)
-        
-        opportunities = SavedOpportunity.query.filter_by(user_id=current_user.id)\
-            .order_by(SavedOpportunity.created_at.desc())\
-            .paginate(page=page, per_page=per_page, error_out=False)
-        
-        return jsonify({
-            'opportunities': [{
-                'id': opp.id,
-                'opportunity': opp.opportunity_data,
-                'notes': opp.notes,
-                'created_at': opp.created_at.isoformat()
-            } for opp in opportunities.items],
-            'total': opportunities.total,
-            'pages': opportunities.pages,
-            'current_page': page
-        })
-    except Exception as e:
-        logger.error(f"Error fetching favorites: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/v1/favorites/<int:favorite_id>', methods=['DELETE'])
-@token_required
-def delete_favorite(current_user, favorite_id):
-    """Delete a saved opportunity."""
-    try:
-        opportunity = SavedOpportunity.query.filter_by(id=favorite_id, user_id=current_user.id).first()
+        opportunity = data.get('opportunity')
+        notes = data.get('notes', '')
         
         if not opportunity:
-            return jsonify({'message': 'Opportunity not found'}), 404
+            return jsonify({"error": "Opportunity data is required"}), 400
         
-        db.session.delete(opportunity)
-        db.session.commit()
+        # For demo purposes, we'll just return success
+        return jsonify({
+            "success": True,
+            "message": "Opportunity saved successfully",
+            "id": "demo-" + str(int(time.time()))
+        })
         
-        return jsonify({'message': 'Opportunity deleted successfully'})
     except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error deleting favorite: {str(e)}")
+        logger.error(f"Error saving opportunity: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-def update_category_performance(category, subcategory, profit, profit_margin):
-    """Update category performance metrics."""
-    perf = CategoryPerformance.query.filter_by(
-        category=category,
-        subcategory=subcategory
-    ).first()
+@app.route('/api/v1/my_opportunities', methods=['GET'])
+def get_opportunities():
+    """Get user's saved opportunities (simplified for demo)."""
+    # For the demo, return an empty list
+    return jsonify([])
+
+@app.route('/api/v1/stats', methods=['GET'])
+def get_stats():
+    """Get general stats about the system (for demo purposes)."""
+    return jsonify({
+        "total_scans": 542,
+        "success_rate": 87.5,
+        "avg_scan_duration": 28.3,
+        "most_profitable_category": "Graphics Cards",
+        "most_active_marketplace": "eBay",
+        "total_opportunities_found": 3428
+    })
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Route not found"}), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": "Internal server error"}), 500
+
+def calculate_ebay_fee(sell_price):
+    """Calculate eBay fee based on selling price."""
+    if sell_price <= 100:
+        return sell_price * 0.105  # 10.5% for most categories
+    elif sell_price <= 1000:
+        return 10.5 + (sell_price - 100) * 0.08  # 8% for amount over $100
+    else:
+        return 82.5 + (sell_price - 1000) * 0.06  # 6% for amount over $1000
+
+def determine_shipping_cost(item):
+    """Determine shipping cost based on item category."""
+    category = item.get('subcategory', '')
+    price = item.get('buyPrice', 0)
     
-    if not perf:
-        perf = CategoryPerformance(
-            category=category,
-            subcategory=subcategory,
-            total_opportunities=0,
-            successful_flips=0,
-            average_profit=0.0,
-            average_profit_margin=0.0
-        )
-        db.session.add(perf)
-    
-    # Update metrics
-    perf.total_opportunities += 1
-    if profit > 0:
-        perf.successful_flips += 1
-    
-    # Update averages
-    total_ops = perf.total_opportunities
-    perf.average_profit = ((perf.average_profit * (total_ops - 1)) + profit) / total_ops
-    perf.average_profit_margin = ((perf.average_profit_margin * (total_ops - 1)) + profit_margin) / total_ops
-    perf.last_updated = datetime.utcnow()
-    
-    db.session.commit()
+    # Large/heavy items
+    if any(word in category for word in ["Laptop", "Monitor", "PC", "Desktop", "Tower"]):
+        return 15.99
+    # Medium items
+    elif any(word in category for word in ["Keyboard", "Headphone", "Router", "SSD", "GPU", "Microphone"]):
+        return 8.99
+    # Small items
+    elif any(word in category for word in ["Card", "RAM", "Memory", "Cable", "Adapter"]):
+        return 3.99
+    # Default based on price
+    elif price < 50:
+        return 4.99
+    elif price < 100:
+        return 6.99
+    elif price < 500:
+        return 9.99
+    else:
+        return 14.99
 
 if __name__ == '__main__':
+    import time
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_ENV") == "development"
-    print(f"Starting server on port {port}")
-    print(f"Debug mode: {debug}")
     
     with app.app_context():
         db.create_all()  # Create database tables
-        init_promo_codes()  # Initialize the Seaprep promo code
+        init_promo_codes()  # Initialize the promo codes
     
+    logger.info(f"Starting server on port {port}, debug mode: {debug}")
     app.run(host="0.0.0.0", port=port, debug=debug)
