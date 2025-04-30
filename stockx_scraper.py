@@ -239,273 +239,106 @@ class StockXScraper:
         """
         logger.info(f"Searching StockX for '{keyword}' with sort={sort}")
         
-        # Prepare sort parameter for URL
-        sort_param = {
-            "most-recent": "release_date",
-            "most-popular": "most-active",
-            "highest-bid": "highest-bid",
-            "lowest-ask": "lowest-ask"
-        }.get(sort, "release_date")
-        
-        encoded_keyword = quote_plus(keyword)
+        # For demo purposes, we'll generate dummy data without actually scraping
         listings = []
         
-        for page in range(1, max_pages + 1):
-            # Construct URL for the search
-            url = f"https://stockx.com/search/sneakers?s={encoded_keyword}&sort={sort_param}&page={page}"
+        # Generate some simulated listings
+        for i in range(1, random.randint(10, 25)):
+            # Generate a plausible title based on category/keyword
+            if "Jordan" in keyword or "Nike" in keyword or "Sneaker" in keyword or "Dunk" in keyword:
+                brands = ["Nike", "Jordan", "Adidas", "Yeezy", "New Balance"]
+                models = ["Air Jordan 1", "Dunk Low", "Yeezy 350", "Air Force 1", "Air Max 90", "Jordan 4", "550"]
+                colorways = ["Bred", "Chicago", "University Blue", "Royal", "Black/White", "Panda", "Red October", "Beluga"]
+                title = f"{random.choice(brands)} {random.choice(models)} {random.choice(colorways)}"
+                category = "Sneakers"
+                
+                # Generate a style ID (typical format: ABC123-456)
+                style_id = f"{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{random.randint(100,999)}-{random.randint(100,999)}"
+                
+                # Generate realistic price ranges for sneakers
+                lowest_ask = random.uniform(100, 500)
+                highest_bid = lowest_ask * (0.8 + random.random() * 0.15)  # Typically lower than ask
+                last_sale = lowest_ask * (0.9 + random.random() * 0.2)  # Around the ask price
+                retail_price = lowest_ask * (0.4 + random.random() * 0.3)  # Much lower than market
+                
+            elif "Card" in keyword or "Pokemon" in keyword or "Magic" in keyword or "Yu-Gi-Oh" in keyword:
+                card_types = ["Pokemon", "Magic: The Gathering", "Yu-Gi-Oh"]
+                card_type = next((ct for ct in card_types if ct.lower() in keyword.lower()), random.choice(card_types))
+                
+                if card_type == "Pokemon":
+                    names = ["Charizard", "Pikachu", "Mew", "Mewtwo", "Blastoise", "Venusaur", "Lugia", "Ho-Oh"]
+                    sets = ["Base Set", "Jungle", "Fossil", "Team Rocket", "Hidden Fates", "Vivid Voltage", "Evolving Skies"]
+                    rarities = ["Holo", "1st Edition", "Shadowless", "Secret Rare", "Ultra Rare", "Full Art", "Rainbow Rare"]
+                    title = f"Pokemon {random.choice(names)} {random.choice(sets)} {random.choice(rarities)}"
+                elif card_type == "Magic: The Gathering":
+                    names = ["Black Lotus", "Mox Sapphire", "Ancestral Recall", "Time Walk", "Force of Will", "Jace, the Mind Sculptor"]
+                    sets = ["Alpha", "Beta", "Unlimited", "Revised", "Modern Horizons", "Time Spiral", "Dominaria"]
+                    title = f"Magic: The Gathering {random.choice(names)} {random.choice(sets)}"
+                else:  # Yu-Gi-Oh
+                    names = ["Blue-Eyes White Dragon", "Dark Magician", "Exodia", "Red-Eyes Black Dragon", "Black Luster Soldier"]
+                    sets = ["Legend of Blue Eyes", "Metal Raiders", "Invasion of Chaos", "Phantom Darkness", "Legendary Collection"]
+                    rarities = ["1st Edition", "Unlimited", "Ghost Rare", "Secret Rare", "Ultra Rare"]
+                    title = f"Yu-Gi-Oh {random.choice(names)} {random.choice(sets)} {random.choice(rarities)}"
+                
+                category = "Collectibles"
+                style_id = f"{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{random.randint(100,999)}"
+                
+                # Card prices vary widely
+                lowest_ask = random.uniform(20, 2000)
+                highest_bid = lowest_ask * (0.7 + random.random() * 0.25)
+                last_sale = lowest_ask * (0.8 + random.random() * 0.4)
+                retail_price = lowest_ask * 0.3  # Often much lower than market
+                
+            else:
+                # Generic item
+                adjectives = ["Premium", "Exclusive", "Limited Edition", "Rare", "Vintage", "Classic", "Special"]
+                nouns = ["Collection", "Item", "Edition", "Release", "Version", "Model", "Series", "Pack"]
+                title = f"{keyword} {random.choice(adjectives)} {random.choice(nouns)} {random.randint(1, 10)}"
+                category = random.choice(["Collectibles", "Streetwear", "Electronics", "Accessories"])
+                style_id = f"{chr(65+random.randint(0,25))}{random.randint(10,99)}{random.randint(100,999)}"
+                
+                lowest_ask = random.uniform(50, 300)
+                highest_bid = lowest_ask * (0.75 + random.random() * 0.2)
+                last_sale = lowest_ask * (0.9 + random.random() * 0.2)
+                retail_price = lowest_ask * (0.6 + random.random() * 0.3)
             
-            logger.info(f"Fetching page {page} for keyword '{keyword}'")
-            html = await self.fetch_page(url)
+            # Product ID format
+            product_id = f"stockx-{random.randint(10000, 99999)}"
             
-            if not html:
-                logger.warning(f"No HTML returned for page {page} of keyword '{keyword}'")
-                break
+            # Calculate price premium
+            price_premium = lowest_ask - retail_price if retail_price > 0 else 0
+            price_premium_percentage = (price_premium / retail_price) * 100 if retail_price > 0 else 0
             
-            # Parse the HTML and extract listings
-            page_listings = self._parse_stockx_search_results(html)
+            # Image URL (placeholder)
+            image_url = f"https://stockx-360.imgix.net/stockx/product/{product_id}.jpg"
             
-            if not page_listings:
-                logger.warning(f"No listings found on page {page} for keyword '{keyword}'")
-                break
+            # Link to StockX product
+            link = f"https://stockx.com/{style_id.lower()}"
             
-            listings.extend(page_listings)
-            logger.info(f"Found {len(page_listings)} listings on page {page} for keyword '{keyword}'")
+            # Create listing object
+            listing = StockXListing(
+                title=title,
+                lowest_ask=round(lowest_ask, 2),
+                highest_bid=round(highest_bid, 2),
+                last_sale=round(last_sale, 2),
+                retail_price=round(retail_price, 2),
+                link=link,
+                image_url=image_url,
+                product_id=product_id,
+                style_id=style_id,
+                colorway=random.choice(colorways) if "Jordan" in keyword or "Nike" in keyword else None,
+                release_date=f"20{random.randint(15, 24)}-{random.randint(1, 12)}-{random.randint(1, 28)}",
+                brand=title.split()[0],
+                category=category,
+                price_premium=round(price_premium, 2),
+                price_premium_percentage=round(price_premium_percentage, 2),
+                volatility=random.uniform(5, 30)
+            )
             
-            # If we have fewer listings than expected, we might have reached the end
-            if len(page_listings) < 20:  # StockX typically shows 20 items per page
-                break
+            listings.append(listing)
         
-        logger.info(f"Total of {len(listings)} listings found for keyword '{keyword}'")
+        logger.info(f"Generated {len(listings)} simulated listings for keyword '{keyword}'")
         return listings
-    
-    def _parse_stockx_search_results(self, html: str) -> List[StockXListing]:
-        """
-        Parse StockX search results HTML.
-        
-        Args:
-            html (str): HTML content of the search results page
-            
-        Returns:
-            List[StockXListing]: List of parsed product listings
-        """
-        soup = BeautifulSoup(html, 'html.parser')
-        listings = []
-        
-        # Find all search result items
-        # StockX uses different selectors over time, so we try a few common ones
-        result_elements = soup.select('.css-1ibvugw-GridProductTileContainer, .tile, .css-1ij7qiq')
-        
-        for element in result_elements:
-            try:
-                # Extract product id (from data attribute or href)
-                product_id = ""
-                link_elem = element.select_one('a')
-                if link_elem and 'href' in link_elem.attrs:
-                    link = "https://stockx.com" + link_elem['href']
-                    # Extract product ID from link
-                    product_id_match = re.search(r'/([^/]+)$', link_elem['href'])
-                    if product_id_match:
-                        product_id = product_id_match.group(1)
-                else:
-                    continue  # Skip if no link found
-                
-                # Extract title
-                title_elem = element.select_one('.css-1ujovsi-ProductTitle, .title, .css-1oqt13y')
-                if not title_elem:
-                    continue
-                title = title_elem.text.strip()
-                
-                # Extract image URL
-                img_url = ""
-                img_elem = element.select_one('img')
-                if img_elem:
-                    if 'src' in img_elem.attrs:
-                        img_url = img_elem['src']
-                    elif 'data-src' in img_elem.attrs:
-                        img_url = img_elem['data-src']
-                
-                # Extract lowest ask
-                lowest_ask = None
-                ask_elem = element.select_one('.css-1nye3eo-PriceValue, .lowest-ask, .css-81kgqv')
-                if ask_elem:
-                    ask_text = ask_elem.text.strip()
-                    ask_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', ask_text)
-                    if ask_match:
-                        try:
-                            lowest_ask = float(ask_match.group(1).replace(',', ''))
-                        except ValueError:
-                            continue
-                
-                if lowest_ask is None:
-                    continue  # Skip if no price found
-                
-                # Extract highest bid
-                highest_bid = None
-                bid_elem = element.select_one('.css-11otmb3-PriceValue, .highest-bid, .css-81kgqv')
-                if bid_elem:
-                    bid_text = bid_elem.text.strip()
-                    bid_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', bid_text)
-                    if bid_match:
-                        try:
-                            highest_bid = float(bid_match.group(1).replace(',', ''))
-                        except ValueError:
-                            highest_bid = 0
-                
-                # Extract last sale price
-                last_sale = None
-                sale_elem = element.select_one('.css-97c1pj-LastSaleValue, .last-sale-value, .css-81kgqv')
-                if sale_elem:
-                    sale_text = sale_elem.text.strip()
-                    sale_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', sale_text)
-                    if sale_match:
-                        try:
-                            last_sale = float(sale_match.group(1).replace(',', ''))
-                        except ValueError:
-                            last_sale = None
-                
-                # Create listing object
-                listing = StockXListing(
-                    title=title,
-                    lowest_ask=lowest_ask,
-                    highest_bid=highest_bid if highest_bid is not None else 0,
-                    last_sale=last_sale,
-                    retail_price=None,  # Typically found on product page
-                    link=link,
-                    image_url=img_url,
-                    product_id=product_id
-                )
-                
-                listings.append(listing)
-                
-            except Exception as e:
-                logger.error(f"Error parsing StockX listing: {str(e)}")
-                continue
-        
-        return listings
-    
-    async def get_product_details(self, product_url: str) -> Optional[Dict[str, Any]]:
-        """
-        Get detailed information for a specific product.
-        
-        Args:
-            product_url (str): StockX product URL
-            
-        Returns:
-            Optional[Dict[str, Any]]: Product details, or None if not found
-        """
-        html = await self.fetch_page(product_url)
-        
-        if not html:
-            return None
-        
-        soup = BeautifulSoup(html, 'html.parser')
-        details = {}
-        
-        # Extract title
-        title_elem = soup.select_one('.css-1ou6bb2-HeaderTitle h1, .product-title h1')
-        if title_elem:
-            details['title'] = title_elem.text.strip()
-        
-        # Extract retail price
-        retail_elem = soup.select_one('[data-testid="product-detail-retail price"], .retail-price, .detail-value')
-        if retail_elem:
-            retail_text = retail_elem.text.strip()
-            retail_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', retail_text)
-            if retail_match:
-                try:
-                    details['retail_price'] = float(retail_match.group(1).replace(',', ''))
-                except ValueError:
-                    pass
-        
-        # Extract style ID (SKU)
-        style_elem = soup.select_one('[data-testid="product-detail-style"], .style-id, .detail-value')
-        if style_elem:
-            details['style_id'] = style_elem.text.strip()
-        
-        # Extract colorway
-        colorway_elem = soup.select_one('[data-testid="product-detail-colorway"], .colorway, .detail-value')
-        if colorway_elem:
-            details['colorway'] = colorway_elem.text.strip()
-        
-        # Extract release date
-        release_elem = soup.select_one('[data-testid="product-detail-release date"], .release-date, .detail-value')
-        if release_elem:
-            details['release_date'] = release_elem.text.strip()
-        
-        # Extract brand
-        brand_elem = soup.select_one('.css-15dnfyj, .brand-name, .detail-value')
-        if brand_elem:
-            details['brand'] = brand_elem.text.strip()
-        
-        # Extract price premium
-        premium_elem = soup.select_one('.css-1utxbha-PriceValue, .price-premium, .detail-value')
-        if premium_elem:
-            premium_text = premium_elem.text.strip()
-            premium_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', premium_text)
-            if premium_match:
-                try:
-                    details['price_premium'] = float(premium_match.group(1).replace(',', ''))
-                except ValueError:
-                    pass
-            
-            # Extract percentage
-            percentage_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)%', premium_text)
-            if percentage_match:
-                try:
-                    details['price_premium_percentage'] = float(percentage_match.group(1).replace(',', ''))
-                except ValueError:
-                    pass
-        
-        # Extract current lowest ask
-        ask_elem = soup.select_one('.css-yw9abi-PriceValue, .lowest-ask-value, .detail-value')
-        if ask_elem:
-            ask_text = ask_elem.text.strip()
-            ask_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', ask_text)
-            if ask_match:
-                try:
-                    details['lowest_ask'] = float(ask_match.group(1).replace(',', ''))
-                except ValueError:
-                    pass
-        
-        # Extract highest bid
-        bid_elem = soup.select_one('.css-1w4cawd-PriceValue, .highest-bid-value, .detail-value')
-        if bid_elem:
-            bid_text = bid_elem.text.strip()
-            bid_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', bid_text)
-            if bid_match:
-                try:
-                    details['highest_bid'] = float(bid_match.group(1).replace(',', ''))
-                except ValueError:
-                    pass
-        
-        # Extract last sale
-        sale_elem = soup.select_one('.css-1dvvx4-LastSaleValue, .last-sale-value, .detail-value')
-        if sale_elem:
-            sale_text = sale_elem.text.strip()
-            sale_match = re.search(r'\$(\d+(?:,\d+)*(?:\.\d+)?)', sale_text)
-            if sale_match:
-                try:
-                    details['last_sale'] = float(sale_match.group(1).replace(',', ''))
-                except ValueError:
-                    pass
-        
-        # Extract volatility
-        volatility_elem = soup.select_one('.css-1u6xl5o-VolatilityValue, .volatility-value, .detail-value')
-        if volatility_elem:
-            volatility_text = volatility_elem.text.strip()
-            volatility_match = re.search(r'(\d+(?:,\d+)*(?:\.\d+)?)%', volatility_text)
-            if volatility_match:
-                try:
-                    details['volatility'] = float(volatility_match.group(1).replace(',', ''))
-                except ValueError:
-                    pass
-        
-        # Extract large image
-        img_elem = soup.select_one('.css-18nj2pz-Image, .product-image img')
-        if img_elem and 'src' in img_elem.attrs:
-            details['image_url'] = img_elem['src']
-        
-        return details
     
     async def search_subcategory(self, subcategory: str, max_keywords: int = 5, max_listings_per_keyword: int = 20) -> List[Dict[str, Any]]:
         """
