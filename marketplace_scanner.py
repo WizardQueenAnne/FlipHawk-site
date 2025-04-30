@@ -170,21 +170,21 @@ class ArbitrageAnalyzer:
                             if confidence >= 60:
                                 opportunity = {
                                     'title': buy_listing.get('title'),
-                                    'buy_title': buy_listing.get('title'),
-                                    'sell_title': sell_listing.get('title'),
-                                    'buy_price': buy_price,
-                                    'sell_price': sell_price,
-                                    'buy_marketplace': source_buy,
-                                    'sell_marketplace': source_sell,
-                                    'buy_link': buy_listing.get('link'),
-                                    'sell_link': sell_listing.get('link'),
+                                    'buyTitle': buy_listing.get('title'),
+                                    'sellTitle': sell_listing.get('title'),
+                                    'buyPrice': buy_price,
+                                    'sellPrice': sell_price,
+                                    'buyMarketplace': source_buy,
+                                    'sellMarketplace': source_sell,
+                                    'buyLink': buy_listing.get('link'),
+                                    'sellLink': sell_listing.get('link'),
                                     'profit': profit,
-                                    'profit_percentage': profit_percentage,
+                                    'profitPercentage': profit_percentage,
                                     'confidence': round(confidence),
                                     'similarity': similarity,
-                                    'buy_condition': buy_listing.get('condition', 'New'),
-                                    'sell_condition': sell_listing.get('condition', 'New'),
-                                    'buy_shipping': buy_shipping,
+                                    'buyCondition': buy_listing.get('condition', 'New'),
+                                    'sellCondition': sell_listing.get('condition', 'New'),
+                                    'buyShipping': buy_shipping,
                                     'image_url': buy_listing.get('image_url') or sell_listing.get('image_url'),
                                     'subcategory': buy_listing.get('subcategory'),
                                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
@@ -193,7 +193,7 @@ class ArbitrageAnalyzer:
                                 opportunities.append(opportunity)
         
         # Sort opportunities by profit percentage
-        opportunities.sort(key=lambda x: x['profit_percentage'], reverse=True)
+        opportunities.sort(key=lambda x: x['profitPercentage'], reverse=True)
         
         logger.info(f"Found {len(opportunities)} arbitrage opportunities")
         return opportunities
@@ -316,63 +316,63 @@ def calculate_profit_metrics(opportunity: Dict[str, Any]) -> Dict[str, Any]:
     updated = opportunity.copy()
     
     # Calculate tax (approximate as 8% of buy price)
-    buy_price = updated.get('buy_price', 0)
-    sell_price = updated.get('sell_price', 0)
+    buy_price = updated.get('buyPrice', 0)
+    sell_price = updated.get('sellPrice', 0)
     
     estimated_tax = buy_price * 0.08
-    updated['estimated_tax'] = round(estimated_tax, 2)
+    updated['estimatedTax'] = round(estimated_tax, 2)
     
     # Calculate shipping (if not already included)
-    buy_shipping = updated.get('buy_shipping', 0)
+    buy_shipping = updated.get('buyShipping', 0)
     
     # Calculate platform fees (approximate)
-    sell_marketplace = updated.get('sell_marketplace', '').lower()
+    sell_marketplace = updated.get('sellMarketplace', '').lower()
     
     if 'ebay' in sell_marketplace:
         # eBay fee: 10-15% of sell price including shipping
         sell_fee = sell_price * 0.125  # 12.5% average
-        updated['platform_fee'] = round(sell_fee, 2)
+        updated['platformFee'] = round(sell_fee, 2)
         
         # PayPal fee (2.9% + $0.30)
         payment_fee = sell_price * 0.029 + 0.30
-        updated['payment_fee'] = round(payment_fee, 2)
+        updated['paymentFee'] = round(payment_fee, 2)
     
     elif 'amazon' in sell_marketplace:
         # Amazon fee: 15% of sell price + variable closing fee
         sell_fee = sell_price * 0.15 + 1.80  # $1.80 variable closing fee
-        updated['platform_fee'] = round(sell_fee, 2)
-        updated['payment_fee'] = 0  # Included in platform fee
+        updated['platformFee'] = round(sell_fee, 2)
+        updated['paymentFee'] = 0  # Included in platform fee
     
     elif 'walmart' in sell_marketplace:
         # Walmart fee: 15% of sell price
         sell_fee = sell_price * 0.15
-        updated['platform_fee'] = round(sell_fee, 2)
-        updated['payment_fee'] = 0  # Included in platform fee
+        updated['platformFee'] = round(sell_fee, 2)
+        updated['paymentFee'] = 0  # Included in platform fee
     
     else:
         # Default fees if marketplace is unknown
         sell_fee = sell_price * 0.10
-        updated['platform_fee'] = round(sell_fee, 2)
+        updated['platformFee'] = round(sell_fee, 2)
         payment_fee = sell_price * 0.029 + 0.30
-        updated['payment_fee'] = round(payment_fee, 2)
+        updated['paymentFee'] = round(payment_fee, 2)
     
     # Calculate total cost
     total_cost = buy_price + estimated_tax + buy_shipping
-    updated['total_cost'] = round(total_cost, 2)
+    updated['totalCost'] = round(total_cost, 2)
     
     # Calculate total fees
-    platform_fee = updated.get('platform_fee', 0)
-    payment_fee = updated.get('payment_fee', 0)
+    platform_fee = updated.get('platformFee', 0)
+    payment_fee = updated.get('paymentFee', 0)
     total_fees = platform_fee + payment_fee
-    updated['total_fees'] = round(total_fees, 2)
+    updated['totalFees'] = round(total_fees, 2)
     
     # Calculate net profit
     net_profit = sell_price - total_cost - total_fees
-    updated['net_profit'] = round(net_profit, 2)
+    updated['netProfit'] = round(net_profit, 2)
     
     # Calculate net profit percentage (ROI)
     net_profit_percentage = (net_profit / total_cost) * 100 if total_cost > 0 else 0
-    updated['net_profit_percentage'] = round(net_profit_percentage, 2)
+    updated['netProfitPercentage'] = round(net_profit_percentage, 2)
     
     return updated
 
@@ -389,7 +389,7 @@ def calculate_velocity_score(opportunity: Dict[str, Any]) -> int:
     score = 50  # Base score
     
     # Adjust based on profit percentage
-    profit_percentage = opportunity.get('profit_percentage', 0)
+    profit_percentage = opportunity.get('profitPercentage', 0)
     if profit_percentage > 50:
         score += 20
     elif profit_percentage > 30:
@@ -403,7 +403,7 @@ def calculate_velocity_score(opportunity: Dict[str, Any]) -> int:
         score += 10
     
     # Adjust based on marketplace
-    sell_marketplace = opportunity.get('sell_marketplace', '').lower()
+    sell_marketplace = opportunity.get('sellMarketplace', '').lower()
     if 'ebay' in sell_marketplace:
         score += 5  # eBay tends to have higher velocity
     elif 'amazon' in sell_marketplace:
@@ -471,8 +471,8 @@ def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
                 velocity_score = calculate_velocity_score(processed)
                 estimated_sell_days = estimate_sell_days(processed, velocity_score)
                 
-                processed['velocity_score'] = velocity_score
-                processed['estimated_sell_days'] = estimated_sell_days
+                processed['velocityScore'] = velocity_score
+                processed['estimatedSellDays'] = estimated_sell_days
                 
                 processed_results.append(processed)
             
@@ -504,11 +504,11 @@ if __name__ == "__main__":
     for i, opp in enumerate(results[:5], 1):
         print(f"\nOpportunity #{i}:")
         print(f"Title: {opp['title']}")
-        print(f"Buy: ${opp['buy_price']:.2f} from {opp['buy_marketplace']}")
-        print(f"Sell: ${opp['sell_price']:.2f} on {opp['sell_marketplace']}")
-        print(f"Profit: ${opp['net_profit']:.2f} ({opp['net_profit_percentage']:.2f}% ROI)")
+        print(f"Buy: ${opp['buyPrice']:.2f} from {opp['buyMarketplace']}")
+        print(f"Sell: ${opp['sellPrice']:.2f} on {opp['sellMarketplace']}")
+        print(f"Profit: ${opp['netProfit']:.2f} ({opp['netProfitPercentage']:.2f}% ROI)")
         print(f"Confidence: {opp['confidence']}%")
-        print(f"Velocity Score: {opp['velocity_score']}")
-        print(f"Estimated Sell Time: {opp['estimated_sell_days']} days")
-        print(f"Buy Link: {opp['buy_link']}")
-        print(f"Sell Link: {opp['sell_link']}")
+        print(f"Velocity Score: {opp['velocityScore']}")
+        print(f"Estimated Sell Time: {opp['estimatedSellDays']} days")
+        print(f"Buy Link: {opp['buyLink']}")
+        print(f"Sell Link: {opp['sellLink']}")
