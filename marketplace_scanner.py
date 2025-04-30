@@ -1,4 +1,62 @@
-"""
+async def scan_marketplaces(subcategories: List[str]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Scan multiple marketplaces for the given subcategories.
+    
+    Args:
+        subcategories (List[str]): List of subcategories to search for
+        
+    Returns:
+        Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]: (All listings, Arbitrage opportunities)
+    """
+    logger.info(f"Starting marketplace scan for subcategories: {subcategories}")
+    
+    # Run marketplace searches concurrently
+    try:
+        # Create tasks for all marketplaces
+        amazon_task = asyncio.create_task(run_amazon_search(subcategories))
+        ebay_task = asyncio.create_task(run_ebay_search(subcategories))
+        walmart_task = asyncio.create_task(run_walmart_search(subcategories))
+        stockx_task = asyncio.create_task(run_stockx_search(subcategories))
+        facebook_task = asyncio.create_task(run_facebook_search(subcategories))
+        
+        # Determine if we should include TCGPlayer based on subcategories
+        tcg_subcategories = ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Trading Cards"]
+        include_tcgplayer = any(subcat in tcg_subcategories for subcat in subcategories)
+        
+        if include_tcgplayer:
+            tcgplayer_task = asyncio.create_task(run_tcgplayer_search(subcategories))
+            # Wait for all searches to complete
+            amazon_results, ebay_results, walmart_results, stockx_results, facebook_results, tcgplayer_results = await asyncio.gather(
+                amazon_task, ebay_task, walmart_task, stockx_task, facebook_task, tcgplayer_task
+            )
+        else:
+            # Wait for all searches to complete (excluding TCGPlayer)
+            amazon_results, ebay_results, walmart_results, stockx_results, facebook_results = await asyncio.gather(
+                amazon_task, ebay_task, walmart_task, stockx_task, facebook_task
+            )
+            tcgplayer_results = []
+        
+        # Combine all listings
+        all_listings = amazon_results + ebay_results + walmart_results + stockx_results + facebook_results + tcgplayer_results
+        
+        logger.info(f"Total listings found: {len(all_listings)}")
+        logger.info(f"- Amazon: {len(amazon_results)} listings")
+        logger.info(f"- eBay: {len(ebay_results)} listings")
+        logger.info(f"- Walmart: {len(walmart_results)} listings")
+        logger.info(f"- StockX: {len(stockx_results)} listings")
+        logger.info(f"- Facebook Marketplace: {len(facebook_results)} listings")
+        if include_tcgplayer:
+            logger.info(f"- TCGPlayer: {len(tcgplayer_results)} listings")
+        
+        # Find arbitrage opportunities
+        analyzer = ArbitrageAnalyzer()
+        opportunities = analyzer.find_opportunities(all_listings)
+        
+        return all_listings, opportunities
+        
+    except Exception as e:
+        logger.error(f"Error during marketplace scan: {str(e)}")
+        return [], []"""
 Unified marketplace scanner for FlipHawk arbitrage system.
 This module combines all the marketplace scrapers and finds arbitrage opportunities.
 """
@@ -17,6 +75,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from amazon_scraper import run_amazon_search
 from ebay_scraper import run_ebay_search
 from walmart_scraper import run_walmart_search
+from stockx_scraper import run_stockx_search
+from facebook_scraper import run_facebook_search
+from tcgplayer_scraper import run_tcgplayer_search
 
 # Set up logging
 logging.basicConfig(
@@ -27,6 +88,7 @@ logger = logging.getLogger('marketplace_scanner')
 
 class ArbitrageAnalyzer:
     """Analyze arbitrage opportunities across marketplaces."""
+
     
     def __init__(self):
         """Initialize the arbitrage analyzer."""
