@@ -1,1978 +1,1936 @@
-@staticmethod
-    def _antique_toys_keywords() -> List[str]:
-        return [
-            "antique toy", "antique toys", "vintage toy", "vintage toys", "old toy", "old toys", "classic toy", "classic toys",
-            "collectible toy", "collectible toys", "rare toy", "rare toys", "retro toy", "retro toys", "nostalgic toy",
-            "nostalgic toys", "tin toy", "tin toys", "wind up toy", "wind up toys", "windup toy", "windup toys", 
-            "mechanical toy", "mechanical toys", "clockwork toy", "clockwork toys", "cast iron toy", "cast iron toys", 
-            "pressed steel toy", "pressed steel toys", "metal toy", "metal toys", "wooden toy", "wooden toys", "wood toy",
-            "wood toys", "plastic toy", "plastic toys", "rubber toy", "rubber toys", "celluloid toy", "celluloid toys", 
-            "toy car", "toy cars", "toy truck", "toy trucks", "toy train", "toy trains", "toy boat", "toy boats", 
-            "toy ship", "toy ships", "toy airplane", "toy airplanes", "toy plane", "toy planes", "toy bus", "toy busses", 
-            "toy vehicle", "toy vehicles", "toy soldier", "toy soldiers", "toy figure", "toy figures", "toy animal", 
-            "toy animals", "doll", "dolls", "dollhouse", "dollhouses", "teddy bear", "teddy bears", "stuffed animal", 
-            "stuffed animals", "plush toy", "plush toys", "action figure", "action figures", "toy gun", "toy guns", 
-            "cap gun", "cap guns", "toy pistol", "toy pistols", "toy rifle", "toy rifles", "toy sword", "toy swords", 
-            "toy kitchen", "toy kitchens", "toy stove", "toy stoves", "toy dishes", "toy furniture", "toy farm", 
-            "toy farms", "toy barn", "toy barns", "toy carousel", "toy carousels", "toy circus", "toy circuses", 
-            "toy puppet", "toy puppets", "toy marionette", "toy marionettes", "toy bank", "toy banks", "penny toy", 
-            "penny toys", "toy horse", "toy horses", "toy robot", "toy robots", "toy space", "toy spaces", "toy rocket", 
-            "toy rockets", "board game", "board games", "card game", "card games", "jigsaw puzzle", "jigsaw puzzles", 
-            "toy blocks", "building blocks", "construction toy", "construction toys", "toy telephone", "toy telephones", 
-            "toy typewriter", "toy typewriters", "toy sewing machine", "toy sewing machines", "toy cash register", 
-            "toy cash registers", "toy musical instrument", "toy musical instruments", "toy piano", "toy pianos", 
-            "toy drum", "toy drums", "toy guitar", "toy guitars", "toy xylophone", "toy xylophones", "marble", "marbles", 
-            "top", "tops", "spinning top", "spinning tops", "toy store", "toy stores", "playground equipment", 
-            "toy wagon", "toy wagons", "pull toy", "pull toys", "push toy", "push toys", "rocking horse", "rocking horses", 
-            "toy bicycle", "toy bicycles", "toy tricycle", "toy tricycles", "toy pedal car", "toy pedal cars", 
-            "scooter", "scooters", "hobby horse", "hobby horses", "toy soldier", "toy soldiers", "tin soldier", 
-            "tin soldiers", "lead soldier", "lead soldiers", "toy fort", "toy forts", "toy castle", "toy castles", 
-            "toy western", "toy cowboys", "toy indians", "toy farm", "toy farm animals", "toy zoo", "toy zoo animals", 
-            "toy circus", "toy circus animals", "toy clown", "toy clowns", "jack in the box", "jack in the boxes", 
-            "toy monkey", "toy monkeys", "mechanical bank", "mechanical banks", "still bank", "still banks", 
-            "penny bank", "penny banks", "money box", "money boxes", "toy money", "toy monies", "toy coin", "toy coins", 
-            "toy phonograph", "toy phonographs", "toy gramophone", "toy gramophones", "toy projector", "toy projectors", 
-            "magic lantern", "magic lanterns", "viewmaster", "viewmasters", "stereo viewer", "stereo viewers", 
-            "toy camera", "toy cameras", "bubble pipe", "bubble pipes", "toy bubble", "toy bubbles", "kite", "kites", 
-            "yo yo", "yo yos", "yoyo", "yoyos", "toy ball", "toy balls", "toy bowling", "toy bowlings", "dart", "darts", 
-            "toy dart", "toy darts", "toy archery", "toy archeries", "toy boat", "toy boats", "toy ship", "toy ships", 
-            "toy submarine", "toy submarines", "toy sailboat", "toy sailboats", "toy canoe", "toy canoes", "toy kayak", 
-            "toy kayaks", "toy raft", "toy rafts", "paper toy", "paper toys", "cardboard toy", "cardboard toys", 
-            "playhouse", "playhouses", "play kitchen", "play kitchens", "play store", "play stores", "play shop", 
-            "play shops", "play set", "play sets", "play tent", "play tents", "play tunnel", "play tunnels", "playset", 
-            "playsets", "play structure", "play structures", "sand toy", "sand toys", "beach toy", "beach toys", 
-            "water toy", "water toys", "bath toy", "bath toys", "pool toy", "pool toys", "squirt gun", "squirt guns", 
-            "water gun", "water guns", "water pistol", "water pistols", "play furniture", "play furnitures", 
-            "play table", "play tables", "play chair", "play chairs", "play desk", "play desks", "play couch", 
-            "play couches", "play sofa", "play sofas", "play bed", "play beds", "play kitchen", "play kitchens", 
-            "play refrigerator", "play refrigerators", "play stove", "play stoves", "play oven", "play ovens", 
-            "play sink", "play sinks", "play dishwasher", "play dishwashers", "play washer", "play washers", 
-            "play dryer", "play dryers", "play iron", "play irons", "play ironing board", "play ironing boards", 
-            "play vacuum", "play vacuums", "play vacuum cleaner", "play vacuum cleaners", "play broom", "play brooms", 
-            "play mop", "play mops", "play dustpan", "play dustpans", "play cleaning", "play cleanings", "play food", 
-            "play foods", "play fruit", "play fruits", "play vegetable", "play vegetables", "play meat", "play meats", 
-            "play bread", "play breads", "play cake", "play cakes", "play cookie", "play cookies", "play pie", "play pies", 
-            "play ice cream", "play ice creams", "play candy", "play candies", "play chocolate", "play chocolates", 
-            "play grocery", "play groceries", "play supermarket", "play supermarkets", "play store", "play stores", 
-            "play restaurant", "play restaurants", "play cafe", "play cafes", "play coffee", "play coffees", "play tea", 
-            "play teas", "play teapot", "play teapots", "play tea set", "play tea sets", "play cup", "play cups", 
-            "play mug", "play mugs", "play glass", "play glasses", "play dish", "play dishes", "play plate", "play plates", 
-            "play bowl", "play bowls", "play dinnerware", "play dinnerwares", "play silverware", "play silverwares", 
-            "play utensil", "play utensils", "play fork", "play forks", "play knife", "play knives", "play spoon", 
-            "play spoons", "play pot", "play pots", "play pan", "play pans", "play cookware", "play cookwares", 
-            "play spatula", "play spatulas", "play ladle", "play ladles", "play serving", "play servings", 
-            "play dining", "play dinings", "play picnic", "play picnics", "play bbq", "play bbqs", "play barbecue", 
-            "play barbecues", "play grill", "play grills", "play tool", "play tools", "play toolbox", "play toolboxes", 
-            "play hammer", "play hammers", "play screwdriver", "play screwdrivers", "play wrench", "play wrenches", 
-            "play pliers", "play plierss", "play saw", "play saws", "play drill", "play drills", "play workbench", 
-            "play workbenches", "play workshop", "play workshops", "play carpentry", "play carpentries", "play construction", 
-            "play constructions", "marx toys", "buddy l", "tonka", "tootsietoy", "arcade", "hubley", "kenton", "kilgore", 
-            "dent", "ives", "lionel", "american flyer", "marklin", "steiff", "ideal", "mattel", "fisher price", 
-            "playskool", "ohio art", "wolverine", "structo", "keystone", "metalcraft", "kingsbury", "chein", "mark", 
-            "marx train", "marx trains", "tin toy japan", "tin toy germany", "lehmann", "gunthermann", "distler", 
-            "schuco", "linemar", "unique art", "alps", "nomura", "masudaya", "yonezawa", "brio", "holgate", "halsam", 
-            "playskool", "playschool", "playskol", "lincoln logs", "tinker toy", "tinker toys", "tinkertoy", "tinkertoys", 
-            "erector set", "erector sets", "meccano", "meccanos", "gilbert", "american flyer", "american flyers", 
-            "buddy l", "buddy ls", "steiff", "steiffs", "madame alexander", "effanbee", "kewpie", "shirley temple", 
-            "raggedy ann", "raggedy andy", "cabbage patch", "betsy wetsy", "chatty cathy", "barbie", "hot wheels"
-        ]
-    
-    # === GAMING CATEGORY ===
-    
-    @staticmethod
-    def _consoles_keywords() -> List[str]:
-        return [
-            "video game console", "video game consoles", "gaming console", "gaming consoles", "game console", "game consoles",
-            "video game system", "video game systems", "gaming system", "gaming systems", "game system", "game systems",
-            "game platform", "game platforms", "gaming platform", "gaming platforms", "video game platform",
-            "video game platforms", "console", "consoles", "system", "systems", "Nintendo", "PlayStation", "Xbox", "Sega",
-            "Atari", "NES", "SNES", "N64", "GameCube", "Wii", "Wii U", "Switch", "Nintendo Switch", "PlayStation 1", "PS1",
-            "PlayStation 2", "PS2", "PlayStation 3", "PS3", "PlayStation 4", "PS4", "PlayStation 5", "PS5", "Xbox original",
-            "Xbox classic", "Xbox 360", "Xbox One", "Xbox Series X", "Xbox Series S", "Sega Genesis", "Sega Mega Drive",
-            "Sega Saturn", "Sega Dreamcast", "Sega Master System", "Atari 2600", "Atari 5200", "Atari 7800", "Atari Jaguar",
-            "3DO", "Neo Geo", "Intellivision", "Colecovision", "Magnavox Odyssey", "Vectrex", "Turbografx-16", "PC Engine",
-            "Super Famicom", "Famicom", "Virtual Boy", "Nintendo DS", "Nintendo 3DS", "Nintendo DSi", "Game Boy",
-            "Game Boy Color", "Game Boy Advance", "Game Boy Advance SP", "Game Boy Micro", "Nintendo 2DS", "PSP",
-            "PlayStation Portable", "PlayStation Vita", "PS Vita", "Sega Game Gear", "Atari Lynx", "Neo Geo Pocket",
-            "Neo Geo Pocket Color", "WonderSwan", "WonderSwan Color", "Nintendo Entertainment System", "Super Nintendo",
-            "Super Nintendo Entertainment System", "Nintendo 64", "Sony PlayStation", "Microsoft Xbox", "Sega CD",
-            "32X", "Sega 32X", "Jaguar CD", "CD-i", "Philips CD-i", "3DO Interactive Multiplayer", "Neo Geo CD",
-            "Neo Geo AES", "Neo Geo MVS", "PC-FX", "Pioneer LaserActive", "Amiga CD32", "Atari ST", "Commodore 64",
-            "Commodore 128", "Commodore Amiga", "Amstrad CPC", "ZX Spectrum", "Apple II", "BBC Micro", "MSX",
-            "Sharp X68000", "FM Towns", "PC-88", "PC-98", "video game", "video games", "home console", "home consoles",
-            "arcade console", "arcade consoles", "retro console", "retro consoles", "classic console", "classic consoles",
-            "vintage console", "vintage consoles", "used console", "used consoles", "refurbished console",
-            "refurbished consoles", "new console", "new consoles", "console bundle", "console bundles", "limited edition",
-            "limited edition console", "limited edition consoles", "special edition", "special edition console",
-            "special edition consoles", "console exclusive", "console exclusives", "launch console", "launch consoles",
-            "launch day console", "launch day consoles", "day one console", "day one consoles", "day one edition",
-            "day one edition console", "day one edition consoles", "console version", "console versions", "slim console",
-            "slim consoles", "pro console", "pro consoles", "dev kit", "dev kits", "development kit", "development kits",
-            "debug console", "debug consoles", "test console", "test consoles", "kiosk console", "kiosk consoles",
-            "display console", "display consoles", "demo console", "demo consoles", "promotional console",
-            "promotional consoles", "console promo", "console promos", "console prototype", "console prototypes",
-            "console model", "console models", "console revision", "console revisions", "console variant",
-            "console variants", "console generation", "console generations", "first party", "first party console",
-            "first party consoles", "third party", "third party console", "third party consoles", "console manufacturer",
-            "console manufacturers", "console developer", "console developers", "console maker", "console makers",
-            "console brand", "console brands", "console company", "console companies", "console hardware", "console hardwares",
-            "console accessory", "console accessories", "console peripheral", "console peripherals", "console controller",
-            "console controllers", "console gamepad", "console gamepads", "console joystick", "console joysticks",
-            "console memory card", "console memory cards", "console hard drive", "console hard drives", "console HDD",
-            "console HDDs", "console SSD", "console SSDs", "console storage", "console storages", "console expansion",
-            "console expansions", "console add-on", "console add-ons", "console addon", "console addons", "console extension",
-            "console extensions", "console upgrade", "console upgrades", "console mod", "console mods", "console modification",
-            "console modifications", "console chip", "console chips", "console modchip", "console modchips", "console softmod",
-            "console softmods", "console jailbreak", "console jailbreaks", "console hack", "console hacks", "console flash",
-            "console flashes", "console flash cart", "console flash carts", "console cartridge", "console cartridges",
-            "console cart", "console carts", "console game", "console games", "console disc", "console discs", "console disk",
-            "console disks", "console CD", "console CDs", "console DVD", "console DVDs", "console blu-ray", "console blu-rays",
-            "console digital", "console digitals", "console download", "console downloads", "console DLC", "console DLCs",
-            "console patch", "console patches", "console update", "console updates", "console firmware", "console firmwares",
-            "console operating system", "console operating systems", "console OS", "console OSes", "console dashboard",
-            "console dashboards", "console interface", "console interfaces", "console UI", "console UIs", "console menu",
-            "console menus", "console home", "console homes", "console theme", "console themes", "console avatar",
-            "console avatars", "console profile", "console profiles", "console account", "console accounts", "console login",
-            "console logins", "console user", "console users", "console username", "console usernames", "console online",
-            "console onlines", "console network", "console networks", "console service", "console services",
-            "console subscription", "console subscriptions", "console pass", "console passes", "console membership",
-            "console memberships", "console plus", "console pluses", "console gold", "console golds", "console live",
-            "console lives", "console store", "console stores", "console shop", "console shops", "console marketplace",
-            "console marketplaces", "console purchase", "console purchases", "console transaction", "console transactions",
-            "console payment", "console payments", "console credit", "console credits", "console point", "console points",
-            "console currency", "console currencies", "console wallet", "console wallets", "console fund", "console funds",
-            "console balance", "console balances", "console sale", "console sales", "console discount", "console discounts",
-            "console offer", "console offers", "console deal", "console deals", "console promotion", "console promotions",
-            "console code", "console codes", "console key", "console keys", "console redeem", "console redeems",
-            "console voucher", "console vouchers", "console gift", "console gifts", "console card", "console cards",
-            "console physical", "console physicals", "console digital", "console digitals", "console version",
-            "console versions", "console edition", "console editions", "console copy", "console copies", "console library",
-            "console libraries", "console collection", "console collections", "console recommendation", "console recommendations",
-            "console suggestion", "console suggestions", "console list", "console lists", "console top", "console tops",
-            "console best", "console bests", "console popular", "console populars", "console trending", "console trendings",
-            "console viral", "console virals", "console hit", "console hits", "console must have", "console must haves",
-            "console must-have", "console must-haves", "console classic", "console classics", "console old", "console olds",
-            "console retro", "console retros", "console vintage", "console vintages", "console antique", "console antiques",
-            "console rare", "console rares", "console collector", "console collectors", "console collectible",
-            "console collectibles", "console limited", "console limiteds", "console exclusive", "console exclusives",
-            "console special", "console specials", "console premium", "console premiums", "console deluxe", "console deluxes",
-            "console ultimate", "console ultimates", "console complete", "console completes", "console definitive",
-            "console definitives", "console standard", "console standards", "console regular", "console regulars",
-            "console base", "console bases", "console starter", "console starters", "console bundle", "console bundles",
-            "console pack", "console packs", "console package", "console packages", "console set", "console sets",
-            "console collection", "console collections", "console compilation", "console compilations", "console anthology",
-            "console anthologies", "console series", "console series", "console trilogy", "console trilogies", "console saga",
-            "console sagas", "console franchise", "console franchises", "console universe", "console universes",
-            "console world", "console worlds", "console generation", "console generations", "console era", "console eras",
-            "console period", "console periods", "console time", "console times", "console history", "console histories",
-            "console timeline", "console timelines", "console chronology", "console chronologies", "console evolution",
-            "console evolutions", "console development", "console developments", "console progress", "console progresses",
-            "console advancement", "console advancements", "console innovation", "console innovations", "console technology",
-            "console technologies", "console feature", "console features", "console capability", "console capabilities",
-            "console spec", "console specs", "console specification", "console specifications", "console performance",
-            "console performances", "console power", "console powers", "console processing", "console processings",
-            "console graphics", "console graphicss", "console visual", "console visuals", "console display", "console displays",
-            "console resolution", "console resolutions", "console fps", "console fpss", "console frame rate",
-            "console frame rates", "console framerate", "console framerates", "console 4K", "console 4Ks", "console HD",
-            "console HDs", "console high definition", "console high definitions", "console SDR", "console SDRs",
-            "console HDR", "console HDRs", "console raytracing", "console raytracings", "console ray tracing",
-            "console ray tracings", "console memory", "console memories", "console RAM", "console RAMs", "console ROM",
-            "console ROMs", "console storage", "console storages", "console capacity", "console capacities"
-        ]
-    
-    @staticmethod
-    def _game_controllers_keywords() -> List[str]:
-        return [
-            "game controller", "game controllers", "gaming controller", "gaming controllers", "controller", "controllers",
-            "gamepad", "gamepads", "game pad", "game pads", "gaming pad", "gaming pads", "joystick", "joysticks",
-            "arcade stick", "arcade sticks", "fight stick", "fight sticks", "fighting stick", "fighting sticks",
-            "steering wheel", "steering wheels", "racing wheel", "racing wheels", "pedals", "racing pedals", "flight stick",
-            "flight sticks", "flight joystick", "flight joysticks", "HOTAS", "throttle", "throttles", "flight yoke",
-            "flight yokes", "rudder pedals", "rudder pedal", "light gun", "light guns", "gun controller", "gun controllers",
-            "motion controller", "motion controllers", "move controller", "move controllers", "PlayStation Move",
-            "PS Move", "Wii Remote", "Wiimote", "Wii Motion Plus", "Wii Nunchuk", "Nunchuk", "Wii Balance Board",
-            "balance board", "balance boards", "dance pad", "dance pads", "dance mat", "dance mats", "drum controller",
-            "drum controllers", "rock band drums", "guitar hero guitar", "guitar controller", "guitar controllers",
-            "keytar", "keytars", "DJ controller", "DJ controllers", "turntable controller", "turntable controllers",
-            "fishing controller", "fishing controllers", "fishing rod", "fishing rods", "PlayStation controller",
-            "PS controller", "DualShock", "DualShock 2", "DualShock 3", "DualShock 4", "DualSense", "PS5 controller",
-            "Xbox controller", "Xbox 360 controller", "Xbox One controller", "Xbox Series controller", "Xbox Elite controller",
-            "Nintendo Switch Pro controller", "Switch Pro controller", "Joy-Con", "Joy Cons", "JoyCon", "Joy Con",
-            "GameCube controller", "N64 controller", "NES controller", "SNES controller", "Wii Classic Controller",
-            "Wii U Pro Controller", "Wii U GamePad", "Nintendo DS stylus", "3DS stylus", "Virtual Boy controller",
-            "Dreamcast controller", "Sega Saturn controller", "Sega Genesis controller", "Mega Drive controller",
-            "Sega Master System controller", "PlayStation VR Aim Controller", "PSVR Aim Controller", "Aim Controller",
-            "VR controller", "VR controllers", "Oculus Touch", "Oculus controller", "Oculus controllers", "Vive controller",
-            "Vive controllers", "Valve Index controller", "Valve Index controllers", "Knuckles controller",
-            "Knuckles controllers", "Windows Mixed Reality controller", "Windows Mixed Reality controllers", "Quest controller",
-            "Quest controllers", "Steam controller", "third party controller", "third party controllers", "3rd party controller",
-            "3rd party controllers", "off brand controller", "off brand controllers", "aftermarket controller",
-            "aftermarket controllers", "OEM controller", "OEM controllers", "official controller", "official controllers",
-            "original controller", "original controllers", "wired controller", "wired controllers", "wireless controller",
-            "wireless controllers", "bluetooth controller", "bluetooth controllers", "PC controller", "PC controllers",
-            "USB controller", "USB controllers", "controller adapter", "controller adapters", "controller converter",
-            "controller converters", "controller dongle", "controller dongles", "controller receiver", "controller receivers",
-            "controller transmitter", "controller transmitters", "controller battery", "controller batteries",
-            "controller charger", "controller chargers", "controller charging", "controller chargings", "controller dock",
-            "controller docks", "controller stand", "controller stands", "controller grip", "controller grips",
-            "controller skin", "controller skins", "controller case", "controller cases", "controller cover",
-            "controller covers", "controller shell", "controller shells", "controller mod", "controller mods",
-            "controller modification", "controller modifications", "controller button", "controller buttons",
-            "controller stick", "controller sticks", "controller analog", "controller analogs", "controller d-pad",
-            "controller d-pads", "controller dpad", "controller dpads", "controller trigger", "controller triggers",
-            "controller bumper", "controller bumpers", "controller LB", "controller RB", "controller LT", "controller RT",
-            "controller L1", "controller R1", "controller L2", "controller R2", "controller L3", "controller R3",
-            "controller paddle", "controller paddles", "controller back button", "controller back buttons",
-            "controller thumbstick", "controller thumbsticks", "controller analog stick", "controller analog sticks",
-            "controller joystick", "controller joysticks", "controller touchpad", "controller touchpads", "controller touch",
-            "controller touches", "controller gyro", "controller gyros", "controller gyroscope", "controller gyroscopes",
-            "controller accelerometer", "controller accelerometers", "controller motion", "controller motions",
-            "controller sensor", "controller sensors", "controller rumble", "controller rumbles", "controller vibration",
-            "controller vibrations", "controller haptic", "controller haptics", "controller feedback", "controller feedbacks",
-            "controller force feedback", "controller force feedbacks", "controller adaptive trigger", "controller adaptive triggers",
-            "controller programmable", "controller programmables", "controller customizable", "controller customizables",
-            "controller remappable", "controller remappables", "controller macro", "controller macros", "controller profile",
-            "controller profiles", "controller setting", "controller settings", "controller configuration",
-            "controller configurations", "controller layout", "controller layouts", "controller scheme", "controller schemes",
-            "controller setup", "controller setups", "controller driver", "controller drivers", "controller software",
-            "controller softwares", "controller firmware", "controller firmwares", "controller update", "controller updates",
-            "controller patch", "controller patches", "controller support", "controller supports", "controller compatible",
-            "controller compatibles", "controller compatibility", "controller compatibilities", "controller works with",
-            "controller works withs", "controller for", "controller fors", "controller designed for", "controller designed fors",
-            "controller made for", "controller made fors", "controller official", "controller officials", "controller licensed",
-            "controller licenseds", "controller approved", "controller approveds", "controller authentic", "controller authentics",
-            "controller genuine", "controller genuines", "controller original", "controller originals", "controller legit",
-            "controller legits", "controller real", "controller reals", "controller fake", "controller fakes", "controller knockoff",
-            "controller knockoffs", "controller counterfeit", "controller counterfeits", "controller replica", "controller replicas",
-            "controller clone", "controller clones", "controller copy", "controller copies", "controller imitation",
-            "controller imitations", "controller new", "controller news", "controller used", "controller useds",
-            "controller refurbished", "controller refurbisheds", "controller preowned", "controller preowneds",
-            "controller pre-owned", "controller pre-owneds", "controller secondhand", "controller secondhands",
-            "controller second-hand", "controller second-hands", "controller like new", "controller like news",
-            "controller mint", "controller mints", "controller excellent", "controller excellents", "controller good",
-            "controller goods", "controller fair", "controller fairs", "controller poor", "controller poors", "controller broken",
-            "controller brokens", "controller damaged", "controller damageds", "controller faulty", "controller faultys",
-            "controller defective", "controller defectives", "controller problem", "controller problems", "controller issue",
-            "controller issues", "controller drift", "controller drifts", "controller drifting", "controller driftings",
-            "controller stick drift", "controller stick drifts", "controller analog drift", "controller analog drifts",
-            "controller joystick drift", "controller joystick drifts", "controller drift fix", "controller drift fixes",
-            "controller repair", "controller repairs", "controller fix", "controller fixes", "controller replacement",
-            "controller replacements", "controller spare", "controller spares", "controller part", "controller parts",
-            "controller button replacement", "controller button replacements", "controller stick replacement",
-            "controller stick replacements", "controller analog replacement", "controller analog replacements",
-            "controller mod kit", "controller mod kits", "controller modification kit", "controller modification kits",
-            "controller custom", "controller customs", "controller customized", "controller customizeds", "controller personalized",
-            "controller personalizeds", "controller special", "controller specials", "controller unique", "controller uniques",
-            "controller limited", "controller limiteds", "controller edition", "controller editions", "controller exclusive",
-            "controller exclusives", "controller collector", "controller collectors", "controller collectible",
-            "controller collectibles", "controller rare", "controller rares", "controller vintage", "controller vintages",
-            "controller retro", "controller retros", "controller classic", "controller classics", "controller old school",
-            "controller old schools", "controller nostalgic", "controller nostalgics", "controller brand", "controller brands",
-            "controller model", "controller models", "controller type", "controller types", "controller style", "controller styles",
-            "controller design", "controller designs", "controller color", "controller colors", "controller colour",
-            "controller colours", "controller black", "controller blacks", "controller white", "controller whites",
-            "controller red", "controller reds", "controller blue", "controller blues", "controller green", "controller greens",
-            "controller yellow", "controller yellows", "controller orange", "controller oranges", "controller purple",
-            "controller purples", "controller pink", "controller pinks", "controller gold", "controller golds", "controller silver",
-            "controller silvers", "controller chrome", "controller chromes", "controller metallic", "controller metallics",
-            "controller transparent", "controller transparents", "controller clear", "controller clears", "controller crystal",
-            "controller crystals", "controller see through", "controller see throughs", "controller special edition",
-            "controller special editions", "controller limited edition", "controller limited editions", "controller anniversary",
-            "controller anniversaries", "controller anniversary edition", "controller anniversary editions",
-            "controller commemorative", "controller commemoratives", "controller commemorative edition",
-            "controller commemorative editions", "controller console", "controller consoles", "PS4 controller", "ps4 controller",    @staticmethod
-    def _vintage_tools_keywords() -> List[str]:
-        return [
-            "vintage tool", "vintage tools", "antique tool", "antique tools", "old tool", "old tools", "retro tool",
-            "retro tools", "classic tool", "classic tools", "collectible tool", "collectible tools", "rare tool",
-            "rare tools", "primitive tool", "primitive tools", "rustic tool", "rustic tools", "vintage hand tool",
-            "vintage hand tools", "antique hand tool", "antique hand tools", "old hand tool", "old hand tools",
-            "vintage power tool", "vintage power tools", "antique power tool", "antique power tools", "old power tool",
-            "old power tools", "vintage garden tool", "vintage garden tools", "antique garden tool", "antique garden tools",
-            "old garden tool", "old garden tools", "vintage farm tool", "vintage farm tools", "antique farm tool",
-            "antique farm tools", "old farm tool", "old farm tools", "vintage workshop tool", "vintage workshop tools",
-            "antique workshop tool", "antique workshop tools", "old workshop tool", "old workshop tools",
-            "vintage woodworking tool", "vintage woodworking tools", "antique woodworking tool", "antique woodworking tools",
-            "old woodworking tool", "old woodworking tools", "vintage carpentry tool", "vintage carpentry tools",
-            "antique carpentry tool", "antique carpentry tools", "old carpentry tool", "old carpentry tools",
-            "vintage metalworking tool", "vintage metalworking tools", "antique metalworking tool", "antique metalworking tools",
-            "old metalworking tool", "old metalworking tools", "vintage machinist tool", "vintage machinist tools",
-            "antique machinist tool", "antique machinist tools", "old machinist tool", "old machinist tools",
-            "vintage hammer", "vintage hammers", "antique hammer", "antique hammers", "old hammer", "old hammers",
-            "vintage saw", "vintage saws", "antique saw", "antique saws", "old saw", "old saws",
-            "vintage plane", "vintage planes", "antique plane", "antique planes", "old plane", "old planes",
-            "vintage level", "vintage levels", "antique level", "antique levels", "old level", "old levels",
-            "vintage wrench", "vintage wrenches", "antique wrench", "antique wrenches", "old wrench", "old wrenches",
-            "vintage screwdriver", "vintage screwdrivers", "antique screwdriver", "antique screwdrivers",
-            "vintage drill", "vintage drills", "antique drill", "antique drills", "old drill", "old drills",
-            "vintage brace", "vintage braces", "antique brace", "antique braces", "old brace", "old braces",
-            "vintage hand plane", "vintage hand planes", "stanley plane", "stanley tool", "stanley tools",
-            "vintage adze", "vintage adzes", "antique adze", "antique adzes", "old adze", "old adzes",
-            "vintage axe", "vintage axes", "antique axe", "antique axes", "old axe", "old axes",
-            "vintage chisel", "vintage chisels", "antique chisel", "antique chisels", "old chisel", "old chisels", 
-            "vintage drawknife", "vintage spokeshave", "vintage hatchet", "vintage auger", "vintage bit brace", 
-            "craftsman tool", "craftsman tools", "vintage craftsman", "woodworking", "carpentry", "metalworking",
-            "vintage vise", "vintage vises", "antique vise", "antique vises", "old vise", "old vises",
-            "primitive tool", "primitive tools", "wood plane", "wood planes", "molding plane", "moulding plane",
-            "vintage square", "vintage rule", "vintage caliper", "vintage calipers", "machinist tools",
-            "blacksmith tool", "blacksmith tools", "forge tool", "forge tools", "anvil", "anvils",
-            "vintage socket", "socket set", "tool chest", "tool box", "tool kit", "toolbox", "tool cabinet",
-            "vintage pliers", "vintage clamp", "vintage clamps", "antique clamp", "antique clamps",
-            "carpenters tool", "carpenters tools", "joiners tool", "joiners tools", "tool collection",
-            "millers falls", "disston", "starrett", "keen kutter", "blue grass", "proto tool", "proto tools",
-            "snap-on", "snap on", "snap on tool", "snap on tools", "snap-on tool", "snap-on tools",
-            "tool collector", "tool collecting", "old hardware", "hardware store", "general store", "vintage store"
-        ]
-    
-    @staticmethod
-    def _old_maps_keywords() -> List[str]:
-        return [
-            "old map", "old maps", "antique map", "antique maps", "vintage map", "vintage maps", "ancient map", "ancient maps",
-            "historic map", "historic maps", "historical map", "historical maps", "rare map", "rare maps", "collectible map",
-            "collectible maps", "map collection", "map collections", "map collector", "map collectors", "cartography",
-            "cartographic", "cartographer", "cartographers", "world map", "world maps", "globe", "globes", "atlas",
-            "atlases", "road map", "road maps", "street map", "street maps", "topographic map", "topographic maps",
-            "military map", "military maps", "nautical map", "nautical maps", "maritime map", "maritime maps",
-            "nautical chart", "nautical charts", "sea chart", "sea charts", "maritime chart", "maritime charts",
-            "celestial map", "celestial maps", "star map", "star maps", "astronomical map", "astronomical maps",
-            "city map", "city maps", "town map", "town maps", "county map", "county maps", "state map", "state maps",
-            "country map", "country maps", "continent map", "continent maps", "wall map", "wall maps", "pocket map",
-            "pocket maps", "folding map", "folding maps", "fold out map", "fold out maps", "map book", "map books",
-            "map guide", "map guides", "map print", "map prints", "map engraving", "map engravings", "map etching",
-            "map etchings", "map lithograph", "map lithographs", "map woodcut", "map woodcuts", "map plate", "map plates",
-            "map image", "map images", "map picture", "map pictures", "map illustration", "map illustrations",
-            "map reproduction", "map reproductions", "map facsimile", "map facsimiles", "map reprint", "map reprints",
-            "map copy", "map copies", "map reproduction", "map reproductions", "map scan", "map scans", "map photocopy",
-            "map photocopies", "map photograph", "map photographs", "map scan", "map scans", "map digital", "map digitals",
-            "map paper", "map papers", "map vellum", "map vellums", "map parchment", "map parchments", "map canvas",
-            "map canvases", "map silk", "map silks", "map cloth", "map cloths", "map linen", "map linens", "map mounted",
-            "map mounteds", "map framed", "map frameds", "map scroll", "map scrolls", "map poster", "map posters",
-            "map artwork", "map artworks", "map antique", "map antiques", "map vintage", "map vintages", "map old",
-            "map olds", "map ancient", "map ancients", "map historic", "map historics", "map historical", "map historicals",
-            "map rare", "map rares", "map collectible", "map collectibles", "map valuable", "map valuables", "map expensive",
-            "map expensives", "map valuable", "map valuables", "map appraised", "map appraiseds", "map appraisal",
-            "map appraisals", "map authentic", "map authentics", "map authenticated", "map authenticateds", "map genuine",
-            "map genuines", "map original", "map originals", "map reproduction", "map reproductions", "map copy",
-            "map copies", "map fake", "map fakes", "map forgery", "map forgeries", "map counterfeits", "18th century map",
-            "19th century map", "17th century map", "16th century map", "15th century map", "medieval map", "renaissance map",
-            "colonial map", "revolutionary war map", "civil war map", "world war map", "railroad map", "canal map",
-            "river map", "mountain map", "coastal map", "island map", "city plan", "town plan", "battlefield map",
-            "exploration map", "discovery map", "expedition map", "survey map", "land survey", "geological map",
-            "geological survey", "ordnance survey", "cadastral map", "property map", "estate map", "mercator",
-            "mercator projection", "ortelius", "blaeu", "speed", "visscher", "jansson", "hondius", "homann", "coronelli",
-            "mitchell", "tanner", "colton", "johnson", "rand mcnally", "sanborn", "usgs", "national geographic", "map society"
-        ]
-    
-    @staticmethod
-    def _antique_toys_keywords() -> List[str]:
-        return [
-            "antique toy", "antique toys", "vintage toy", "vintage toys", "old toy", "old toys", "classic toy", "classic toys",
-            "collectible toy", "collectible toys", "rare toy", "rare toys", "retro toy", "retro toys", "nostalgic toy",
-            "nostalgic toys", "toy collection", "toy collections", "toy collector", "toy collectors", "tin toy", "tin toys",
-            "wind up toy", "wind up toys", "windup toy", "windup toys", "mechanical toy", "mechanical toys", "clockwork toy",
-            "clockwork toys", "cast iron toy", "cast iron toys", "pressed steel toy", "pressed steel toys", "metal toy",
-            "metal toys", "wooden toy", "wooden toys", "wood toy", "wood toys", "plastic toy", "plastic toys", "rubber toy",
-            "rubber toys", "celluloid toy", "celluloid toys", "composition toy", "composition toys", "bisque toy",
-            "bisque toys", "porcelain toy", "porcelain toys", "ceramic toy", "ceramic toys", "lead toy", "lead toys",
-            "pot metal toy", "pot metal toys", "die cast toy", "die cast toys", "diecast toy", "diecast toys", "toy car",
-            "toy cars", "toy truck", "toy trucks", "toy train", "toy trains", "toy boat", "toy boats", "toy ship", "toy ships",
-            "toy airplane", "toy airplanes", "toy plane", "toy planes", "toy bus", "toy busses", "toy vehicle",
-            "toy vehicles", "toy soldier", "toy soldiers", "toy figure", "toy figures", "toy animal", "toy animals",
-            "toy horse", "toy horses", "toy dog", "toy dogs", "toy cat", "toy cats", "toy bird", "toy birds", "toy farm",
-            "toy farms", "toy barn", "toy barns", "toy house", "toy houses", "toy building", "toy buildings", "toy store",
-            "toy stores", "toy shop", "toy shops", "toy castle", "toy castles", "toy fort", "toy forts", "toy western",
-            "toy westerns", "toy cowboy", "toy cowboys", "toy indian", "toy indians", "toy native american",
-            "toy native americans", "toy soldier", "toy soldiers", "toy army", "toy armies", "toy military", "toy militaries",
-            "toy gun", "toy guns", "toy pistol", "toy pistols", "toy rifle", "toy rifles", "toy cannon", "toy cannons",
-            "toy weapon", "toy weapons", "toy sword", "toy swords", "toy knife", "toy knives", "toy bow", "toy bows",
-            "toy arrow", "toy arrows", "toy space", "toy spaces", "toy rocket", "toy rockets", "toy spaceship",
-            "toy spaceships", "toy robot", "toy robots", "toy astronaut", "toy astronauts", "toy alien", "toy aliens",
-            "toy monster", "toy monsters", "toy creature", "toy creatures", "toy dinosaur", "toy dinosaurs", "toy dragon",
-            "toy dragons", "toy knight", "toy knights", "toy medieval", "toy medievals", "toy castle", "toy castles",
-            "toy pirate", "toy pirates", "toy ship", "toy ships", "toy boat", "toy boats", "toy sailor", "toy sailors",
-            "toy captain", "toy captains", "toy circus", "toy circuses", "toy clown", "toy clowns", "toy acrobat",
-            "toy acrobats", "toy performer", "toy performers", "toy zoo", "toy zoos", "toy jungle", "toy jungles",
-            "toy safari", "toy safaris", "toy ark", "toy arks", "toy noah", "toy noahs", "toy religious", "toy religiouss",
-            "toy bible", "toy bibles", "toy doll", "toy dolls", "toy figure", "toy figures", "toy character",
-            "toy characters", "toy puppet", "toy puppets", "toy marionette", "toy marionettes", "toy ventriloquist",
-            "toy ventriloquists", "toy dummy", "toy dummies", "toy teddy bear", "toy teddy bears", "toy stuffed animal",
-            "toy stuffed animals", "toy plush", "toy plushes", "toy soft", "toy softs", "toy baby", "toy babies",
-            "toy child", "toy children", "toy girl", "toy girls", "toy boy", "toy boys", "toy man", "toy men", "toy woman",
-            "toy women", "toy people", "toy peoples", "toy person", "toy persons", "toy family", "toy families", "toy set",
-            "toy sets", "toy game", "toy games", "toy board game", "toy board games", "toy card game", "toy card games",
-            "toy puzzle", "toy puzzles", "toy construction", "toy constructions", "toy building", "toy buildings",
-            "toy block", "toy blocks", "toy brick", "toy bricks", "toy educational", "toy educationals", "toy learning",
-            "toy learnings", "toy school", "toy schools", "toy book", "toy books", "toy story", "toy stories", "toy comic",
-            "toy comics", "toy movie", "toy movies", "toy film", "toy films", "toy tv", "toy tvs", "toy television",
-            "toy televisions", "toy show", "toy shows", "toy character", "toy characters", "toy licensed", "toy licenseds",
-            "toy disney", "toy disneys", "toy mickey", "toy mickeys", "toy minnie", "toy minnies", "toy donald",
-            "toy donalds", "toy goofy", "toy goofys", "toy pluto", "toy plutos", "toy warner", "toy warners", "toy looney",
-            "toy looneys", "toy tunes", "toy tuness", "toy bugs", "toy bugss", "toy bunny", "toy bunnies", "toy daffy",
-            "toy daffys", "toy duck", "toy ducks", "toy porky", "toy porkys", "toy pig", "toy pigs", "toy tweety",
-            "toy tweetys", "toy sylvester", "toy sylvesters", "toy cat", "toy cats", "toy road runner", "toy road runners",
-            "toy coyote", "toy coyotes", "toy hanna", "toy hannas", "toy barbera", "toy barberas", "toy tom", "toy toms",
-            "toy jerry", "toy jerries", "toy mouse", "toy mice", "toy scooby", "toy scoobys", "toy doo", "toy doos",
-            "toy fred", "toy freds", "toy flintstone", "toy flintstones", "toy barney", "toy barneys", "toy rubble",
-            "toy rubbles", "toy marvel", "toy marvels", "toy superhero", "toy superheroes", "toy dc", "toy dcs", "toy batman",
-            "toy batmans", "toy superman", "toy supermans", "toy wonder woman", "toy wonder womans", "toy star wars",
-            "toy star warss", "toy trek", "toy treks", "toy science fiction", "toy science fictions", "toy sci fi",
-            "toy sci fis", "toy radio", "toy radios", "toy record", "toy records", "toy player", "toy players", "toy stereo",
-            "toy stereos", "toy phonograph", "toy phonographs", "toy musical", "toy musicals", "toy instrument",
-            "toy instruments", "toy piano", "toy pianos", "toy guitar", "toy guitars", "toy drum", "toy drums", "toy band",
-            "toy bands", "toy orchestra", "toy orchestras", "toy music", "toy musics", "toy xylophone", "toy xylophones",
-            "toy electronic", "toy electronics", "toy battery", "toy batteries", "toy operated", "toy operateds",
-            "toy electric", "toy electrics", "toy remote", "toy remotes", "toy control", "toy controls", "toy rc", "toy rcs",
-            "toy radio control", "toy radio controls", "toy slot", "toy slots", "toy slot car", "toy slot cars",
-            "toy race", "toy races", "toy racing", "toy racings", "toy track", "toy tracks", "toy roadway", "toy roadways",
-            "toy garage", "toy garages", "toy service", "toy services", "toy station", "toy stations", "toy gas",
-            "toy gases", "toy petrol", "toy petrols", "toy oil", "toy oils", "toy airport", "toy airports", "toy plane",
-            "toy planes", "toy airplane", "toy airplanes", "toy aircraft", "toy aircrafts", "toy helicopter",
-            "toy helicopters", "toy rocket", "toy rockets", "toy space", "toy spaces", "toy nasa", "toy nasas",
-            "toy astronaut", "toy astronauts", "toy alien", "toy aliens", "toy ufo", "toy ufos", "toy flying saucer",
-            "toy flying saucers", "toy martian", "toy martians", "toy kitchen", "toy kitchens", "toy dish", "toy dishes",
-            "toy dinnerware", "toy dinnerwares", "toy cookware", "toy cookwares", "toy pot", "toy pots", "toy pan",
-            "toy pans", "toy stove", "toy stoves", "toy refrigerator", "toy refrigerators", "toy sink", "toy sinks",
-            "toy cabinet", "toy cabinets", "toy food", "toy foods", "toy grocery", "toy groceries", "toy fruit",
-            "toy fruits", "toy vegetable", "toy vegetables", "toy meat", "toy meats", "toy bread", "toy breads", "toy dairy",
-            "toy dairies", "toy drink", "toy drinks", "toy beverage", "toy beverages", "toy house", "toy houses",
-            "toy domestic", "toy domestics", "toy furniture", "toy furnitures", "toy table", "toy tables", "toy chair",
-            "toy chairs", "toy sofa", "toy sofas", "toy couch", "toy couches", "toy lamp", "toy lamps", "toy light",
-            "toy lights", "toy bed", "toy beds", "toy bedroom", "toy bedrooms", "toy bathroom", "toy bathrooms", "toy tub",
-            "toy tubs", "toy bathtub", "toy bathtubs", "toy shower", "toy showers", "toy toilet", "toy toilets", "toy sink",
-            "toy sinks", "toy garden", "toy gardens", "toy yard", "toy yards", "toy outdoor", "toy outdoors", "toy lawn",
-            "toy lawns", "toy mower", "toy mowers", "toy pool", "toy pools", "toy swimming", "toy swimmings", "toy beach",
-            "toy beaches", "toy sand", "toy sands", "toy sandbox", "toy sandboxes", "toy playground", "toy playgrounds",
-            "toy swing", "toy swings", "toy slide", "toy slides", "toy seesaw", "toy seesaws", "toy teeter", "toy teeters",
-            "toy totter", "toy totters", "toy merry go round", "toy merry go rounds", "toy carousel", "toy carousels",
-            "toy ride", "toy rides", "toy riding", "toy ridings", "toy pedal", "toy pedals", "toy car", "toy cars",
-            "toy tricycle", "toy tricycles", "toy bicycle", "toy bicycles", "toy bike", "toy bikes", "toy wagon",
-            "toy wagons", "toy pull", "toy pulls", "toy push", "toy pushes", "toy scooter", "toy scooters", "toy skate",
-            "toy skates", "toy skateboard", "toy skateboards", "toy rollerskate", "toy rollerskates", "toy roller skate",
-            "toy roller skates", "toy bank", "toy banks", "toy money", "toy monies", "toy coin", "toy coins", "toy cash",
-            "toy cashes", "toy register", "toy registers", "toy store", "toy stores", "toy shop", "toy shops", "toy market",
-            "toy markets", "toy mall", "toy malls", "toy business", "toy businesses", "toy office", "toy offices",
-            "toy phone", "toy phones", "toy telephone", "toy telephones", "toy computer", "toy computers", "toy camera",
-            "toy cameras", "toy video", "toy videos", "toy movie", "toy movies", "toy film", "toy films", "toy projector",
-            "toy projectors", "toy screen", "toy screens", "toy view", "toy views", "toy viewer", "toy viewers", "toy slide",
-            "toy slides", "toy reel", "toy reels", "toy art", "toy arts", "toy craft", "toy crafts", "toy paint",
-            "toy paints", "toy painting", "toy paintings", "toy draw", "toy draws", "toy drawing", "toy drawings",
-            "toy crayon", "toy crayons", "toy marker", "toy markers", "toy pen", "toy pens", "toy pencil", "toy pencils",
-            "toy chalk", "toy chalks", "toy blackboard", "toy blackboards", "toy easel", "toy easels", "toy clay",
-            "toy clays", "toy dough", "toy doughs", "toy mold", "toy molds", "toy pottery", "toy potteries", "toy hobby",
-            "toy hobbies", "toy model", "toy models", "toy kit", "toy kits", "toy project", "toy projects",
-            "toy experiment", "toy experiments", "toy science", "toy sciences", "toy chemistry", "toy chemistries",
-            "toy set", "toy sets", "toy make", "toy makes", "toy making", "toy makings", "toy create", "toy creates",
-            "toy creating", "toy creatings", "toy build", "toy builds", "toy building", "toy buildings", "toy construct",
-            "toy constructs", "toy constructing", "toy constructings", "toy assemble", "toy assembles", "toy assembling",
-            "toy assemblings", "toy sew", "toy sews", "toy sewing", "toy sewings", "toy knit", "toy knits", "toy knitting",
-            "toy knittings", "toy fabric", "toy fabrics", "toy textile", "toy textiles", "toy costume", "toy costumes",
-            "toy dress up", "toy dress ups", "toy seasonal", "toy seasonals", "toy holiday", "toy holidays", "toy christmas",
-            "toy christmases", "toy santa", "toy santas", "toy halloween", "toy halloweens", "toy easter", "toy easters",
-            "toy valentine", "toy valentines", "toy thanksgiving", "toy thanksgivings", "toy birthday", "toy birthdays",
-            "toy party", "toy parties", "toy collectible", "toy collectibles", "toy collection", "toy collections",
-            "toy display", "toy displays", "toy showcase", "toy showcases", "toy cabinet", "toy cabinets", "toy box",
-            "toy boxes", "toy storage", "toy storages", "toy trunk", "toy trunks", "toy chest", "toy chests", "toy bin",
-            "toy bins", "toy basket", "toy baskets", "toy case", "toy cases", "toy limited", "toy limiteds", "toy edition",
-            "toy editions", "toy exclusive", "toy exclusives", "toy anniversary", "toy anniversaries", "toy commemorate",
-            "toy commemorates", "toy commemorative", "toy commemoratives", "toy special", "toy specials", "toy dealer",
-            "toy dealers", "toy store", "toy stores", "toy shop", "toy shops", "toy market", "toy markets", "toy vendor",
-            "toy vendors", "toy seller", "toy sellers", "toy booth", "toy booths", "toy stall", "toy stalls", "toy fair",
-            "toy fairs", "toy convention", "toy conventions", "toy show", "toy shows", "toy exhibition", "toy exhibitions",
-            "toy museum", "toy museums", "toy display", "toy displays", "toy gallery", "toy galleries", "toy auction",
-            "toy auctions", "toy auctioneer", "toy auctioneers", "toy bidding", "toy biddings", "toy estate", "toy estates",
-            "toy garage sale", "toy garage sales", "toy yard sale", "toy yard sales", "toy tag sale", "toy tag sales",
-            "toy rummage", "toy rummages", "toy sale", "toy sales", "toy marketplace", "toy marketplaces", "toy buy",
-            "toy buys", "toy buying", "toy buyings", "toy sell", "toy sells", "toy selling", "toy sellings", "toy trade",
-            "toy trades", "toy trading", "toy tradings", "toy exchange", "toy exchanges", "toy exchanging", "toy exchangings",
-            "toy swap", "toy swaps", "toy swapping", "toy swappings", "toy appraisal", "toy appraisals", "toy appraising",
-            "toy appraisings", "toy value", "toy values", "toy valuing", "toy valuings", "toy identification",
-            "toy identifications", "toy identifying", "toy identifyings", "toy authentication", "toy authentications",
-            "toy research", "toy researchs", "toy price", "toy prices", "toy pricing", "toy pricings", "toy worth",
-            "toy worths", "toy restoration", "toy restorations", "toy restoring", "toy restorings", "toy repair",
-            "toy repairs", "toy repairing", "toy repairings", "toy fix", "toy fixes", "toy fixing", "toy fixings",
-            "toy condition", "toy conditions", "toy dating", "toy datings", "toy documentation", "toy documentations",
-            "toy provenance", "toy provenances", "toy certification", "toy certifications", "toy insurance", "toy insurances",
-            "toy preservation", "toy preservations", "toy investing", "toy investings", "toy investment", "toy investments",
-            "toy collector", "toy collectors", "toy collecting", "toy collectings", "toy aficionado", "toy aficionados",
-            "toy enthusiast", "toy enthusiasts", "toy expert", "toy experts", "toy specialist", "toy specialists",
-            "toy appraiser", "toy appraisers", "toy historian", "toy historians", "toy resource", "toy resources",
-            "toy information", "toy informations", "toy material", "toy materials", "toy article", "toy articles",
-            "toy publication", "toy publications", "toy magazine", "toy magazines", "toy journal", "toy journals",
-            "toy periodical", "toy periodicals", "toy newsletter", "toy newsletters", "toy book", "toy books", "toy guide",
-            "toy guides", "toy catalog", "toy catalogs", "toy brochure", "toy brochures", "toy pamphlet", "toy pamphlets",
-            "toy leaflet", "toy leaflets", "toy website", "toy websites", "toy web site", "toy web sites", "toy internet",
-            "toy internets", "toy online", "toy onlines", "toy blog", "toy blogs", "toy forum", "toy forums", "toy group",
-            "toy groups", "toy community", "toy communities", "toy club", "toy clubs", "toy society", "toy societies",
-            "toy association", "toy associations", "toy organization", "toy organizations", "toy federation",
-            "toy federations", "toy guild", "toy guilds", "toy convention", "toy conventions", "toy conference",
-            "toy conferences", "toy event", "toy events", "toy gathering", "toy gatherings", "toy meetup", "toy meetups",
-            "toy meeting", "toy meetings", "toy get together", "toy get togethers", "toy social", "toy socials",
-            "toy network", "toy networks", "toy networking", "toy networkings", "toy member", "toy members", "toy membership",
-            "toy memberships", "toy subscription", "toy subscriptions", "toy subscriber", "toy subscribers", "toy registry",
-            "toy registries", "toy register", "toy registers", "toy registering", "toy registerings", "toy list", "toy lists",
-            "toy listing", "toy listings", "toy database", "toy databases", "toy directory", "toy directories", "toy index",
-            "toy indices", "toy catalog", "toy catalogs", "toy library", "toy libraries", "toy archive", "toy archives",
-            "toy repository", "toy repositories", "toy collection", "toy collections", "toy museum", "toy museums",
-            "toy gallery", "toy galleries", "toy foundation", "toy foundations", "toy institute", "toy institutes",
-            "toy center", "toy centers", "toy centre", "toy centres", "toy lab", "toy labs", "toy laboratory",
-            "toy laboratories", "toy studio", "toy studios", "toy workshop", "toy workshops", "toy space", "toy spaces",
-            "toy place", "toy places", "toy location", "toy locations", "toy spot", "toy spots", "toy site", "toy sites",
-            "toy area", "toy areas", "toy venue", "toy venues", "toy facility", "toy facilities", "toy room", "toy rooms",
-            "toy building", "toy buildings", "toy structure", "toy structures", "toy headquarters", "toy headquarterss",
-            "toy base", "toy bases", "toy office", "toy offices", "toy outlet", "toy outlets", "toy boutique",
-            "toy boutiques", "toy shop", "toy shops", "toy retailer", "toy retailers", "toy supplier", "toy suppliers",
-            "toy provider", "toy providers", "toy sourcer", "toy sourcers", "toy source", "toy sources", "toy vendor",
-            "toy vendors", "toy dealer", "toy dealers", "toy distributor", "toy distributors", "toy merchant",
-            "toy merchants", "toy broker", "toy brokers", "toy agent", "toy agents", "toy representative",
-            "toy representatives", "toy manufacturer", "toy manufacturers", "toy manufacturing", "toy manufacturings",
-            "toy maker", "toy makers", "toy making", "toy makings", "toy producer", "toy producers", "toy producing",
-            "toy producings", "toy creator", "toy creators", "toy creating", "toy creatings", "toy designer", "toy designers",
-            "toy designing", "toy designings", "toy engineer", "toy engineers", "toy engineering", "toy engineerings",
-            "toy developer", "toy developers", "toy developing", "toy developings", "toy builder", "toy builders",
-            "toy building", "toy buildings", "toy constructor", "toy constructors", "toy constructing", "toy constructings",
-            "toy crafter", "toy crafters", "toy crafting", "toy craftings", "toy artisan", "toy artisans", "toy artist",
-            "toy artists", "toy brand", "toy brands", "toy company", "toy companies", "toy firm", "toy firms", "toy business",
-            "toy businesses", "toy enterprise", "toy enterprises", "toy corporation", "toy corporations", "toy incorporated",
-            "toy incorporateds", "toy industry", "toy industries", "toy industrialist", "toy industrialists", "toy market",
-            "toy markets", "toy marketing", "toy marketings", "toy marketeer", "toy marketeers", "toy promotion",
-            "toy promotions", "toy promoting", "toy promotings", "toy promoter", "toy promoters", "toy advertising",
-            "toy advertisings", "toy advert    @staticmethod
-    def _vintage_tools_keywords() -> List[str]:
-        return [
-            "vintage tool", "vintage tools", "antique tool", "antique tools", "old tool", "old tools", "retro tool",
-            "retro tools", "classic tool", "classic tools", "collectible tool", "collectible tools", "rare tool",
-            "rare tools", "primitive tool", "primitive tools", "rustic tool", "rustic tools", "vintage hand tool",
-            "vintage hand tools", "antique hand tool", "antique hand tools", "old hand tool", "old hand tools",
-            "vintage power tool", "vintage power tools", "antique power tool", "antique power tools", "old power tool",
-            "old power tools", "vintage garden tool", "vintage garden tools", "antique garden tool", "antique garden tools",
-            "old garden tool", "old garden tools", "vintage farm tool", "vintage farm tools", "antique farm tool",
-            "antique farm tools", "old farm tool", "old farm tools", "vintage workshop tool", "vintage workshop tools",
-            "antique workshop tool", "antique workshop tools", "old workshop tool", "old workshop tools",
-            "vintage woodworking tool", "vintage woodworking tools", "antique woodworking tool", "antique woodworking tools",
-            "old woodworking tool", "old woodworking tools", "vintage carpentry tool", "vintage carpentry tools",
-            "antique carpentry tool", "antique carpentry tools", "old carpentry tool", "old carpentry tools",
-            "vintage metalworking tool", "vintage metalworking tools", "antique metalworking tool", "antique metalworking tools",
-            "old metalworking tool", "old metalworking tools", "vintage machinist tool", "vintage machinist tools",
-            "antique machinist tool", "antique machinist tools", "old machinist tool", "old machinist tools",
-            "vintage blacksmith tool", "vintage blacksmith tools", "antique blacksmith tool", "antique blacksmith tools",
-            "old blacksmith tool", "old blacksmith tools", "vintage mechanic tool", "vintage mechanic tools",
-            "antique mechanic tool", "antique mechanic tools", "old mechanic tool", "    @staticmethod
-    def _typewriters_keywords() -> List[str]:
-        return [
-            "typewriter", "typewriters", "antique typewriter", "antique typewriters", "vintage typewriter",
-            "vintage typewriters", "old typewriter", "old typewriters", "classic typewriter", "classic typewriters",
-            "retro typewriter", "retro typewriters", "collectible typewriter", "collectible typewriters",
-            "rare typewriter", "rare typewriters", "manual typewriter", "manual typewriters", "mechanical typewriter",
-            "mechanical typewriters", "portable typewriter", "portable typewriters", "standard typewriter",
-            "standard typewriters", "desktop typewriter", "desktop typewriters", "office typewriter",
-            "office typewriters", "electric typewriter", "electric typewriters", "electronic typewriter",
-            "electronic typewriters", "typewriter machine", "typewriter machines", "typing machine", "typing machines",
-            "writing machine", "writing machines", "typewriter keyboard", "typewriter keyboards", "typewriter keys",
-            "typewriter key", "typewriter ribbon", "typewriter ribbons", "typewriter part", "typewriter parts",
-            "typewriter accessory", "typewriter accessories", "typewriter case", "typewriter cases", "typewriter cover",
-            "typewriter covers", "typewriter stand", "typewriter stands", "typewriter desk", "typewriter desks",
-            "typewriter table", "typewriter tables", "typewriter repair", "typewriter repairs", "typewriter service",
-            "typewriter services", "typewriter maintenance", "typewriter maintenances", "typewriter restoration",
-            "typewriter restorations", "typewriter collector", "typewriter collectors", "typewriter collection",
-            "typewriter collections", "typewriter enthusiast", "typewriter enthusiasts", "typewriter fan",
-            "typewriter fans", "typewriter user", "typewriter users", "typewriter owner", "typewriter owners",
-            "typewriter lover", "typewriter lovers", "typewriter addict", "typewriter addicts", "typewriter nut",
-            "typewriter nuts", "typewriter museum", "typewriter museums", "typewriter exhibition",
-            "typewriter exhibitions", "typewriter display", "typewriter displays", "typewriter show", "typewriter shows",
-            "typewriter manual", "typewriter manuals", "typewriter instruction", "typewriter instructions",
-            "typewriter guide", "typewriter guides", "typewriter book", "typewriter books", "typewriter catalog",
-            "typewriter catalogs", "typewriter brochure", "typewriter brochures", "typewriter ad", "typewriter ads",
-            "typewriter advertisement", "typewriter advertisements", "typewriter commercial", "typewriter commercials",
-            "typewriter model", "typewriter models", "typewriter make", "typewriter makes", "typewriter brand",
-            "typewriter brands", "typewriter manufacturer", "typewriter manufacturers", "typewriter company",
-            "typewriter companies", "typewriter paper", "typewriter papers", "typewriter stationery",
-            "typewriter stationeries", "typewriter supply", "typewriter supplies", "royal typewriter",
-            "royal typewriters", "underwood typewriter", "underwood typewriters", "remington typewriter",
-            "remington typewriters", "smith corona typewriter", "smith corona typewriters", "olivetti typewriter",
-            "olivetti typewriters", "olympia typewriter", "olympia typewriters", "hermes typewriter",
-            "hermes typewriters", "corona typewriter", "corona typewriters", "adler typewriter", "adler typewriters",
-            "brother typewriter", "brother typewriters", "continental typewriter", "continental typewriters",
-            "facit typewriter", "facit typewriters", "ibm typewriter", "ibm typewriters", "imperial typewriter",
-            "imperial typewriters", "optima typewriter", "optima typewriters", "remington rand typewriter",
-            "remington rand typewriters", "sears typewriter", "sears typewriters", "torpedo typewriter",
-            "torpedo typewriters", "triumph typewriter", "triumph typewriters", "woodstock typewriter",
-            "woodstock typewriters", "l.c. smith typewriter", "l.c. smith typewriters", "lc smith typewriter",
-            "lc smith typewriters", "l c smith typewriter", "l c smith typewriters", "erika typewriter",
-            "erika typewriters", "corona portable", "corona portables", "corona standard", "corona standards",
-            "corona four", "corona fours", "remington portable", "remington portables", "remington standard",
-            "remington standards", "remington noiseless", "remington noiseless typewriter",
-            "remington noiseless typewriters", "underwood portable", "underwood portables", "underwood standard",
-            "underwood standards", "underwood noiseless", "smith premier typewriter", "smith premier typewriters",
-            "royal portable", "royal portables", "royal standard", "royal standards", "royal quiet deluxe",
-            "royal quiet de luxe", "royal qd", "royal quiet", "royal arrow", "royal arrows", "royal safari",
-            "royal safaris", "olympia sm", "olympia sf", "hermes 3000", "hermes 2000", "hermes baby", "hermes rocket",
-            "hermes media", "olympia sm3", "olympia sm4", "olympia sm5", "olympia sm7", "olympia sm8", "olympia sm9",
-            "olympia sg1", "olympia sg3", "typebar", "typebars", "typebasket", "typebaskets", "platen", "platens",
-            "carriage", "carriages", "typewriter bell", "typewriter bells", "margin stop", "margin stops",
-            "type slug", "type slugs", "type bar", "type bars", "type basket", "type baskets"
-        ]
-    
-    @staticmethod
-    def _vinyl_records_keywords() -> List[str]:
-        return [
-            "vinyl", "vinyls", "vinyl record", "vinyl records", "vinyl album", "vinyl albums", "vinyl lp", "vinyl lps",
-            "vinyl ep", "vinyl eps", "vinyl single", "vinyl singles", "vinly", "vinyle", "vinal", "phonograph record",
-            "phonograph records", "gramophone record", "gramophone records", "lp", "lps", "long play", "long plays",
-            "long player", "long players", "album", "albums", "ep", "eps", "extended play", "extended plays",
-            "single", "singles", "45", "45s", "45 rpm", "45 rpms", "33", "33s", "33 rpm", "33 rpms", "33 1/3",
-            "33 1/3 rpm", "33 1/3 rpms", "78", "78s", "78 rpm", "78 rpms", "record", "records", "wax", "waxes",
-            "platter", "platters", "disc", "discs", "disk", "disks", "recording", "recordings", "antique vinyl",
-            "antique vinyls", "antique record", "antique records", "vintage vinyl", "vintage vinyls", "vintage record",
-            "vintage records", "old vinyl", "old vinyls", "old record", "old records", "used vinyl", "used vinyls",
-            "used record", "used records", "new vinyl", "new vinyls", "new record", "new records", "sealed vinyl",
-            "sealed vinyls", "sealed record", "sealed records", "rare vinyl", "rare vinyls", "rare record",
-            "rare records", "collectible vinyl", "collectible vinyls", "collectible record", "collectible records",
-            "limited vinyl", "limited vinyls", "limited record", "limited records", "first pressing", "first pressings",
-            "original pressing", "original pressings", "reissue", "reissues", "repress", "represses", "repressing",
-            "repressings", "remastered vinyl", "remastered vinyls", "remastered record", "remastered records",
-            "180 gram", "180 grams", "180g vinyl", "180g vinyls", "180g record", "180g records", "200 gram",
-            "200 grams", "200g vinyl", "200g vinyls", "200g record", "200g records", "heavyweight vinyl",
-            "heavyweight vinyls", "heavyweight record", "heavyweight records", "audiophile vinyl", "audiophile vinyls",
-            "audiophile record", "audiophile records", "picture disc", "picture discs", "colored vinyl",
-            "colored vinyls", "colored record", "colored records", "splatter vinyl", "splatter vinyls",
-            "splatter record", "splatter records", "marbled vinyl", "marbled vinyls", "marbled record",
-            "marbled records", "swirl vinyl", "swirl vinyls", "swirl record", "swirl records", "clear vinyl",
-            "clear vinyls", "clear record", "clear records", "transparent vinyl", "transparent vinyls",
-            "transparent record", "transparent records", "black vinyl", "black vinyls", "black record", "black records",
-            "white vinyl", "white vinyls", "white record", "white records", "red vinyl", "red vinyls", "red record",
-            "red records", "blue vinyl", "blue vinyls", "blue record", "blue records", "green vinyl", "green vinyls",
-            "green record", "green records", "yellow vinyl", "yellow vinyls", "yellow record", "yellow records",
-            "purple vinyl", "purple vinyls", "purple record", "purple records", "pink vinyl", "pink vinyls",
-            "pink record", "pink records", "orange vinyl", "orange vinyls", "orange record", "orange records",
-            "multi colored vinyl", "multi colored vinyls", "multi colored record", "multi colored records",
-            "split colored vinyl", "split colored vinyls", "split colored record", "split colored records",
-            "half and half vinyl", "half and half vinyls", "half and half record", "half and half records",
-            "tri color vinyl", "tri color vinyls", "tri color record", "tri color records", "starburst vinyl",
-            "starburst vinyls", "starburst record", "starburst records", "special edition vinyl",
-            "special edition vinyls", "special edition record", "special edition records", "record lot", "record lots",
-            "vinyl lot", "vinyl lots", "record collection", "record collections", "vinyl collection",
-            "vinyl collections", "record bundle", "record bundles", "vinyl bundle", "vinyl bundles", "record job lot",
-            "record job lots", "vinyl job lot", "vinyl job lots", "record album", "record albums", "vinyl album",
-            "vinyl albums", "record player", "record players", "turntable", "turntables", "record store day",
-            "rsd vinyl", "rsd vinyls", "rsd record", "rsd records", "private press", "private pressing",
-            "private pressings", "white label", "white labels", "promo record", "promo records", "promotional record",
-            "promotional records", "promo vinyl", "promo vinyls", "promotional vinyl", "promotional vinyls",
-            "test pressing", "test pressings", "acetate", "acetates", "dubplate", "dubplates", "dub plate", "dub plates",
-            "lathe cut", "lathe cuts", "mono record", "mono records", "mono vinyl", "mono vinyls", "mono lp", "mono lps",
-            "stereo record", "stereo records", "stereo vinyl", "stereo vinyls", "stereo lp", "stereo lps",
-            "quadraphonic record", "quadraphonic records", "quadraphonic vinyl", "quadraphonic vinyls",
-            "quadraphonic lp", "quadraphonic lps", "quad record", "quad records", "quad vinyl", "quad vinyls",
-            "quad lp", "quad lps", "direct to disc", "direct to disk", "direct cut", "half speed mastered",
-            "one step process", "super vinyl", "super audio disc", "super audio disk", "audiophile pressing",
-            "audiophile pressings", "analog recording", "analogue recording", "digital recording", "record sleeve",
-            "record sleeves", "vinyl sleeve", "vinyl sleeves", "inner sleeve", "inner sleeves", "outer sleeve",
-            "outer sleeves", "record cover", "record covers", "vinyl cover", "vinyl covers", "album cover",
-            "album covers", "lp cover", "lp covers", "ep cover", "ep covers", "gatefold", "gatefolds", "gate fold",
-            "gate folds", "double lp", "double lps", "triple lp", "triple lps", "boxset", "boxsets", "box set",
-            "box sets", "record box set", "record box sets", "vinyl box set", "vinyl box sets", "record store",
-            "record stores", "vinyl store", "vinyl stores", "record shop", "record shops", "vinyl shop", "vinyl shops",
-            "record dealer", "record dealers", "vinyl dealer", "vinyl dealers", "record fair", "record fairs",
-            "vinyl fair", "vinyl fairs", "record show", "record shows", "vinyl show", "vinyl shows", "record convention",
-            "record conventions", "vinyl convention", "vinyl conventions", "record collector", "record collectors",
-            "vinyl collector", "vinyl collectors", "record collecting", "vinyl collecting", "record collection",
-            "record collections", "vinyl collection", "vinyl collections", "record shelving", "record shelves",
-            "vinyl shelving", "vinyl shelves", "record storage", "vinyl storage", "record crate", "record crates",
-            "vinyl crate", "vinyl crates", "record cleaner", "record cleaners", "vinyl cleaner", "vinyl cleaners",
-            "record cleaning", "vinyl cleaning", "record brush", "record brushes", "vinyl brush", "vinyl brushes",
-            "record cleaning machine", "record cleaning machines", "vinyl cleaning machine", "vinyl cleaning machines",
-            "record washer", "record washers", "vinyl washer", "vinyl washers", "record vacuum", "record vacuums",
-            "vinyl vacuum", "vinyl vacuums", "record fluid", "record fluids", "vinyl fluid", "vinyl fluids",
-            "record solution", "record solutions", "vinyl solution", "vinyl solutions", "stylus", "styluses", "styli",
-            "needle", "needles", "cartridge", "cartridges", "phono cartridge", "phono cartridges", "record weight",
-            "record weights", "vinyl weight", "vinyl weights", "record clamp", "record clamps", "vinyl clamp",
-            "vinyl clamps", "anti static", "antistatic", "record slip mat", "record slip mats", "vinyl slip mat",
-            "vinyl slip mats", "slipmat", "slipmats", "record mat", "record mats", "vinyl mat", "vinyl mats",
-            "record stabilizer", "record stabilizers", "vinyl stabilizer", "vinyl stabilizers", "record doctor",
-            "vinyl doctor", "record spin clean", "vinyl spin clean", "record rca", "vinyl rca", "record phono",
-            "vinyl phono", "record preamp", "record preamps", "vinyl preamp", "vinyl preamps", "phonograph",
-            "phonographs", "gramophone", "gramophones", "record player needle", "record player needles",
-            "turntable needle", "turntable needles", "record player stylus", "turntable stylus", "record player belt",
-            "record player belts", "turntable belt", "turntable belts", "music on vinyl", "simply vinyl", "mfsl",
-            "mobile fidelity", "mofi", "classic records", "speakers corner", "pure pleasure", "analog productions",
-            "analogue productions", "sundazed", "third man records", "third man", "limited edition", "special edition",
-            "rsd drop", "rsd exclusive", "rsd release", "bootleg", "bootlegs", "boot leg", "boot legs", "counterfeit",
-            "counterfeits", "pirate", "pirates", "unofficial", "unofficials", "concert recording", "concert recordings",
-            "live recording", "live recordings", "audience recording", "audience recordings", "soundboard recording",
-            "soundboard recordings", "import", "imports", "export", "exports", "oop", "out of print", "rare groove",
-            "rare grooves", "dollar bin", "dollar bins", "bargain bin", "bargain bins", "junk wax", "thrift store find",
-            "thrift store finds", "estate find", "estate finds", "yard sale find", "yard sale finds", "garage sale find",
-            "garage sale finds", "attic find", "attic finds", "barn find", "barn finds", "mint condition",
-            "near mint condition", "very good plus condition", "very good condition", "good plus condition",
-            "good condition", "fair condition", "poor condition", "mint", "near mint", "nm", "very good plus", "vg+",
-            "very good", "vg", "good plus", "g+", "good", "g", "fair", "f", "poor", "p", "record grading",
-            "vinyl grading", "goldmine standard", "goldmine grading", "record", "vinyl", "lp", "ep", "45", "33"
-        ]
-    
-    @staticmethod
-    def _vintage_tools_keywords() -> List[str]:
-        return [
-            "vintage tool", "vintage tools", "antique tool", "antique tools", "old tool", "old tools", "retro tool",
-            "retro tools", "classic tool", "classic tools", "collectible tool", "collectible tools", "rare tool",
-            "rare tools", "primitive tool", "primitive tools", "rustic tool", "rustic tools", "vintage hand tool",
-            "vintage hand tools", "antique hand tool", "antique hand tools", "old hand tool", "old hand tools",
-            "vintage power tool", "vintage power tools", "antique power tool", "antique power tools", "old power tool",
-            "old power tools", "vintage garden tool", "vintage garden tools", "antique garden tool", "antique garden tools",
-            "old garden tool", "old garden tools", "vintage farm tool", "vintage farm tools", "antique farm tool",
-            "antique farm tools", "old farm tool", "old farm tools", "vintage workshop tool", "vintage workshop tools",
-            "antique workshop tool", "antique workshop tools", "old workshop tool", "old workshop tools",
-            "vintage woodworking tool", "vintage woodworking tools", "antique woodworking tool", "antique woodworking tools",
-            "old woodworking tool", "old woodworking tools", "vintage carpentry tool", "vintage carpentry tools",
-            "antique carpentry tool", "antique carpentry tools", "old carpentry tool", "old carpentry tools",
-            "vintage metalworking tool", "vintage metalworking tools", "antique metalworking tool", "antique metalworking tools",
-            "old metalworking tool", "old metalworking tools", "vintage machinist tool", "vintage machinist tools",
-            "antique machinist tool", "antique machinist tools", "old machinist tool", "old machinist tools",
-            "vintage blacksmith tool", "vintage blacksmith tools", "antique blacksmith tool", "antique blacksmith tools",
-            "old blacksmith tool", "old blacksmith tools", "vintage mechanic tool", "vintage mechanic tools",
-            "antique mechanic tool", "antique mechanic tools", "old mechanic tool", "old mechanic tools",
-            "vintage plumbing tool", "vintage plumbing tools", "antique plumbing tool", "antique plumbing tools",
-            "old plumbing tool", "old plumbing tools", "vintage electrical tool", "vintage electrical tools",
-            "antique electrical tool", "antique electrical tools", "old electrical tool", "old electrical tools",
-            "vintage hammer", "vintage hammers", "antique hammer", "antique hammers", "old hammer", "old hammers",
-            "vintage saw", "vintage saws", "antique saw", "antique saws", "old saw", "old saws", "vintage drill",
-            "vintage drills", "antique drill", "antique drills", "old drill", "old drills", "vintage plane",
-            "vintage planes", "antique plane", "antique planes", "old plane", "old planes", "vintage hand plane",
-            "vintage hand planes", "antique hand plane", "antique hand planes", "old hand plane", "old hand planes",
-            "vintage woodworking plane", "vintage woodworking planes", "antique woodworking plane", "antique woodworking planes",
-            "old woodworking plane", "old woodworking planes", "vintage stanley plane", "vintage stanley planes",
-            "antique stanley plane", "antique stanley planes", "old stanley plane", "old stanley planes",
-            "vintage level", "vintage levels", "antique level", "antique levels", "old level", "old levels",
-            "vintage rule", "vintage rules", "antique rule", "antique rules", "old rule", "old rules",
-            "vintage measuring tool", "vintage measuring tools", "antique measuring tool", "antique measuring tools",
-            "old measuring tool", "old measuring tools", "vintage wrench", "vintage wrenches", "antique wrench",
-            "antique wrenches", "old wrench", "old wrenches", "vintage spanner", "vintage spanners", "antique spanner",
-            "antique spanners", "old spanner", "old spanners", "vintage socket", "vintage sockets", "antique socket",
-            "antique sockets", "old socket", "old sockets", "vintage screwdriver", "vintage screwdrivers",
-            "antique screwdriver", "antique screwdrivers", "old screwdriver", "old screwdrivers", "vintage pliers",
-            "antique pliers", "old pliers", "vintage clamp", "vintage clamps", "antique clamp", "antique clamps",
-            "old clamp", "old clamps", "vintage vise", "vintage vises", "antique vise", "antique vises", "old vise",
-            "old vises", "vintage vice", "vintage vices", "antique vice", "antique vices", "old vice", "old vices",
-            "vintage chisel", "vintage chisels", "antique chisel", "antique chisels", "old chisel", "old chisels",
-            "vintage gouge", "vintage gouges", "antique gouge", "antique gouges", "old gouge", "old gouges",
-            "vintage carving tool", "vintage carving tools", "antique carving tool", "antique carving tools",
-            "old carving tool", "old carving tools", "vintage auger", "vintage augers", "antique auger", "antique augers",
-            "old auger", "old augers", "vintage bit", "vintage bits", "antique bit", "antique bits", "old bit", "old bits",
-            "vintage brace", "vintage braces", "antique brace", "antique braces", "old brace", "old braces",
-            "vintage brace and bit", "vintage braces and bits", "antique brace and bit", "antique braces and bits",
-            "old brace and bit", "old braces and bits", "vintage drawknife", "vintage drawknives", "antique drawknife",
-            "antique drawknives", "old drawknife", "old drawknives", "vintage spokeshave", "vintage spokeshaves",
-            "antique spokeshave", "antique spokeshaves", "old spokeshave", "old spokeshaves", "vintage adze",
-            "vintage adzes", "antique adze", "antique adzes", "old adze", "old adzes", "vintage axe", "vintage axes",
-            "antique axe", "antique axes", "old axe", "old axes", "vintage hatchet", "vintage hatchets", "antique hatchet",
-            "antique hatchets", "old hatchet", "old hatchets", "vintage file", "vintage files", "antique file",
-            "antique files", "old file", "old files", "vintage rasp", "vintage rasps", "antique rasp", "antique rasps",
-            "old rasp", "old rasps", "vintage sharpening tool", "vintage sharpening tools", "antique sharpening tool",
-            "antique sharpening tools", "old sharpening tool", "old sharpening tools", "vintage sharpener",
-            "vintage sharpeners", "antique sharpener", "antique sharpeners", "old sharpener", "old sharpeners",
-            "vintage hone", "vintage hones", "antique hone", "antique hones", "old hone", "old hones", "vintage whetstone",
-            "vintage whetstones", "antique whetstone", "antique whetstones", "old whetstone", "old whetstones",
-            "vintage grinder", "vintage grinders", "antique grinder", "antique grinders", "old grinder", "old grinders",
-            "vintage sander", "vintage sanders", "antique sander", "antique sanders", "old sander", "old sanders",
-            "vintage polisher", "vintage polishers", "antique polisher", "antique polishers", "old polisher", "old polishers",
-            "vintage lathe", "vintage lathes", "antique lathe", "antique lathes", "old lathe", "old lathes",
-            "vintage turning tool", "vintage turning tools", "antique turning tool", "antique turning tools",
-            "old turning tool", "old turning tools", "vintage drill press", "vintage drill presses", "antique drill press",
-            "antique drill presses", "old drill press", "old drill presses", "vintage jointery tool", "vintage jointery tools",
-            "antique jointery tool", "antique jointery tools", "old jointery tool", "old jointery tools",
-            "vintage dovetail tool", "vintage dovetail tools", "antique dovetail tool", "antique dovetail tools",
-            "old dovetail tool", "old dovetail tools", "vintage router", "vintage routers", "antique router",
-            "antique routers", "old router", "old routers", "vintage planer", "vintage planers", "antique planer",
-            "antique planers", "old planer", "old planers", "vintage jointer", "vintage jointers", "antique jointer",
-            "antique jointers", "old jointer", "old jointers", "vintage thickness planer", "vintage thickness planers",
-            "antique thickness planer", "antique thickness planers", "old thickness planer", "old thickness planers",
-            "vintage table saw", "vintage table saws", "antique table saw", "antique table saws", "old table saw",
-            "old table saws", "vintage circular saw", "vintage circular saws", "antique circular saw", "antique circular saws",
-            "old circular saw", "old circular saws", "vintage jig saw", "vintage jig saws", "antique jig saw",
-            "antique jig saws", "old jig saw", "old jig saws", "vintage scroll saw", "vintage scroll saws",
-            "antique scroll saw", "antique scroll saws", "old scroll saw", "old scroll saws", "vintage band saw",
-            "vintage band saws", "antique band saw", "antique band saws", "old band saw", "old band saws",
-            "vintage miter saw", "vintage miter saws", "antique miter saw", "antique miter saws", "old miter saw",
-            "old miter saws", "vintage mitre saw", "vintage mitre saws", "antique mitre saw", "antique mitre saws",
-            "old mitre saw", "old mitre saws", "vintage miter box", "vintage miter boxes", "antique miter box",
-            "antique miter boxes", "old miter box", "old miter boxes", "vintage mitre box", "vintage mitre boxes",
-            "antique mitre box", "antique mitre boxes", "old mitre box", "old mitre boxes", "vintage coping saw",
-            "vintage coping saws", "antique coping saw", "antique coping saws", "old coping saw", "old coping saws",
-            "vintage hack saw", "vintage hack saws", "antique hack saw", "antique hack saws", "old hack saw", "old hack saws",
-            "vintage bow saw", "vintage bow saws", "antique bow saw", "antique bow saws", "old bow saw", "old bow saws",
-            "vintage hand saw", "vintage hand saws", "antique hand saw", "antique hand saws", "old hand saw", "old hand saws",
-            "vintage back saw", "vintage back saws", "antique back saw", "antique back saws", "old back saw", "old back saws",
-            "vintage dovetail saw", "vintage dovetail saws", "antique dovetail saw", "antique dovetail saws",
-            "old dovetail saw", "old dovetail saws", "vintage tenon saw", "vintage tenon saws", "antique tenon saw",
-            "antique tenon saws", "old tenon saw", "old tenon saws", "vintage rip saw", "vintage rip saws",
-            "antique rip saw", "antique rip saws", "old rip saw", "old rip saws", "vintage cross cut saw",
-            "vintage cross cut saws", "antique cross cut saw", "antique cross cut saws", "old cross cut saw",
-            "old cross cut saws", "vintage cross-cut saw", "vintage cross-cut saws", "antique cross-cut saw",
-            "antique cross-cut saws", "old cross-cut saw", "old cross-cut saws", "vintage nail", "vintage nails",
-            "antique nail", "antique nails", "old nail", "old nails", "vintage square nail", "vintage square nails",
-            "antique square nail", "antique square nails", "old square nail", "old square nails", "vintage cut nail",
-            "vintage cut nails", "antique cut nail", "antique cut nails", "old cut nail", "old cut nails",
-            "vintage screw", "vintage screws", "antique screw", "antique screws", "old screw    @staticmethod
-    def _patagonia_keywords() -> List[str]:
-        return [
-            "patagonia", "patogonia", "patigonia", "paragonia", "patagona", "patagucci", "pata", "patagonia jacket", 
-            "patagonia jackets", "patagonia coat", "patagonia coats", "patagonia fleece", "patagonia fleeces", 
-            "patagonia hoodie", "patagonia hoodies", "patagonia sweatshirt", "patagonia sweatshirts", "patagonia sweater", 
-            "patagonia sweaters", "patagonia crewneck", "patagonia crewnecks", "patagonia t-shirt", "patagonia t shirt", 
-            "patagonia tshirt", "patagonia tee", "patagonia shirt", "patagonia t-shirts", "patagonia t shirts", 
-            "patagonia tshirts", "patagonia tees", "patagonia shirts", "patagonia long sleeve", "patagonia long sleeves", 
-            "patagonia longsleeve", "patagonia longsleeves", "patagonia pants", "patagonia pant", "patagonia trousers", 
-            "patagonia trouser", "patagonia shorts", "patagonia short", "patagonia vest", "patagonia vests", 
-            "patagonia gilet", "patagonia gilets", "patagonia hat", "patagonia hats", "patagonia cap", "patagonia caps", 
-            "patagonia beanie", "patagonia beanies", "patagonia bag", "patagonia bags", "patagonia backpack", 
-            "patagonia backpacks", "patagonia tote", "patagonia totes", "patagonia duffel", "patagonia duffels", 
-            "patagonia black hole", "patagonia blackhole", "patagonia better sweater", "patagonia retro", 
-            "patagonia retro x", "patagonia synchilla", "patagonia nano puff", "patagonia nanopuff", "patagonia down", 
-            "patagonia down sweater", "patagonia torrentshell", "patagonia torrent shell", "patagonia rain jacket", 
-            "patagonia raincoat", "patagonia rain coat", "patagonia hardshell", "patagonia soft shell", "patagonia baggies", 
-            "patagonia stand up", "patagonia stand-up", "patagonia r1", "patagonia r2", "patagonia capilene", 
-            "patagonia base layer", "patagonia base layers", "patagonia mid layer", "patagonia mid layers", 
-            "patagonia outer layer", "patagonia outer layers", "patagonia shell", "patagonia shells", "patagonia insulated", 
-            "patagonia insulation", "patagonia waterproof", "patagonia water proof", "patagonia water resistant", 
-            "patagonia windproof", "patagonia wind proof", "patagonia wind resistant", "patagonia breathable", 
-            "patagonia recycled", "patagonia sustainable", "patagonia eco", "patagonia green", "patagonia environmentally", 
-            "patagonia ethical", "patagonia fair trade", "patagonia responsible", "patagonia organic", "patagonia hemp", 
-            "patagonia logo", "patagonia branded", "patagonia patch", "patagonia label", "patagonia tag", 
-            "patagonia embroidered", "patagonia stitched", "patagonia printed", "patagonia mountain", "patagonia mountains", 
-            "patagonia vintage", "patagonia classic", "patagonia traditional", "patagonia retro", "patagonia old", 
-            "patagonia deadstock", "patagonia new old stock", "patagonia nos", "patagonia outdoor", "patagonia outdoors", 
-            "patagonia sportswear", "patagonia sports", "patagonia active", "patagonia activewear", "patagonia climbing", 
-            "patagonia hike", "patagonia hiking", "patagonia trek", "patagonia trekking", "patagonia camp", "patagonia camping", 
-            "patagonia ski", "patagonia skiing", "patagonia snow", "patagonia snowboard", "patagonia snowboarding", 
-            "patagonia trail", "patagonia run", "patagonia running", "patagonia fish", "patagonia fishing", 
-            "patagonia surf", "patagonia surfing", "patagonia swim", "patagonia swimming", "patagonia yoga", 
-            "patagonia pilates", "patagonia workwear", "patagonia work wear", "patagonia streetwear", "patagonia street wear", 
-            "patagonia fashion", "patagonia urban", "patagonia rugged", "patagonia tough", "patagonia durable", 
-            "patagonia quality", "patagonia premium", "patagonia luxury", "patagonia designer", "patagonia high end", 
-            "patagonia authentic", "patagonia genuine", "patagonia real", "patagonia original", "patagonia men", 
-            "patagonia mens", "patagonia man", "patagonia women", "patagonia womens", "patagonia woman", "patagonia unisex", 
-            "patagonia kids", "patagonia child", "patagonia youth", "patagonia boys", "patagonia girls", "patagonia black", 
-            "patagonia blue", "patagonia navy", "patagonia green", "patagonia red", "patagonia yellow", "patagonia purple", 
-            "patagonia brown", "patagonia gray", "patagonia grey", "patagonia white", "patagonia multi", "patagonia pattern", 
-            "patagonia patterned", "patagonia small", "patagonia medium", "patagonia large", "patagonia xl", "patagonia xxl", 
-            "patagonia 2xl", "patagonia xxxl", "patagonia 3xl", "patagonia oversized", "patagonia loose", "patagonia baggy", 
-            "patagonia slim", "patagonia fitted", "patagonia relaxed", "patagonia regular", "patagonia straight"
-        ]
-    
-    # === ANTIQUES CATEGORY ===
-    
-    @staticmethod
-    def _coins_keywords() -> List[str]:
-        return [
-            "coin", "coins", "antique coin", "antique coins", "old coin", "old coins", "vintage coin", "vintage coins",
-            "rare coin", "rare coins", "collectible coin", "collectible coins", "ancient coin", "ancient coins",
-            "numismatic", "numismatics", "numismatist", "numismatists", "currency", "currencies", "foreign coin",
-            "foreign coins", "world coin", "world coins", "silver coin", "silver coins", "gold coin", "gold coins",
-            "copper coin", "copper coins", "bronze coin", "bronze coins", "nickel coin", "nickel coins", "platinum coin",
-            "platinum coins", "bullion coin", "bullion coins", "proof coin", "proof coins", "uncirculated coin",
-            "uncirculated coins", "mint state coin", "mint state coins", "circulated coin", "circulated coins",
-            "graded coin", "graded coins", "slabbed coin", "slabbed coins", "certified coin", "certified coins",
-            "pcgs coin", "pcgs coins", "ngc coin", "ngc coins", "anacs coin", "anacs coins", "icg coin", "icg coins",
-            "roman coin", "roman coins", "greek coin", "greek coins", "medieval coin", "medieval coins",
-            "byzantine coin", "byzantine coins", "hammered coin", "hammered coins", "milled coin", "milled coins",
-            "token", "tokens", "trade token", "trade tokens", "merchant token", "merchant tokens", "error coin",
-            "error coins", "variety coin", "variety coins", "commemorative coin", "commemorative coins",
-            "wheat penny", "wheat pennies", "indian head penny", "indian head pennies", "buffalo nickel",
-            "buffalo nickels", "mercury dime", "mercury dimes", "barber dime", "barber dimes", "walking liberty",
-            "walking liberties", "franklin half", "franklin halves", "kennedy half", "kennedy halves", "morgan dollar",
-            "morgan dollars", "peace dollar", "peace dollars", "eisenhower dollar", "eisenhower dollars",
-            "susan b anthony", "susan b anthonys", "sacagawea dollar", "sacagawea dollars", "presidential dollar",
-            "presidential dollars", "american eagle", "american eagles", "american silver eagle",
-            "american silver eagles", "american gold eagle", "american gold eagles", "half cent", "half cents",
-            "large cent", "large cents", "flying eagle cent", "flying eagle cents", "two cent", "two cents",
-            "three cent", "three cents", "half dime", "half dimes", "twenty cent", "twenty cents", "trade dollar",
-            "trade dollars", "seated liberty", "seated liberties", "capped bust", "capped busts", "draped bust",
-            "draped busts", "flowing hair", "flowing hairs", "classic head", "classic heads", "liberty head",
-            "liberty heads", "shield nickel", "shield nickels", "v nickel", "v nickels", "liberty nickel",
-            "liberty nickels", "jefferson nickel", "jefferson nickels", "roosevelt dime", "roosevelt dimes",
-            "washington quarter", "washington quarters", "standing liberty", "standing liberties", "state quarter",
-            "state quarters", "america the beautiful", "america the beautifuls", "national park quarter",
-            "national park quarters", "coin album", "coin albums", "coin folder", "coin folders", "coin book",
-            "coin books", "coin holder", "coin holders", "coin flip", "coin flips", "coin slab", "coin slabs",
-            "coin capsule", "coin capsules", "coin storage", "coin storage box", "coin collection", "coin collections",
-            "coin collector", "coin collectors", "coin lot", "coin lots", "coin set", "coin sets", "coin roll",
-            "coin rolls", "coin bag", "coin bags", "coin hoard", "coin hoards", "coin find", "coin finds",
-            "coin error", "coin errors", "coin grade", "coin grades", "coin value", "coin values", "coin price",
-            "coin prices", "coin auction", "coin auctions", "coin show", "coin shows", "coin fair", "coin fairs",
-            "coin convention", "coin conventions", "coin expo", "coin expos", "coin dealer", "coin dealers",
-            "coin shop", "coin shops", "coin store", "coin stores", "key date", "key dates", "semi key", "semi keys",
-            "mintmark", "mintmarks", "coin die", "coin dies", "coin variety", "coin varieties", "coin type",
-            "coin types", "coin series", "coin series", "coin mint", "coin mints", "philadelphia mint", "denver mint",
-            "san francisco mint", "west point mint", "carson city mint", "new orleans mint", "charlotte mint",
-            "dahlonega mint", "coin year", "coin years", "coin date", "coin dates", "coin composition",
-            "coin compositions", "coin metal", "coin metals", "coin alloy", "coin alloys", "coin design",
-            "coin designs", "coinage", "coinages", "minting", "mintings", "coin strike", "coin strikes"
-        ]
-    
-    @staticmethod
-    def _watches_keywords() -> List[str]:
-        return [
-            "watch", "watches", "wristwatch", "wristwatches", "pocket watch", "pocket watches", "antique watch",
-            "antique watches", "vintage watch", "vintage watches", "old watch", "old watches", "classic watch",
-            "classic watches", "retro watch", "retro watches", "collectible watch", "collectible watches",
-            "rare watch", "rare watches", "luxury watch", "luxury watches", "high end watch", "high end watches",
-            "premium watch", "premium watches", "fine watch", "fine watches", "dress watch", "dress watches",
-            "dive watch", "dive watches", "diving watch", "diving watches", "pilot watch", "pilot watches",
-            "aviator watch", "aviator watches", "field watch", "field watches", "military watch", "military watches",
-            "sport watch", "sport watches", "sports watch", "sports watches", "racing watch", "racing watches",
-            "driving watch", "driving watches", "chronograph", "chronographs", "chronometer", "chronometers",
-            "automatic watch", "automatic watches", "self-winding watch", "self-winding watches", "manual watch",
-            "manual watches", "hand-wound watch", "hand-wound watches", "hand wound watch", "hand wound watches", 
-            "quartz watch", "quartz watches", "mechanical watch", "mechanical watches", "digital watch", "digital watches",
-            "analog watch", "analog watches", "analog digital watch", "analog digital watches", "smart watch",
-            "smart watches", "smartwatch", "smartwatches", "connected watch", "connected watches", "solar watch",
-            "solar watches", "kinetic watch", "kinetic watches", "spring drive watch", "spring drive watches",
-            "tourbillon watch", "tourbillon watches", "perpetual calendar watch", "perpetual calendar watches",
-            "moonphase watch", "moonphase watches", "moon phase watch", "moon phase watches", "gmt watch",
-            "gmt watches", "dual time watch", "dual time watches", "world time watch", "world time watches",
-            "alarm watch", "alarm watches", "minute repeater watch", "minute repeater watches", "skeleton watch",
-            "skeleton watches", "open heart watch", "open heart watches", "time only watch", "time only watches",
-            "day date watch", "day date watches", "date watch", "date watches", "no date watch", "no date watches",
-            "power reserve watch", "power reserve watches", "grande complication watch", "grande complication watches",
-            "grand complication watch", "grand complication watches", "complicated watch", "complicated watches",
-            "watches for men", "mens watch", "mens watches", "men's watch", "men's watches", "watches for women",
-            "womens watch", "womens watches", "women's watch", "women's watches", "unisex watch", "unisex watches",
-            "watches for kids", "kids watch", "kids watches", "children's watch", "children's watches",
-            "boys watch", "boys watches", "girls watch", "girls watches", "rolex", "omega", "tag heuer", "seiko",
-            "citizen", "casio", "tissot", "hamilton", "longines", "bulova", "timex", "swatch", "invicta", "breitling",
-            "iwc", "panerai", "jaeger lecoultre", "jaeger-lecoultre", "zenith", "tudor", "grand seiko", "oris",
-            "bell & ross", "bell and ross", "ulysse nardin", "movado", "frederique constant", "glycine", "mido",
-            "rado", "ball", "maurice lacroix", "raymond weil", "alpina", "victorinox", "christopher ward", "nomos",
-            "stowa", "junghans", "sinn", "certina", "eterna", "fortis", "swiss watch", "swiss watches",
-            "swiss made watch", "swiss made watches", "german watch", "german watches", "japanese watch",
-            "japanese watches", "american watch", "american watches", "russian watch", "russian watches",
-            "british watch", "british watches", "italian watch", "italian watches", "french watch", "french watches",
-            "chinese watch", "chinese watches", "watch box", "watch boxes", "watch case", "watch cases",
-            "watch winder", "watch winders", "watch roll", "watch rolls", "watch pouch", "watch pouches",
-            "watch strap", "watch straps", "watch band", "watch bands", "watch bracelet", "watch bracelets",
-            "leather strap", "leather straps", "metal bracelet", "metal bracelets", "nato strap", "nato straps",
-            "rubber strap", "rubber straps", "silicone strap", "silicone straps", "nylon strap", "nylon straps",
-            "mesh bracelet", "mesh bracelets", "watch crystal", "watch crystals", "sapphire crystal",
-            "sapphire crystals", "acrylic crystal", "acrylic crystals", "hesalite crystal", "hesalite crystals",
-            "mineral crystal", "mineral crystals", "watch dial", "watch dials", "watch hands", "watch face",
-            "watch faces", "watch crown", "watch crowns", "watch bezel", "watch bezels", "watch case back",
-            "watch case backs", "watch movement", "watch movements", "eta movement", "eta movements",
-            "sellita movement", "sellita movements", "miyota movement", "miyota movements", "seiko movement",
-            "seiko movements", "in-house movement", "in-house movements", "swiss movement", "swiss movements",
-            "japanese movement", "japanese movements", "watch complication", "watch complications", "horology",
-            "horological", "watch making", "watchmaking", "watch repair", "watch repairs", "watch service",
-            "watch services", "watch restoration", "watch restorations", "watch polish", "watch polishes",
-            "watch cleaning", "watch cleanings", "watch collection", "watch collections", "watch collector",
-            "watch collectors", "watch enthusiast", "watch enthusiasts", "watch lover", "watch lovers", "watch guy",
-            "watch guys", "watch girl", "watch girls", "watch forum", "watch forums", "watch community",
-            "watch communities", "watch review", "watch reviews", "watch guide", "watch guides", "watch blog",
-            "watch blogs", "watch magazine", "watch magazines", "watch dealer", "watch dealers", "watch shop",
-            "watch shops", "watch store", "watch stores", "watch boutique", "watch boutiques", "watch auction",
-            "watch auctions", "watch fair", "watch fairs", "watch show", "watch shows", "watch event", "watch events",
-            "watch convention", "watch conventions", "watch exhibition", "watch exhibitions", "watch expo", "watch expos",
-            "watch salon", "watch salons", "watch week", "watch weeks", "watch day", "watch days", "watch night",
-            "watch nights", "watch party", "watch parties", "watch meet", "watch meets", "watch meetup", "watch meetups",
-            "watch group", "watch groups", "watch club", "watch clubs", "watch society", "watch societies",
-            "watch association", "watch associations", "watch alliance", "watch alliances", "watch guild", "watch guilds"
-        ]
-    
-    @staticmethod
-    def _cameras_keywords() -> List[str]:
-        return [
-            "camera", "cameras", "antique camera", "antique cameras", "vintage camera", "vintage cameras",
-            "old camera", "old cameras", "classic camera", "classic cameras", "retro camera", "retro cameras",
-            "collectible camera", "collectible cameras", "rare camera", "rare cameras", "film camera", "film cameras",
-            "analog camera", "analog cameras", "manual camera", "manual cameras", "mechanical camera", "mechanical cameras",
-            "slr camera", "slr cameras", "single lens reflex", "single lens reflexes", "rangefinder camera",
-            "rangefinder cameras", "point and shoot", "point and shoots", "point & shoot", "point & shoots",
-            "compact camera", "compact cameras", "pocket camera", "pocket cameras", "folding camera", "folding cameras",
-            "box camera", "box cameras", "bellows camera", "bellows cameras", "press camera", "press cameras",
-            "view camera", "view cameras", "large format camera", "large format cameras", "medium format camera",
-            "medium format cameras", "35mm camera", "35mm cameras", "half frame camera", "half frame cameras",
-            "panoramic camera", "panoramic cameras", "stereo camera", "stereo cameras", "instant camera",
-            "instant cameras", "polaroid camera", "polaroid cameras", "polaroid", "polaroids", "land camera",
-            "land cameras", "tlr camera", "tlr cameras", "twin lens reflex", "twin lens reflexes", "pinhole camera",
-            "pinhole cameras", "disposable camera", "disposable cameras", "single use camera", "single use cameras",
-            "toy camera", "toy cameras", "miniature camera", "miniature cameras", "spy camera", "spy cameras",
-            "subminiature camera", "subminiature cameras", "detective camera", "detective cameras", "disc camera",
-            "disc cameras", "110 camera", "110 cameras", "126 camera", "126 cameras", "620 camera", "620 cameras",
-            "120 camera", "120 cameras", "127 camera", "127 cameras", "116 camera", "116 cameras", "616 camera",
-            "616 cameras", "828 camera", "828 cameras", "aps camera", "aps cameras", "advanced photo system",
-            "cinema camera", "cinema cameras", "movie camera", "movie cameras", "motion picture camera",
-            "motion picture cameras", "cine camera", "cine cameras", "super 8 camera", "super 8 cameras",
-            "8mm camera", "8mm cameras", "16mm camera", "16mm cameras", "35mm movie camera", "35mm movie cameras",
-            "camcorder", "camcorders", "video camera", "video cameras", "digital camera", "digital cameras",
-            "dslr camera", "dslr cameras", "digital slr", "digital slrs", "mirrorless camera", "mirrorless cameras",
-            "evil camera", "evil cameras", "electronic viewfinder", "bridge camera", "bridge cameras",
-            "superzoom camera", "superzoom cameras", "action camera", "action cameras", "gopro", "gopros",
-            "360 camera", "360 cameras", "virtual reality camera", "virtual reality cameras", "vr camera",
-            "vr cameras", "drone camera", "drone cameras", "aerial camera", "aerial cameras", "underwater camera",
-            "underwater cameras", "waterproof camera", "waterproof cameras", "amphibious camera", "amphibious cameras",
-            "rugged camera", "rugged cameras", "tough camera", "tough cameras", "camera lens", "camera lenses",
-            "wide angle lens", "wide angle lenses", "standard lens", "standard lenses", "normal lens", "normal lenses",
-            "telephoto lens", "telephoto lenses", "zoom lens", "zoom lenses", "prime lens", "prime lenses",
-            "fixed focal length", "fixed focal lengths", "fisheye lens", "fisheye lenses", "macro lens", "macro lenses",
-            "portrait lens", "portrait lenses", "camera body", "camera bodies", "camera back", "camera backs",
-            "camera front", "camera fronts", "camera grip", "camera grips", "camera plate", "camera plates",
-            "camera filter", "camera filters", "lens filter", "lens filters", "uv filter", "uv filters",
-            "polarizing filter", "polarizing filters", "nd filter", "nd filters", "neutral density filter",
-            "neutral density filters", "close up filter", "close up filters", "soft focus filter", "soft focus filters",
-            "camera flash", "camera flashes", "camera strobe", "camera strobes", "hot shoe flash", "hot shoe flashes",
-            "electronic flash", "electronic flashes", "flash unit", "flash units", "flash attachment",
-            "flash attachments", "flash accessory", "flash accessories", "camera light", "camera lights",
-            "camera lighting", "camera lightings", "video light", "video lights", "led light", "led lights",
-            "camera case", "camera cases", "camera bag", "camera bags", "camera backpack", "camera backpacks",
-            "camera pouch", "camera pouches", "camera strap", "camera straps", "neck strap", "neck straps",
-            "wrist strap", "wrist straps", "camera tripod", "camera tripods", "tripod head", "tripod heads",
-            "camera monopod", "camera monopods", "camera stand", "camera stands", "camera bracket", "camera brackets",
-            "camera mount", "camera mounts", "camera film", "camera films", "35mm film", "35mm films", "120 film",
-            "120 films", "medium format film", "medium format films", "large format film", "large format films",
-            "black and white film", "black and white films", "color film", "color films", "reversal film",
-            "reversal films", "slide film", "slide films", "negative film", "negative films", "print film",
-            "print films", "camera battery", "camera batteries", "camera charger", "camera chargers",
-            "camera power supply", "camera power supplies", "camera adapter", "camera adapters", "camera manual",
-            "camera manuals", "instruction manual", "instruction manuals", "camera book", "camera books",
-            "photography book", "photography books", "camera catalog", "camera catalogs", "camera brochure",
-            "camera brochures", "camera magazine", "camera magazines", "camera collector", "camera collectors",
-            "camera collection", "camera collections", "camera enthusiast", "camera enthusiasts", "camera fan",
-            "camera fans", "camera user", "camera users", "camera owner", "camera owners", "camera dealer",
-            "camera dealers", "camera store", "camera stores", "camera shop", "camera shops", "camera repair",
-            "camera repairs", "camera service", "camera services", "camera restoration", "camera restorations",
-            "camera cleaning", "camera cleanings", "camera maintenance", "camera maintenances", "camera part",
-            "camera parts", "camera accessory", "camera accessories", "camera equipment", "camera equipments",
-            "camera gear", "camera gears", "camera stuff", "camera maker", "camera makers", "camera brand",
-            "camera brands", "camera manufacture", "camera manufactures", "camera manufacturer", "camera manufacturers",
-            "camera company", "camera companies", "camera firm", "camera firms", "camera label", "camera labels",
-            "leica", "nikon", "canon", "pentax", "olympus", "minolta", "konica", "kodak", "fuji", "fujifilm",
-            "hasselblad", "rollei", "rolleiflex", "mamiya", "bronica", "yashica", "contax", "zeiss", "voigtlander",
-            "praktica", "exakta", "agfa", "topcon", "ricoh", "petri", "miranda", "chinon", "vivitar", "soligor",
-            "sigma", "tamron", "tokina", "argus", "polaroid", "kodak", "ilford", "foma", "adox", "ansco",
-            "graflex", "speed graphic", "crown graphic", "century graphic", "linhof", "sinar", "toyo", "wista",
-            "horseman", "cambo", "deardorff", "wisner", "tachihara", "bell & howell", "keystone", "bolex", "revere",
-            "elmo", "beaulieu", "pathe", "eumig", "sankyo", "rca", "hitachi", "panasonic", "jvc", "sony"
-        ]
-    
-    @staticmethod
-    def _typewriters_keywords() -> List[str]:
-        return [
-            "typewriter", "typewriters", "antique typewriter", "antique typewriters", "vintage typewriter",
-            "vintage typewriters", "old typewriter", "old typewriters", "classic typewriter", "classic typewriters",
-            "retro typewriter", "retro typewriters", "collectible typewriter", "collectible typewriters",
-            "rare typewriter", "rare typewriters", "manual typewriter", "manual typewriters", "mechanical typewriter",
-            "mechanical typewriters", "portable typewriter", "portable typewriters", "standard typewriter",
-            "standard typewriters", "desktop typewriter", "desktop typewriters", "office typewriter",
-            "office typewriters", "electric typewriter", "electric typewriters", "electronic typewriter",
-            "electronic typewriters", "typewriter machine", "typewriter machines", "typing machine", "typing machines",
-            "writing machine", "writing machines", "typewriter keyboard", "typewriter keyboards", "typewriter keys",
-            "typewriter key", "typewriter ribbon", "typewriter ribbons", "typewriter part", "typewriter parts",
-            "typewriter accessory", "typewriter accessories", "typewriter case", "typewriter cases", "typewriter cover",
-            "typewriter covers", "typewriter stand", "typewriter stands", "typewriter desk", "typewriter desks",
-            "typewriter table", "typewriter tables", "typewriter repair", "typewriter repairs", "typewriter service",
-            "typewriter services", "typewriter maintenance", "typewriter maintenances", "typewriter restoration",
-            "typewriter restorations", "typewriter collector", "typewriter collectors", "typewriter collection",
-            "typewriter collections", "typewriter enthusiast", "typewriter enthusiasts", "typewriter fan",
-            "typewriter fans", "typewriter user", "typewriter users", "typewriter owner", "typewriter owners",
-            "typewriter lover", "typewriter lovers", "typewriter addict", "typewriter addicts", "typewriter nut",
-            "typewriter nuts", "typewriter museum", "typewriter museums", "typewriter exhibition",
-            "typewriter exhibitions", "typewriter display", "typewriter displays", "typewriter show", "typewriter shows",
-            "typewriter manual", "typewriter manuals", "typewriter instruction", "typewriter instructions",
-            "typewriter guide", "typewriter guides", "typewriter book", "typewriter books", "typewriter catalog",
-            "typewriter catalogs", "typewriter brochure", "typewriter brochures", "typewriter ad", "typewriter ads",
-            "typewriter advertisement", "typewriter advertisements", "typewriter commercial", "typewriter commercials",
-            "typewriter model", "typewriter models", "typewriter make", "typewriter makes", "typewriter brand",
-            "typewriter brands", "typewriter manufacturer", "typewriter manufacturers", "typewriter company",
-            "typewriter companies", "typewriter paper", "typewriter papers", "typewriter stationery",
-            "typewriter stationeries", "typewriter supply", "typewriter supplies", "royal typewriter",
-            "royal typewriters", "underwood typewriter", "underwood typewriters", "remington typewriter",
-            "remington typewriters", "smith corona typewriter", "smith corona typewriters", "olivetti typewriter",
-            "olivetti typewriters", "olympia typewriter", "olympia typewriters", "hermes typewriter",
-            "hermes typewriters", "corona typewriter", "corona typewriters", "adler typewriter", "adler typewriters",
-            "brother typewriter", "brother typewriters", "continental typewriter", "continental typewriters",
-            "facit typewriter", "facit typewriters", "ibm typewriter", "ibm typewriters", "imperial typewriter",
-            "imperial typewriters", "optima typewriter", "optima typewriters", "remington rand typewriter",
-            "remington rand typewriters", "sears typewriter", "sears typewriters", "torpedo typewriter",
-            "torpedo typewriters", "triumph typewriter", "triumph typewriters", "woodstock typewriter",
-            "woodstock typewriters", "l.c. smith typewriter", "l.c. smith typewriters", "lc smith typewriter",
-            "lc smith typewriters", "l c smith typewriter", "l c smith typewriters", "erika typewriter",
-            "erika typewriters", "corona portable", "corona portables", "corona standard", "corona standards",
-            "corona four", "corona fours", "remington portable", "remington portables", "remington standard",
-            "remington standards", "remington noiseless", "remington noiseless typewriter",
-            "remington noiseless typewriters", "underwood portable", "underwood portables", "underwood standard",
-            "underwood standards", "underwood noiseless", "smith premier typewriter", "smith premier typewriters",
-            "royal portable", "royal portables", "royal standard", "royal standards", "royal quiet deluxe",
-            "royal quiet de luxe", "royal qd", "royal quiet", "royal arrow", "royal arrows", "royal safari",
-            "royal safaris", "olympia sm", "olympia sf", "hermes 3000", "hermes 2000", "hermes baby", "hermes rocket",
-            "hermes media", "olympia sm3", "olympia sm4", "olympia sm5", "olympia sm7", "olympia sm8", "olympia sm9    @staticmethod
-    def _vintage_tees_keywords() -> List[str]:
-        return [
-            "vintage tee", "vintage tees", "vintage t-shirt", "vintage t shirt", "vintage tshirt", "vintage shirt",
-            "vintage t", "vintage top", "old tee", "old t-shirt", "old t shirt", "old tshirt", "old shirt", "retro tee",
-            "retro t-shirt", "retro shirt", "classic tee", "classic t-shirt", "classic shirt", "single stitch",
-            "single stitch tee", "single stitch t-shirt", "single stitch shirt", "single stitched", "vintage single stitch",
-            "double stitch", "vintage double stitch", "thin tee", "thin t-shirt", "thin shirt", "vintage thin",
-            "made in usa tee", "made in usa t-shirt", "made in usa shirt", "usa made", "vintage usa made",
-            "vintage tag", "old tag", "original tag", "deadstock", "deadstock tee", "deadstock t-shirt", "deadstock shirt",
-            "nos tee", "nos t-shirt", "nos shirt", "new old stock", "unworn vintage", "vintage unworn", "vintage new",
-            "80s tee", "80s t-shirt", "80s shirt", "80's tee", "80's t-shirt", "80's shirt", "eighties tee",
-            "eighties t-shirt", "eighties shirt", "1980s tee", "1980s t-shirt", "1980s shirt", "80s vintage",
-            "90s tee", "90s t-shirt", "90s shirt", "90's tee", "90's t-shirt", "90's shirt", "nineties tee",
-            "nineties t-shirt", "nineties shirt", "1990s tee", "1990s t-shirt", "1990s shirt", "90s vintage",
-            "70s tee", "70s t-shirt", "70s shirt", "70's tee", "70's t-shirt", "70's shirt", "seventies tee",
-            "seventies t-shirt", "seventies shirt", "1970s tee", "1970s t-shirt", "1970s shirt", "70s vintage",
-            "y2k tee", "y2k t-shirt", "y2k shirt", "y2k top", "y2k era", "2000s tee", "2000s t-shirt", "2000s shirt",
-            "graphic tee", "graphic t-shirt", "graphic shirt", "graphic t", "vintage graphic", "all over print",
-            "all over print tee", "all over print t-shirt", "all over print shirt", "vintage print",
-            "distressed tee", "distressed t-shirt", "distressed shirt", "faded tee", "faded t-shirt", "faded shirt",
-            "worn in tee", "worn in t-shirt", "worn in shirt", "vintage worn in", "vintage worn", "worn vintage",
-            "promo tee", "promo t-shirt", "promo shirt", "promotional tee", "promotional t-shirt", "promotional shirt", 
-            "staff tee", "staff t-shirt", "staff shirt", "crew tee", "crew t-shirt", "crew shirt", "crew only",
-            "brand tee", "brand t-shirt", "brand shirt", "designer tee", "designer t-shirt", "designer shirt",
-            "rare tee", "rare t-shirt", "rare shirt", "vintage rare", "limited tee", "limited t-shirt", "limited shirt",
-            "one of a kind", "vintage lot", "t-shirt lot", "tee lot", "shirt lot", "bundle", "vintage bundle",
-            "collection", "vintage collection", "wholesale", "vintage wholesale", "vintage reseller", "bulk vintage",
-            "vintage mystery", "mystery tee", "mystery t-shirt", "mystery shirt", "grab bag"
-        ]
-    
-    @staticmethod
-    def _band_tees_keywords() -> List[str]:
-        return [
-            "band tee", "band tees", "band t-shirt", "band t shirt", "band tshirt", "band shirt", "concert tee",
-            "concert t-shirt", "concert shirt", "tour tee", "tour t-shirt", "tour shirt", "world tour tee", 
-            "world tour t-shirt", "world tour shirt", "band tour", "band merch", "band merchandise", "rock tee",
-            "rock t-shirt", "rock shirt", "rock n roll tee", "rock n roll t-shirt", "rock n roll shirt",
-            "concert merch", "vintage band", "vintage band tee", "vintage band t-shirt", "vintage band shirt",
-            "music tee", "music t-shirt", "music shirt", "music merch", "vintage concert", "vintage concert tee",
-            "vintage concert t-shirt", "vintage concert shirt", "vintage tour", "vintage tour tee", "vintage tour t-shirt",
-            "vintage tour shirt", "rock band", "rock band tee", "rock band t-shirt", "rock band shirt", "punk band",
-            "punk band tee", "punk band t-shirt", "punk band shirt", "metal band", "metal band tee", "metal band t-shirt",
-            "metal band shirt", "rap tee", "rap t-shirt", "rap shirt", "hip hop tee", "hip hop t-shirt", "hip hop shirt",
-            "hip-hop tee", "hip-hop t-shirt", "hip-hop shirt", "country tee", "country t-shirt", "country shirt",
-            "blues tee", "blues t-shirt", "blues shirt", "jazz tee", "jazz t-shirt", "jazz shirt", "pop tee",
-            "pop t-shirt", "pop shirt", "edm tee", "edm t-shirt", "edm shirt", "dj tee", "dj t-shirt", "dj shirt",
-            "heavy metal tee", "heavy metal t-shirt", "heavy metal shirt", "thrash metal tee", "thrash metal t-shirt",
-            "thrash metal shirt", "death metal tee", "death metal t-shirt", "death metal shirt", "black metal tee",
-            "black metal t-shirt", "black metal shirt", "grunge tee", "grunge t-shirt", "grunge shirt", "indie tee",
-            "indie t-shirt", "indie shirt", "alternative tee", "alternative t-shirt", "alternative shirt",
-            "classic rock tee", "classic rock t-shirt", "classic rock shirt", "punk rock tee", "punk rock t-shirt",
-            "punk rock shirt", "hardcore tee", "hardcore t-shirt", "hardcore shirt", "emo tee", "emo t-shirt", "emo shirt",
-            "bandana tee", "bandana t-shirt", "bandana shirt", "official band", "licensed band", "bootleg band",
-            "vintage bootleg", "promo tee", "promo t-shirt", "promo shirt", "promotional tee", "promotional t-shirt",
-            "promotional shirt", "tour dates", "band dates", "band logo", "band graphic", "band artwork", "band image",
-            "rock tour", "rock merch", "metal tour", "metal merch", "punk tour", "punk merch", "rap tour", "rap merch",
-            "hip hop tour", "hip hop merch", "rare band", "rare tour", "rare concert", "limited edition band",
-            "limited edition tour", "limited edition concert", "numbered band", "numbered tour", "numbered concert",
-            "collector band", "collector tour", "collector concert", "vintage rock", "vintage metal", "vintage punk",
-            "vintage rap", "vintage hip hop", "vintage country", "vintage pop", "vintage alternative", "vintage indie",
-            "vintage hardcore", "vintage emo", "vintage grunge", "original band", "original tour", "original concert",
-            "90s band", "90s tour", "90s concert", "80s band", "80s tour", "80s concert", "70s band", "70s tour",
-            "70s concert", "2000s band", "2000s tour", "2000s concert", "y2k band", "y2k tour", "y2k concert",
-            "festival tee", "festival t-shirt", "festival shirt", "festival merch", "live show", "live concert",
-            "live tour", "backstage", "vip merch", "vip band", "crew shirt", "local crew", "road crew", "tour crew",
-            "staff tee", "staff t-shirt", "staff shirt", "band staff", "tour staff", "concert staff", "roadie shirt",
-            "security shirt", "artist tee", "artist t-shirt", "artist shirt", "musician tee", "musician t-shirt",
-            "musician shirt", "group tee", "group t-shirt", "group shirt", "band photo", "band picture"
-        ]
-    
-    @staticmethod
-    def _denim_jackets_keywords() -> List[str]:
-        return [
-            "denim jacket", "denim jackets", "jean jacket", "jean jackets", "blue jean jacket", "trucker jacket",
-            "denim coat", "denim trucker", "jean coat", "jeans jacket", "jeans jackets", "jeans coat", "vintage denim",
-            "vintage denim jacket", "vintage jean jacket", "vintage trucker jacket", "vintage denim coat",
-            "vintage jean coat", "vintage jeans jacket", "vintage jeans coat", "retro denim", "retro denim jacket",
-            "retro jean jacket", "retro trucker jacket", "retro denim coat", "retro jean coat", "retro jeans jacket",
-            "retro jeans coat", "classic denim", "classic denim jacket", "classic jean jacket", "classic trucker jacket",
-            "classic denim coat", "classic jean coat", "classic jeans jacket", "classic jeans coat", "old denim",
-            "old denim jacket", "old jean jacket", "old trucker jacket", "old denim coat", "old jean coat",
-            "old jeans jacket", "old jeans coat", "distressed denim", "distressed denim jacket", "distressed jean jacket",
-            "distressed trucker jacket", "distressed denim coat", "distressed jean coat", "distressed jeans jacket",
-            "distressed jeans coat", "faded denim", "faded denim jacket", "faded jean jacket", "faded trucker jacket",
-            "faded denim coat", "faded jean coat", "faded jeans jacket", "faded jeans coat", "washed denim",
-            "washed denim jacket", "washed jean jacket", "washed trucker jacket", "washed denim coat", "washed jean coat",
-            "washed jeans jacket", "washed jeans coat", "acid wash", "acid wash denim", "acid wash jacket",
-            "acid wash denim jacket", "acid wash jean jacket", "acid wash trucker jacket", "acid wash denim coat",
-            "acid wash jean coat", "acid wash jeans jacket", "acid wash jeans coat", "stonewashed", "stonewashed denim",
-            "stonewashed jacket", "stonewashed denim jacket", "stonewashed jean jacket", "stonewashed trucker jacket",
-            "stonewashed denim coat", "stonewashed jean coat", "stonewashed jeans jacket", "stonewashed jeans coat",
-            "raw denim", "raw denim jacket", "raw jean jacket", "raw trucker jacket", "raw denim coat", "raw jean coat",
-            "raw jeans jacket", "raw jeans coat", "selvedge denim", "selvedge denim jacket", "selvedge jean jacket",
-            "selvedge trucker jacket", "selvedge denim coat", "selvedge jean coat", "selvedge jeans jacket",
-            "selvedge jeans coat", "selvage denim", "selvage denim jacket", "selvage jean jacket", "selvage trucker jacket",
-            "selvage denim coat", "selvage jean coat", "selvage jeans jacket", "selvage jeans coat", "lined denim",
-            "lined denim jacket", "lined jean jacket", "lined trucker jacket", "lined denim coat", "lined jean coat",
-            "lined jeans jacket", "lined jeans coat", "sherpa", "sherpa denim", "sherpa denim jacket", "sherpa jean jacket",
-            "sherpa trucker jacket", "sherpa denim coat", "sherpa jean coat", "sherpa jeans jacket", "sherpa jeans coat",
-            "fleece", "fleece denim", "fleece denim jacket", "fleece jean jacket", "fleece trucker jacket",
-            "fleece denim coat", "fleece jean coat", "fleece jeans jacket", "fleece jeans coat", "levis", "levi's",
-            "levis jacket", "levi's jacket", "levis denim jacket", "levi's denim jacket", "levis jean jacket",
-            "levi's jean jacket", "levis trucker jacket", "levi's trucker jacket", "levis denim coat", "levi's denim coat",
-            "levis jean coat", "levi's jean coat", "levis jeans jacket", "levi's jeans jacket", "levis jeans coat",
-            "levi's jeans coat", "wrangler", "wrangler jacket", "wrangler denim jacket", "wrangler jean jacket",
-            "wrangler trucker jacket", "wrangler denim coat", "wrangler jean coat", "wrangler jeans jacket",
-            "wrangler jeans coat", "lee", "lee jacket", "lee denim jacket", "lee jean jacket", "lee trucker jacket",
-            "lee denim coat", "lee jean coat", "lee jeans jacket", "lee jeans coat", "carhartt", "carhartt jacket",
-            "carhartt denim jacket", "carhartt jean jacket", "carhartt trucker jacket", "carhartt denim coat",
-            "carhartt jean coat", "carhartt jeans jacket", "carhartt jeans coat", "calvin klein", "calvin klein jacket",
-            "calvin klein denim jacket", "calvin klein jean jacket", "calvin klein trucker jacket", "calvin klein denim coat",
-            "calvin klein jean coat", "calvin klein jeans jacket", "calvin klein jeans coat", "tommy hilfiger",
-            "tommy hilfiger jacket", "tommy hilfiger denim jacket", "tommy hilfiger jean jacket", "tommy hilfiger trucker jacket",
-            "tommy hilfiger denim coat", "tommy hilfiger jean coat", "tommy hilfiger jeans jacket", "tommy hilfiger jeans coat",
-            "guess", "guess jacket", "guess denim jacket", "guess jean jacket", "guess trucker jacket", "guess denim coat",
-            "guess jean coat", "guess jeans jacket", "guess jeans coat", "diesel", "diesel jacket", "diesel denim jacket",
-            "diesel jean jacket", "diesel trucker jacket", "diesel denim coat", "diesel jean coat", "diesel jeans jacket",
-            "diesel jeans coat", "gap", "gap jacket", "gap denim jacket", "gap jean jacket", "gap trucker jacket",
-            "gap denim coat", "gap jean coat", "gap jeans jacket", "gap jeans coat", "old navy", "old navy jacket",
-            "old navy denim jacket", "old navy jean jacket", "old navy trucker jacket", "old navy denim coat",
-            "old navy jean coat", "old navy jeans jacket", "old navy jeans coat", "american eagle", "american eagle jacket",
-            "american eagle denim jacket", "american eagle jean jacket", "american eagle trucker jacket",
-            "american eagle denim coat", "american eagle jean coat", "american eagle jeans jacket", "american eagle jeans coat"
-        ]
-    
-    @staticmethod
-    def _designer_brands_keywords() -> List[str]:
-        return [
-            "designer", "designer brand", "designer brands", "designer clothing", "designer clothes", "designer wear",
-            "designer apparel", "designer gear", "designer outfit", "designer outfits", "designer wardrobe",
-            "designer collection", "designer collections", "designer piece", "designer pieces", "designer item",
-            "designer items", "luxury", "luxury brand", "luxury brands", "luxury clothing", "luxury clothes",
-            "luxury wear", "luxury apparel", "luxury gear", "luxury outfit", "luxury outfits", "luxury wardrobe",
-            "luxury collection", "luxury collections", "luxury piece", "luxury pieces", "luxury item", "luxury items",
-            "high end", "high end brand", "high end brands", "high end clothing", "high end clothes", "high end wear",
-            "high end apparel", "high end gear", "high end outfit", "high end outfits", "high end wardrobe",
-            "high end collection", "high end collections", "high end piece", "high end pieces", "high end item",
-            "high end items", "premium", "premium brand", "premium brands", "premium clothing", "premium clothes",
-            "premium wear", "premium apparel", "premium gear", "premium outfit", "premium outfits", "premium wardrobe",
-            "premium collection", "premium collections", "premium piece", "premium pieces", "premium item", "premium items",
-            "couture", "couture brand", "couture brands", "couture clothing", "couture clothes", "couture wear",
-            "couture apparel", "couture gear", "couture outfit", "couture outfits", "couture wardrobe", "couture collection",
-            "couture collections", "couture piece", "couture pieces", "couture item", "couture items", "haute couture",
-            "haute couture brand", "haute couture brands", "haute couture clothing", "haute couture clothes",
-            "haute couture wear", "haute couture apparel", "haute couture gear", "haute couture outfit",
-            "haute couture outfits", "haute couture wardrobe", "haute couture collection", "haute couture collections",
-            "haute couture piece", "haute couture pieces", "haute couture item", "haute couture items", "runway",
-            "runway brand", "runway brands", "runway clothing", "runway clothes", "runway wear", "runway apparel",
-            "runway gear", "runway outfit", "runway outfits", "runway wardrobe", "runway collection", "runway collections",
-            "runway piece", "runway pieces", "runway item", "runway items", "fashion", "fashion brand", "fashion brands",
-            "fashion clothing", "fashion clothes", "fashion wear", "fashion apparel", "fashion gear", "fashion outfit",
-            "fashion outfits", "fashion wardrobe", "fashion collection", "fashion collections", "fashion piece",
-            "fashion pieces", "fashion item", "fashion items", "designer fashion", "luxury fashion", "high end fashion",
-            "premium fashion", "couture fashion", "high fashion", "designer luxury", "vintage designer", "vintage luxury",
-            "vintage couture", "vintage fashion", "authentic designer", "authentic luxury", "authentic couture",
-            "authentic fashion", "genuine designer", "genuine luxury", "genuine couture", "genuine fashion",
-            "original designer", "original luxury", "original couture", "original fashion", "pre-owned designer",
-            "pre-owned luxury", "pre-owned couture", "pre-owned fashion", "used designer", "used luxury", "used couture",
-            "used fashion", "second hand designer", "second hand luxury", "second hand couture", "second hand fashion", 
-            "louis vuitton", "gucci", "chanel", "dior", "yves saint laurent", "saint laurent", "ysl", "prada", "fendi", 
-            "versace", "valentino", "balenciaga", "givenchy", "balmain", "hermes", "burberry", "bottega veneta", 
-            "alexander mcqueen", "dolce & gabbana", "dolce and gabbana", "d&g", "dsquared2", "moschino", "miu miu", 
-            "off white", "off-white", "mcm", "celine", "loewe", "jimmy choo", "marc jacobs", "kenzo", "coach", "acne", 
-            "comme des garcons", "maison margiela", "marni", "mulberry", "salvatore ferragamo", "tory burch", 
-            "alexander wang", "stella mccartney", "vetements", "isabel marant", "jacquemus", "jil sander", "jw anderson", 
-            "lululemon", "marine serre", "palm angels", "rick owens", "stone island", "supreme", "undercover", 
-            "vivienne westwood", "y-3", "a.p.c.", "apc", "aspesi", "canada goose", "carhartt wip", "casablanca", 
-            "amiri", "aimé leon dore", "ader error", "enfants riches deprimes", "essentials", "fear of god", "moncler", 
-            "kith", "palace", "sacai", "alyx", "visvim", "yeezy", "gallery dept", "stussy", "neighborhood", "bape", 
-            "bathing ape", "human made", "cdg", "rolex", "omega", "tag heuer", "tissot", "iwc", "breitling", "cartier"
-        ]
-    
-    @staticmethod
-    def _carhartt_keywords() -> List[str]:
-        return [
-            "carhartt", "carhartt wip", "carhartt work in progress", "carhartts", "carhart", "carheart", "carharts", 
-            "carhartt jacket", "carhartt jackets", "carhartt coat", "carhartt coats", "carhartt hoodie", "carhartt hoodies", 
-            "carhartt sweatshirt", "carhartt sweatshirts", "carhartt sweater", "carhartt sweaters", "carhartt crewneck", 
-            "carhartt crewnecks", "carhartt t-shirt", "carhartt t shirt", "carhartt tshirt", "carhartt tee", 
-            "carhartt shirt", "carhartt t-shirts", "carhartt t shirts", "carhartt tshirts", "carhartt tees", 
-            "carhartt shirts", "carhartt long sleeve", "carhartt long sleeves", "carhartt longsleeve", "carhartt longsleeves", 
-            "carhartt pants", "carhartt pant", "carhartt trousers", "carhartt trouser", "carhartt jeans", "carhartt jean", 
-            "carhartt shorts", "carhartt short", "carhartt overalls", "carhartt overall", "carhartt dungarees", 
-            "carhartt dungaree", "carhartt coveralls", "carhartt coverall", "carhartt vest", "carhartt vests", 
-            "carhartt gilet", "carhartt gilets", "carhartt beanie", "carhartt beanies", "carhartt hat", "carhartt hats", 
-            "carhartt cap", "carhartt caps", "carhartt bag", "carhartt bags", "carhartt backpack", "carhartt backpacks", 
-            "carhartt tote", "carhartt totes", "carhartt purse", "carhartt purses", "carhartt belt", "carhartt belts", 
-            "carhartt wallet", "carhartt wallets", "carhartt gloves", "carhartt glove", "carhartt socks", "carhartt sock", 
-            "carhartt boots", "carhartt boot", "carhartt shoes", "carhartt shoe", "carhartt sneakers", "carhartt sneaker", 
-            "carhartt trainer", "carhartt trainers", "carhartt detroit", "carhartt active", "carhartt chore", 
-            "carhartt duck", "carhartt canvas", "carhartt cotton", "carhartt denim", "carhartt corduroy", "carhartt logo", 
-            "carhartt branded", "carhartt patch", "carhartt label", "carhartt tag", "carhartt embroidered", 
-            "carhartt stitched", "carhartt printed", "carhartt vintage", "carhartt classic", "carhartt traditional", 
-            "carhartt retro", "carhartt old", "carhartt deadstock", "carhartt new old stock", "carhartt nos", 
-            "carhartt workwear", "carhartt work wear", "carhartt streetwear", "carhartt street wear", "carhartt fashion", 
-            "carhartt urban", "carhartt outdoor", "carhartt rugged", "carhartt tough", "carhartt durable", "carhartt quality", 
-            "carhartt premium", "carhartt luxury", "carhartt designer", "carhartt high end", "carhartt authentic", 
-            "carhartt genuine", "carhartt real", "carhartt original", "carhartt men", "carhartt mens", "carhartt man", 
-            "carhartt women", "carhartt womens", "carhartt woman", "carhartt unisex", "carhartt kids", "carhartt child", 
-            "carhartt youth", "carhartt boys", "carhartt girls", "carhartt hamilton brown", "carhartt brown", 
-            "carhartt black", "carhartt navy", "carhartt blue", "carhartt green", "carhartt olive", "carhartt gray", 
-            "carhartt grey", "carhartt white", "carhartt tan", "carhartt khaki", "carhartt camo", "carhartt camouflage", 
-            "carhartt multi", "carhartt multicolor", "carhartt small", "carhartt medium", "carhartt large", 
-            "carhartt xl", "carhartt xxl", "carhartt 2xl", "carhartt xxxl", "carhartt 3xl", "carhartt oversized", 
-            "carhartt loose", "carhartt baggy", "carhartt slim", "carhartt fitted", "carhartt relaxed", "carhartt regular", 
-            "carhartt straight", "carhartt tapered", "carhartt bootcut", "carhartt wide", "carhartt cargo", "carhartt pocket", 
-            "carhartt pockets", "carhartt multipocket", "carhartt kangaroo pocket", "carhartt zip", "carhartt zipper", 
-            "carhartt snap", "carhartt button", "carhartt velcro", "carhartt collaboration", "carhartt collab", 
-            "carhartt limited", "carhartt special", "carhartt edition", "carhartt anniversary", "carhartt washed", 
-            "carhartt faded", "carhartt distressed", "carhartt worn"
-        ]
-    
-    @staticmethod
-    def _patagonia_keywords() -> List[str]:
-        return [
-            "patagonia", "patogonia", "patigonia", "paragonia", "patagona", "patagucci", "pata", "patagonia jacket", 
-            "patagonia jackets", "patagonia coat", "patagonia coats", "patagonia fleece", "patagonia fleeces", 
-            "patagonia hoodie", "patagonia hoodies", "patagonia sweatshirt", "patagonia sweatshirts", "patagonia sweater", 
-            "patagonia sweaters", "patagonia crewneck", "patagonia crewnecks", "patagonia t-shirt", "patagonia t shirt", 
-            "patagonia tshirt", "patagonia tee", "patagonia shirt", "patagonia t-shirts", "patagonia t shirts", 
-            "patagonia tshirts", "patagonia tees", "patagonia shirts", "patagonia long sleeve", "patagonia long sleeves", 
-            "patagonia longsleeve", "patagonia longsleeves", "patagonia pants", "patagonia pant", "patagonia trousers", 
-            "patagonia trouser", "patagonia shorts", "patagonia short", "patagonia vest", "patagonia vests", 
-            "patagonia gilet", "patagonia gilets", "patagonia hat", "patagonia hats", "patagonia cap", "patagonia caps", 
-            "patagonia beanie", "patagonia beanies", "patagonia bag", "patagonia bags", "patagonia backpack", 
-            "patagonia backpacks", "patagonia tote", "patagonia totes", "patagonia duffel", "patagonia duffels", 
-            "patagonia black hole", "patagonia blackhole", "patagonia better sweater", "patagonia retro", 
-            "patagonia retro x", "patagonia synchilla", "patagonia nano puff", "patagonia nanopuff", "patagonia down", 
-            "patagonia down sweater", "patagonia torrentshell", "patagonia torrent shell", "patagonia rain jacket", 
-            "patagonia raincoat", "patagonia rain coat", "patagonia hardshell", "patagonia soft shell", "patagonia baggies", 
-            "patagonia stand up", "patagonia stand-up", "patagonia r1", "patagonia r2", "patagonia capilene", 
-            "patagonia base layer", "patagonia base layers", "patagonia mid layer", "patagonia mid layers", 
-            "patagonia outer layer", "patagonia outer layers", "patagonia shell", "patagonia shells", "patagonia insulated", 
-            "patagonia insulation", "patagonia waterproof", "patagonia water proof", "patagonia water resistant", 
-            "patagonia windproof", "patagonia wind proof", "patagonia wind resistant", "patagonia breathable", 
-            "patagonia recycled", "patagonia sustainable", "patagonia eco", "patagonia green", "patagonia environmentally", 
-            "patagonia ethical", "patagonia fair trade", "patagonia responsible", "patagonia organic", "patagonia hemp", 
-            "patagonia logo", "patagonia branded", "patagonia patch", "patagonia label", "patagonia tag", 
-            "patagonia embroidered", "patagonia stitched", "patagonia printed", "patagonia mountain", "patagonia mountains", 
-            "patagonia vintage", "patagonia classic", "patagonia traditional", "patagonia retro", "patagonia old", 
-            "patagonia deadstock", "patagonia new old stock", "patagonia nos", "patagonia outdoor", "patagonia outdoors", 
-            "patagonia sportswear", "patagonia sports", "patagonia active", "patagonia activewear", "patagonia climbing", 
-            "patagonia hike", "patagonia hiking", "patagonia trek", "patagonia trekking", "patagonia camp", "patagonia camping", 
-            "patagonia ski", "patagonia skiing", "patagonia snow", "patagonia snowboard", "patagonia snowboarding", 
-            "patagonia trail", "patagonia run", "patagonia running", "patagonia fish", "patagonia fishing", 
-            "patagonia surf", "patagonia surfing", "patagonia swim", "patagonia swimming", "patagonia yoga", 
-            "patagonia pilates", "patagonia workwear", "patagonia work wear", "patagonia streetwear", "patagonia street wear", 
-            "patagonia fashion", "patagonia urban", "patagonia rugged", "patagonia tough", "patagonia durable", 
-            "patagonia quality", "patagonia premium", "patagonia luxury", "patagonia designer", "patagonia high end", 
-            "patagonia authentic", "patagonia genuine", "patagonia real", "patagonia original", "patagonia men", 
-            "patagonia mens", "patagonia man", "patagonia women", "patagonia womens", "patagonia woman", "patagonia unisex", 
-            "patagonia kids", "patagonia child", "patagonia youth", "patagonia boys", "patagonia girls", "patagonia black", 
-            "patagonia blue", "patagonia navy", "patagonia green", "patagonia red", "patagonia yellow", "patagonia purple", 
-            "patagonia brown", "patagonia gray", "patagonia grey", "patagonia white", "patagonia multi", "patagonia pattern", 
-            "patagonia patterned", "patagonia small    @staticmethod
-    def _magic_the_gathering_keywords() -> List[str]:
-        return [
-            "mtg", "magic cards", "magic the gathering", "mtg cards", "mtg lot", "mtg collection",
-            "mtg booster", "mtg box", "mtg booster box", "mtg bundle", "mtg draft booster", "mtg set booster",
-            "mtg collector booster", "mtg prerelease", "mtg commander", "mtg edh", "mtg deck", "magic deck",
-            "magic commander deck", "mtg rare", "mtg mythic", "mtg foil", "mtg extended art", "mtg showcase",
-            "mtg borderless", "mtg full art", "mtg alt art", "mtg alternate art", "mtg textured", "mtg special",
-            "mtg secret lair", "mtg drop", "magic sealed", "mtg sealed", "mtg vintage", "mtg legacy", "mtg modern",
-            "mtg standard", "mtg pioneer", "mtg pauper", "mtg brawl", "mtg arena", "mtg planeswalker", "mtg creature",
-            "mtg land", "mtg instant", "mtg sorcery", "mtg enchantment", "mtg artifact", "mtg equipment", "mtg reserved list",
-            "mtg dual land", "mtg shock land", "mtg fetch land", "mtg check land", "mtg fast land", "mtg pain land",
-            "mtg filter land", "mtg triome", "mtg battle land", "mtg bicycle land", "mtg pathway", "mtg mana base",
-            "mtg moxen", "mtg power", "mtg power nine", "mtg mox", "mtg alpha", "mtg beta", "mtg unlimited",
-            "mtg revised", "mtg fourth", "mtg fifth", "mtg sixth", "mtg seventh", "mtg eighth", "mtg ninth",
-            "mtg tenth", "mtg masters", "mtg modern horizons", "mtg time spiral", "mtg double masters",
-            "mtg jumpstart", "mtg battlebond", "mtg conspiracy", "mtg planechase", "mtg archenemy", "mtg graded",
-            "mtg bgs", "mtg psa", "mtg cgc", "mtg proxy", "mtg reproduction", "mtg repack", "mtg resealed",
-            "mtg black lotus", "mtg mox sapphire", "mtg mox ruby", "mtg mox pearl", "mtg mox jet", "mtg mox emerald",
-            "mtg ancestral recall", "mtg time walk", "mtg timetwister", "mtg underground sea", "mtg volcanic island",
-            "mtg tropical island", "mtg bayou", "mtg savannah", "mtg taiga", "mtg scrubland", "mtg badlands",
-            "mtg plateau", "mtg tundra", "mtg mishra's workshop", "mtg library of alexandria", "mtg tabernacle",
-            "mtg gaea's cradle", "mtg serra's sanctum", "mtg tolarian academy", "mtg force of will", "mtg mana drain",
-            "mtg jace the mind sculptor", "mtg liliana of the veil", "mtg tarmogoyf", "mtg dark confidant",
-            "mtg snapcaster mage", "mtg sensei's divining top", "mtg chrome mox", "mtg mox opal", "mtg ragavan",
-            "mtg sol ring", "mtg demonic tutor", "mtg vampiric tutor", "mtg imperial seal", "mtg mana crypt",
-            "mtg lords of the rings", "mtg doctor who", "mtg universes beyond", "mtg secret lair drop",
-            "mtg masterpiece", "mtg expedition", "mtg invocation", "mtg invention", "mtg signature spellbook"
-        ]
-    
-    @staticmethod
-    def _yu_gi_oh_keywords() -> List[str]:
-        return [
-            "yugioh", "yu-gi-oh", "yu gi oh", "yugioh cards", "yu-gi-oh cards", "yugioh card", "yugioh tcg", "yugioh ocg",
-            "yugioh booster", "yugioh pack", "yugioh box", "yugioh structure deck", "yugioh starter deck", "yugioh speed duel",
-            "yugioh collection", "yugioh lot", "yugioh bulk", "yugioh rare", "yugioh holographic", "yugioh holo", "yugioh foil",
-            "yugioh ultra rare", "yugioh super rare", "yugioh ultimate rare", "yugioh secret rare", "yugioh ghost rare",
-            "yugioh starlight rare", "yugioh collector rare", "yugioh prismatic secret", "yugioh gold rare", "yugioh parallel rare",
-            "yugioh 1st edition", "yugioh first edition", "yugioh unlimited", "yugioh limited", "yugioh graded", "yugioh psa",
-            "yugioh bgs", "yugioh cgc", "yugioh sealed", "yugioh japanese", "yugioh ocg", "yugioh asian english",
-            "yugioh dark magician", "yugioh blue eyes", "blue eyes white dragon", "dark magician", "red eyes",
-            "red eyes black dragon", "exodia", "yugioh exodia", "yugioh god cards", "yugioh egyptian god",
-            "yugioh slifer", "yugioh obelisk", "yugioh ra", "yugioh legendary collection", "yugioh tin",
-            "yugioh mega tin", "yugioh gold sarcophagus", "yugioh binder", "yugioh album", "yugioh sleeves",
-            "yugioh playmat", "yugioh deck box", "yugioh storage", "yugioh proxy", "yugioh reprint",
-            "yugioh lob", "yugioh legend of blue eyes", "yugioh metal raiders", "yugioh spell ruler",
-            "yugioh pharaoh's servant", "yugioh labyrinth of nightmare", "yugioh legacy of darkness",
-            "yugioh invasion of chaos", "yugioh ancient sanctuary", "yugioh soul of the duelist",
-            "yugioh rise of destiny", "yugioh flaming eternity", "yugioh cybernetic revolution",
-            "yugioh elemental energy", "yugioh shadow of infinity", "yugioh enemy of justice",
-            "yugioh maximum crisis", "yugioh code of the duelist", "yugioh circuit break",
-            "yugioh extreme force", "yugioh flames of destruction", "yugioh cybernetic horizon",
-            "yugioh soul fusion", "yugioh savage strike", "yugioh dark neostorm", "yugioh rising rampage",
-            "yugioh chaos impact", "yugioh ignition assault", "yugioh eternity code", "yugioh rise of the duelist",
-            "yugioh phantom rage", "yugioh blazing vortex", "yugioh lightning overdrive", "yugioh dawn of majesty",
-            "yugioh burst of destiny", "yugioh battle of chaos", "yugioh dimension force", "yugioh power of the elements",
-            "yugioh darkwing blast", "yugioh photon hypernova", "yugioh cyberstorm access", "yugioh age of overlord"
-        ]
-    
-    @staticmethod
-    def _funko_pops_keywords() -> List[str]:
-        return [
-            "funko pop", "funko pops", "funko", "pop vinyl", "funko pop vinyl", "funko figure", "funko collectible",
-            "funko collection", "funko lot", "funko exclusives", "exclusive funko", "funko pop exclusive", "funko chase",
-            "chase funko", "funko limited", "limited edition funko", "funko special edition", "funko rare", "rare funko",
-            "funko flocked", "flocked funko", "funko metallic", "metallic funko", "funko glow", "glow in the dark funko",
-            "gitd funko", "funko gitd", "funko chrome", "chrome funko", "funko jumbo", "jumbo funko", "funko 10 inch",
-            "funko giant", "funko supersized", "funko con exclusive", "funko convention", "funko sdcc", "funko nycc",
-            "funko eccc", "funko wondercon", "funko d23", "funko comic con", "funko set", "funko multipack", "funko 2 pack",
-            "funko 3 pack", "funko movie moment", "funko moment", "funko rides", "funko ride", "funko with case",
-            "funko protector", "funko box", "funko display", "funko storage", "funko shelf", "funko signed", "autographed funko",
-            "funko pop signed", "funko pop autograph", "funko grail", "grail funko", "vaulted funko", "funko vaulted",
-            "retired funko", "funko retired", "funko first edition", "funko soda", "funko sodas", "funko vinyl soda",
-            "funko art series", "funko pocket pop", "funko keychain", "funko key chain", "funko pez", "funko wacky wobbler",
-            "funko bobblehead", "funko mystery mini", "funko mini", "funko dorbz", "funko vynl", "funko hikari",
-            "funko marvel", "marvel funko", "funko dc", "dc funko", "funko star wars", "star wars funko",
-            "funko harry potter", "harry potter funko", "funko disney", "disney funko", "funko animation",
-            "funko anime", "anime funko", "funko pop animation", "funko pop anime", "funko games", "funko pop games",
-            "funko fortnite", "funko overwatch", "funko pokemon", "funko ad icons", "funko ad icon", "funko rocks",
-            "funko rock", "funko music", "funko sports", "funko nfl", "funko nba", "funko mlb", "funko nhl", "funko wwe",
-            "funko pop nfl", "funko pop nba", "funko pop mlb", "funko pop nhl", "funko pop wwe", "funko television",
-            "funko tv", "funko movies", "funko pop tv", "funko pop movies", "funko with pop protector", "funko mint",
-            "funko damaged box", "funko no box", "funko oob", "funko out of box", "funko loose", "funko unopened",
-            "funko sealed", "funko complete", "funko set complete", "funko full set", "funko collection set"
-        ]
-    
-    @staticmethod
-    def _sports_cards_keywords() -> List[str]:
-        return [
-            "sports cards", "sports card", "trading cards", "trading card", "baseball cards", "baseball card", 
-            "football cards", "football card", "basketball cards", "basketball card", "hockey cards", "hockey card",
-            "soccer cards", "soccer card", "golf cards", "golf card", "boxing cards", "boxing card", "wrestling cards",
-            "nfl cards", "nba cards", "mlb cards", "nhl cards", "mls cards", "wwe cards", "ufc cards", "racing cards",
-            "nascar cards", "f1 cards", "formula 1 cards", "olympic cards", "rookie card", "rookie cards", "rc card",
-            "auto card", "autograph card", "autographed card", "signed card", "jersey card", "patch card", "relic card", 
-            "memorabilia card", "game used card", "game worn card", "refractor card", "parallel card", "short print card",
-            "sp card", "serial numbered card", "numbered card", "1/1 card", "one of one card", "printing plate card",
-            "graded card", "psa card", "bgs card", "sgc card", "hga card", "cgc card", "csg card", "psa 10", "psa 9",
-            "bgs 9.5", "bgs 10", "sgc 10", "black label", "pristine", "gem mint", "mint", "near mint", "nm card",
-            "sports card lot", "sports card collection", "sports card bulk", "base cards", "common cards", "insert cards",
-            "chase cards", "sports card box", "sports card pack", "sports card set", "complete set cards", "master set cards",
-            "unopened cards", "sealed cards", "vintage cards", "vintage sports card", "modern cards", "modern sports card",
-            "junk wax cards", "junk wax era", "topps cards", "panini cards", "upper deck cards", "fleer cards", "donruss cards",
-            "bowman cards", "leaf cards", "score cards", "pacific cards", "contenders cards", "select cards", "prizm cards",
-            "mosaic cards", "optic cards", "chronicles cards", "immaculate cards", "impeccable cards", "national treasures cards",
-            "flawless cards", "dynasty cards", "transcendent cards", "definitive cards", "dynasty cards", "topps chrome",
-            "topps finest", "topps sterling", "bowman chrome", "topps tribute", "topps dynasty", "panini prizm", "panini select",
-            "panini mosaic", "panini optic", "panini noir", "panini immaculate", "panini flawless", "sports card case",
-            "sports card storage", "sports card album", "sports card binder", "sports card sleeves", "sports card top loaders",
-            "sports card penny sleeves", "sports card semi rigid", "card savers", "card one touch", "magnetic card holder"
-        ]
-    
-    @staticmethod
-    def _comic_books_keywords() -> List[str]:
-        return [
-            "comic book", "comic books", "comics", "comic", "graphic novel", "graphic novels", "trade paperback", "tpb",
-            "comic collection", "comic book collection", "comic lot", "comic book lot", "comic bundle", "comic book bundle",
-            "comic run", "comic book run", "complete run", "complete series", "full run", "key comic", "key issue",
-            "first appearance", "1st appearance", "first print", "1st print", "variant cover", "variant comic",
-            "alternate cover", "incentive cover", "ratio variant", "store exclusive", "comic con exclusive",
-            "signed comic", "autographed comic", "signature series", "remarked comic", "sketch cover", "blank cover",
-            "virgin cover", "foil cover", "holographic cover", "glow in the dark cover", "lenticular cover", "3d cover",
-            "wraparound cover", "connecting cover", "gatefold cover", "die-cut cover", "embossed cover", "acetate cover",
-            "error comic", "error issue", "recalled comic", "recalled issue", "recalled edition", "banned comic",
-            "banned issue", "rare comic", "rare issue", "low print run", "limited edition comic", "comic graded",
-            "graded comic book", "cgc comic", "cbcs comic", "pgx comic", "cgc graded", "cbcs graded", "pgx graded",
-            "cgc signature series", "cbcs signature series", "cgc 9.8", "cgc 9.6", "cgc 9.4", "cgc 9.2", "cgc ss",
-            "slabbed comic", "raw comic", "ungraded comic", "golden age comic", "silver age comic", "bronze age comic",
-            "copper age comic", "modern age comic", "vintage comic", "vintage comic book", "pre-code horror",
-            "marvel comic", "dc comic", "image comic", "dark horse comic", "vertigo comic", "boom comic", "idw comic",
-            "dynamite comic", "valiant comic", "indie comic", "independent comic", "underground comic", "comix",
-            "mature comic", "adult comic", "manga", "manga volume", "tankobon", "light novel", "manhwa", "manhua",
-            "webtoon", "mini comic", "mini series", "one shot comic", "annual comic", "special comic", "treasury edition",
-            "omnibus", "comic omnibus", "absolute edition", "deluxe edition", "hardcover comic", "softcover comic",
-            "comic reader copy", "comic reading copy", "comic user copy", "comic vf/nm", "comic vf", "comic fine",
-            "comic vg", "comic good", "comic fair", "comic poor", "dollar bin comic", "comic grab bag", "mystery comic",
-            "superhero comic", "superhero comics", "batman comic", "spider-man comic", "x-men comic", "avengers comic",
-            "superman comic", "wonder woman comic", "flash comic", "green lantern comic", "hulk comic", "iron man comic",
-            "captain america comic", "thor comic", "deadpool comic", "punisher comic", "daredevil comic", "wolverine comic"
-        ]
-    
-    @staticmethod
-    def _action_figures_keywords() -> List[str]:
-        return [
-            "action figure", "action figures", "action fig", "figure", "toy figure", "plastic figure", "collectible figure",
-            "articulated figure", "poseable figure", "jointed figure", "action toy", "character figure", "toy character",
-            "action figure lot", "action figure collection", "figure lot", "figure collection", "action figure set",
-            "figure set", "action figure bundle", "figure bundle", "action figure loose", "loose figure", "complete figure",
-            "boxed figure", "mib figure", "nib figure", "mosc figure", "misb figure", "sealed figure", "carded figure",
-            "mint on card", "action figure display", "figure display", "figure stand", "action figure case", "figure case",
-            "action figure accessories", "figure accessory", "action figure weapon", "figure weapon", "action figure parts",
-            "figure parts", "action figure lot", "action figure bulk", "figure bulk", "action figure wholesale",
-            "rare figure", "exclusive figure", "limited edition figure", "chase figure", "variant figure", "prototype figure",
-            "test shot figure", "production sample", "action figure error", "factory error figure", "mispack figure",
-            "factory sample", "action figure custom", "custom figure", "kitbashed figure", "action figure kit", "model kit",
-            "figure kit", "model figure", "resin figure", "resin kit", "vinyl figure", "soft vinyl", "sofubi",
-            "pvc figure", "polystone figure", "die cast figure", "diecast figure", "metal figure", "plastic model kit",
-            "snap kit", "painted figure", "prepainted figure", "action figure statue", "statue", "mini statue", "maquette",
-            "bust", "diorama", "premium format", "action figure scale", "1/6 scale", "1:6 scale", "1/6 figure", "1/6th",
-            "1/12 scale", "1:12 scale", "1/12 figure", "1/12th", "1/18 scale", "1:18 scale", "1/18 figure", "1/18th",
-            "3.75 inch figure", "3.75\" figure", "3 3/4 figure", "3 3/4\" figure", "4 inch figure", "4\" figure",
-            "5 inch figure", "5\" figure", "6 inch figure", "6\" figure", "7 inch figure", "7\" figure", "12 inch figure",
-            "12\" figure", "18 inch figure", "18\" figure", "quarter scale", "1/4 scale", "1:4 scale", "1/4 figure",
-            "third scale", "1/3 scale", "1:3 scale", "1/3 figure", "hot toys", "sideshow", "prime 1", "xm studios",
-            "iron studios", "neca figure", "mcfarlane figure", "super7", "mezco", "mafex", "shf", "sh figuarts",
-            "figma", "revoltech", "marvel legends", "dc multiverse", "black series", "gi joe classified", "super7 ultimates",
-            "masterpiece", "motu origins", "motu classics", "legends", "select", "nendoroid", "funko", "qfig", "q-fig"
-        ]
-    
-    @staticmethod
-    def _lego_sets_keywords() -> List[str]:
-        return [
-            "lego", "lego set", "lego sets", "lego kit", "lego kits", "lego bundle", "lego lot", "lego collection",
-            "lego building set", "lego construction", "lego build", "lego box", "lego boxed", "lego sealed", "lego new",
-            "lego used", "lego complete", "lego incomplete", "lego with instructions", "lego with manual", "lego no box",
-            "lego no instructions", "lego missing pieces", "lego bulk", "lego lot pounds", "lego lot lbs", "lego by weight",
-            "lego bulk lot", "lego assorted", "lego mixed", "lego random", "lego pounds", "lego lbs", "lego kilos", "lego kg",
-            "lego pieces", "lego parts", "lego bricks", "lego blocks", "lego elements", "lego components", "lego accessories",
-            "lego minifigure", "lego minifigures", "lego minifig", "lego minifigs", "lego figure", "lego figures",
-            "lego character", "lego characters", "lego people", "lego person", "lego mini figure", "lego mini figures",
-            "lego fig", "lego figs", "lego mf", "lego mfs", "lego mini", "lego minis", "lego star wars", "lego starwars",
-            "lego harry potter", "lego harrypotter", "lego city", "lego castle", "lego space", "lego train", "lego trains",
-            "lego creator", "lego technic", "lego friends", "lego duplo", "lego architecture", "lego ideas", "lego marvel",
-            "lego super heroes", "lego superheroes", "lego dc", "lego batman", "lego movie", "lego ninjago", "lego minecraft",
-            "lego disney", "lego princess", "lego frozen", "lego jurassic world", "lego jurassic park", "lego dinosaurs",
-            "lego pirates", "lego western", "lego wild west", "lego medieval", "lego knights", "lego police", "lego fire",
-            "lego hospital", "lego airport", "lego vehicle", "lego vehicles", "lego car", "lego cars", "lego truck",
-            "lego trucks", "lego boat", "lego boats", "lego ship", "lego ships", "lego airplane", "lego airplanes",
-            "lego aircraft", "lego helicopter", "lego helicopters", "lego motorcycle", "lego motorcycles", "lego bike",
-            "lego bikes", "lego house", "lego houses", "lego building", "lego buildings", "lego modular", "lego modulars",
-            "lego modular building", "lego modular buildings", "lego expert", "lego advanced", "lego ucs", "lego ultimate",
-            "lego collector", "lego collectors", "lego exclusive", "lego limited", "lego rare", "lego retired", "lego vintage",
-            "lego old", "lego classic", "lego classics", "lego promotional", "lego promo", "lego sdcc", "lego con",
-            "lego event", "lego special", "lego vip", "lego polybag", "lego poly bag", "lego xmas", "lego christmas",
-            "lego holiday", "lego seasonal", "lego winter", "lego halloween", "lego easter", "lego brickheadz",
-            "lego brickhead", "lego adult", "lego 18+", "lego 16+", "lego display", "lego collector set", "lego collector's item"
-        ]
-    
-    # === VINTAGE CLOTHING CATEGORY ===
-    
-    @staticmethod
-    def _jordans_keywords() -> List[str]:
-        return [
-            "jordans", "jordan shoes", "jordan sneakers", "air jordans", "nike jordans", "aj", "j's",
-            "jordan 1", "jordan 2", "jordan 3", "jordan 4", "jordan 5", "jordan 6", "jordan 7", "jordan 8",
-            "jordan 9", "jordan 10", "jordan 11", "jordan 12", "jordan 13", "jordan 14", "jordan 15",
-            "jordan 16", "jordan 17", "jordan 18", "jordan 1 high", "jordan 1 mid", "jordan 1 low", 
-            "aj1", "aj2", "aj3", "aj4", "aj5", "aj6", "aj7", "aj8", "aj9", "aj10", "aj11", "aj12",
-            "jordan high", "jordan mid", "jordan low", "retro jordans", "og jordans", "jordan retro",
-            "chicago jordan", "bred jordan", "royal jordan", "shadow jordan", "black toe jordan", "mocha jordan",
-            "university blue jordan", "court purple jordan", "pine green jordan", "hyper royal jordan",
-            "off white jordan", "travis scott jordan", "fragment jordan", "jordan travis scott", "trophy room jordan",
-            "jordan collab", "jordan collaboration", "jordan x", "jordan edition", "jordan player edition", "jordan pe",
-            "jordan sample", "jordan promo", "jordan banned", "jordan playoff", "jordan concord", "jordan space jam",
-            "jordan bred toe", "jordan shattered backboard", "jordan obsidian", "jordan unc", "jordon", "gordan", "jordens",
-            "air jordan", "air jordon", "air gordon", "deadstock jordan", "ds jordan", "jordan ds", "jordan new", "jordan nib",
-            "jordan vnds", "jordan used", "jordan worn", "size 8 jordan", "size 9 jordan", "size 10 jordan", "size 11 jordan",
-            "size 12 jordan", "size 13 jordan", "mens jordan", "womens jordan", "gs jordan", "grade school jordan", "jordan box",
-            "replacement box jordan", "jordan og box", "jordan rep box", "jordan no box", "jordan receipt"
-        ]
-    
-    @staticmethod
-    def _nike_dunks_keywords() -> List[str]:
-        return [
-            "nike dunk", "dunks", "nike dunks", "dunk low", "dunk high", "dunk sb", "sb dunk", "nike sb dunk",
-            "nike dunk low", "nike dunk high", "nike dunk sb", "nike sb dunk low", "nike sb dunk high", "nike sb",
-            "nike skateboarding", "dunks low", "dunks high", "dunks sb", "sb dunks", "dunk", "nike dunk pro",
-            "dunk pro", "dunk pro low", "dunk pro high", "dunk retro", "nike dunk retro", "dunk premium",
-            "nike dunk premium", "dunks premium", "panda dunk", "panda dunks", "nike panda", "dunk panda",
-            "panda nike dunk", "dunk syracuse", "syracuse dunk", "dunk kentucky", "kentucky dunk", "dunk michigan",
-            "michigan dunk", "dunk unlv", "unlv dunk", "dunk st johns", "st john's dunk", "dunk coast", "coast dunk",
-            "dunk unc", "unc dunk", "dunk georgetown", "georgetown dunk", "dunk michigan state", "michigan state dunk",
-            "dunk vintage", "vintage dunk", "dunk retro", "retro dunk", "dunk next nature", "next nature dunk",
-            "travis scott dunk", "dunk travis scott", "strangelove dunk", "dunk strangelove", "chunky dunky",
-            "dunk chunky dunky", "dunk ben jerry", "ben jerry dunk", "dunk grateful dead", "grateful dead dunk",
-            "dunk off white", "off white dunk", "dunk supreme", "supreme dunk", "dunk what the", "what the dunk",
-            "dunk safari", "safari dunk", "dunk raygun", "raygun dunk", "dunk doernbecher", "doernbecher dunk",
-            "dunk lobster", "lobster dunk", "dunk tiffany", "tiffany dunk", "dunk diamond", "diamond dunk",
-            "dunk homer", "homer dunk", "dunk mork", "mork dunk", "dunk de la soul", "de la soul dunk",
-            "dunk cherry", "cherry dunk", "dunk plum", "plum dunk", "dunk curry", "curry dunk", "dunk pigeon",
-            "pigeon dunk", "dunk parra", "parra dunk", "dunk clivers", "clivers dunk", "dunk sean cliver",
-            "dunk halloween", "halloween dunk", "dunk mummy", "mummy dunk", "dunk patent", "patent dunk",
-            "dunk leather", "leather dunk", "dunk canvas", "canvas dunk", "dunk suede", "suede dunk",
-            "dunk cork", "cork dunk", "dunk gum sole", "gum sole dunk", "dunk ice sole", "ice sole dunk",
-            "dunk special box", "dunk cement box", "dunk purple box", "dunk pink box", "dunk silver box",
-            "dunk gold box", "dunk black box", "dunk orange box", "dunk green box", "dunk yellow box",
-            "dunk red box", "dunk blue box", "deadstock dunk", "dunk ds", "ds dunk", "dunk vnds", "vnds dunk"
-        ]
-    
-    @staticmethod
-    def _vintage_tees_keywords() -> List[str]:
-        return [
-            "vintage tee", "vintage tees", "vintage t-shirt", "vintage t shirt", "vintage tshirt", "vintage shirt",
-            "vintage t", "vintage top", "old tee", "old t-shirt", "old t shirt", "old tshirt", "old shirt", "retro tee",
-            "retro t-shirt", "retro shirt", "classic tee", "classic t-shirt", "classic shirt", "single stitch",
-            "single stitch tee", "single stitch t-shirt", "single stitch shirt", "single stitched", "vintage single stitch",
-            "double stitch", "vintage double stitch", "thin tee", "thin t-shirt", "thin shirt", "vintage thin",
-            "made in usa tee", "made in usa t-shirt", "made in usa shirt", "usa made", "vintage usa made",
-            "vintage tag", "old tag", "original tag", "deadstock", "deadstock tee", "deadstock t-shirt", "deadstock shirt",
-            "nos tee", "nos t-shirt", "nos shirt", "new old stock", "unworn vintage", "vintage unworn", "vintage new",
-            "80s tee", "80s t-shirt", "80s shirt", "80's tee", "80's t-shirt", "80's shirt", "eighties tee",
-            "eighties t-shirt", "eighties shirt", "1980s tee", "1980s t-shirt", "1980s shirt", "80s vintage",
-            "90s tee", "90s t-shirt", "90s shirt", "90's tee", "90's t-shirt", "90's shirt", "nineties tee",
-            "nineties t-shirt", "nineties shirt", "1990s tee", "1990s t-shirt", "1990s shirt", "90s vintage",
-            "70s tee", "70s t-shirt", "70s shirt", "70's tee", "70's t-shirt", "70's shirt", "seventies tee",
-            "seventies t-shirt", "seventies shirt", "1970s tee", "1970s t-"""
-Comprehensive keyword generator for marketplace arbitrage scanning.
-This module provides extensive keyword lists for all supported subcategories.
+"""
+Comprehensive keywords database for FlipHawk marketplace scrapers.
+Includes variations, misspellings, and specific model identifiers to improve matching.
 """
 
-from typing import List, Dict, Any
-
-class KeywordGenerator:
-    """Generate comprehensive keywords for marketplace searches."""
-    
-    @staticmethod
-    def generate_keywords(subcategory: str) -> List[str]:
-        """Generate extensive keywords for the given subcategory including variations and misspellings."""
-        # Get subcategory-specific keywords if available
-        subcategory_method = getattr(KeywordGenerator, f"_{subcategory.lower().replace(' ', '_')}_keywords", None)
-        if subcategory_method:
-            return subcategory_method()
-        
-        # Fall back to generic keyword generation
-        return KeywordGenerator._generate_generic_keywords(subcategory)
-    
-    @staticmethod
-    def _generate_generic_keywords(subcategory: str) -> List[str]:
-        """Generate generic keywords for subcategories without specific implementations."""
-        variations = [
-            subcategory.lower(),  # Lowercase
-            subcategory.replace(" ", ""),  # No spaces
-            subcategory.replace(" ", "-"),  # With hyphens
-            f"new {subcategory}",
-            f"used {subcategory}",
-            f"vintage {subcategory}",
-            f"rare {subcategory}",
-            f"collectible {subcategory}",
-            f"{subcategory} lot",
-            f"{subcategory} collection",
-            f"{subcategory} bundle",
-            f"{subcategory} set",
-            f"premium {subcategory}",
-            f"high end {subcategory}",
-            f"professional {subcategory}",
-            f"budget {subcategory}",
-            f"{subcategory} for sale",
-            f"{subcategory} cheap",
-            f"{subcategory} best price",
-            f"{subcategory} deal"
-        ]
-        
-        # Add common misspellings for longer subcategory names
-        if len(subcategory) > 5:
-            words = subcategory.split()
-            for word in words:
-                if len(word) > 4:
-                    # Swap two adjacent characters
-                    for i in range(len(word) - 1):
-                        misspelled = word[:i] + word[i+1] + word[i] + word[i+2:]
-                        variations.append(subcategory.replace(word, misspelled.lower()))
-                    
-                    # Drop a character
-                    for i in range(len(word)):
-                        misspelled = word[:i] + word[i+1:]
-                        variations.append(subcategory.replace(word, misspelled.lower()))
-        
-        return list(set(variations))  # Remove duplicates
-    
-    # === TECH CATEGORY ===
-    
-    @staticmethod
-    def _headphones_keywords() -> List[str]:
-        return [
-            "headphones", "headphone", "headfones", "ear phones", "earphone", "headset", 
-            "wireless headphones", "bluetooth headphones", "noise cancelling headphones",
-            "gaming headphones", "beats headphones", "bose headphones", "sony headphones", 
+COMPREHENSIVE_KEYWORDS = {
+    "Tech": {
+        "Headphones": [
+            # Apple AirPods variations
             "airpods", "airpod", "air pods", "air pod", "apple earbuds", "apple earpods",
-            "jaybird", "sennheiser", "jbl headphones", "skullcandy", "audio technica",
-            "wireless earbuds", "bluetooth earbuds", "true wireless", "tws", "in ear", 
-            "over ear", "on ear", "studio headphones", "anc headphones", "noise canceling",
-            "earbuds", "ear buds", "earfones", "blutooth headphones", "wireless earphones",
-            "headfone", "headfons", "hedphones", "hedfonz", "wireless hedphones", "noize cancelling",
-            "airpods pro", "airpods max", "galaxy buds", "pixel buds", "wireless earpods", 
-            "powerbeats", "beats solo", "beats studio", "bose quietcomfort", "sony wh1000",
-            "noise blocking", "bass headphones", "high resolution audio", "hi res audio",
-            "stereo headphones", "surround sound headphones", "gaming headset", "mic headphones",
-            "microphone headphones", "headset with mic", "wired headphones", "usb c headphones",
-            "lightning headphones", "3.5mm headphones", "premium headphones", "audiophile"
+            "airpods pro", "airpods max", "airpods 2", "airpods 3", "airpods pro 2",
+            "airpds", "aripos", "aripods", "apods", "ap pods", "apple airpads",
+            "airpods 2nd gen", "airpods 3rd gen", "airpods generation", "airpod pros",
+            "apple airpods pro 2", "airpods pro second generation", "airpods usb-c",
+            
+            # Beats variations
+            "beats", "beats headphones", "beats solo", "beats studio", "beats pro",
+            "beats studio buds", "beats fit pro", "powerbeats", "powerbeats pro",
+            "beets", "bats headphones", "beatz", "bts headphones", "beat headphones",
+            "beats solo 3", "beats solo3", "beats studio 3", "beats studio3",
+            "beats by dre", "beats by dr dre", "beats wireless", "beat earbuds",
+            
+            # Bose variations
+            "bose", "bose headphones", "bose quietcomfort", "bose 700", "bose qc",
+            "bose nc", "bose earbuds", "bose soundsport", "bose qc35", "bose qc45",
+            "boss headphones", "boze", "bosee", "quiet comfort", "bose 35 ii",
+            "bose qc35 ii", "bose qc 45", "bose 700 nc", "bose noise cancelling",
+            "bose quietcomfort 35", "bose quietcomfort 45", "bose sport earbuds",
+            
+            # Sony variations
+            "sony wh", "sony headphones", "sony wf", "sony xm4", "sony xm5",
+            "sony wh-1000xm4", "sony wh-1000xm5", "sony wf-1000xm4", "sony wf-1000xm5",
+            "sonny headphones", "soney", "sony x1000", "sony wh1000", "sony wf1000",
+            "sony 1000xm4", "sony 1000xm5", "sony xb900n", "sony wh-xb900n",
+            "sony whch710n", "sony wh-ch710n", "sony linkbuds", "sony earbuds",
+            
+            # General terms and other brands
+            "wireless headphones", "bluetooth earbuds", "noise cancelling",
+            "anc headphones", "true wireless", "earphones", "ear buds",
+            "sennheiser", "jabra", "jbl", "marshall", "skullcandy",
+            "samsung buds", "galaxy buds", "pixel buds", "raycon", "anker soundcore",
+            "bluetooth headset", "wireless earphones", "tws earbuds", "over ear headphones",
+            "on ear headphones", "in ear headphones", "earbuds wireless", "earphone bluetooth",
+            
+            # Additional high-end brands
+            "bang olufsen", "b&o", "bowers wilkins", "master dynamic", "audeze", "grado",
+            "focal", "beyerdynamic", "audio technica", "ath", "shure", "akg", "klipsch",
+            "bang and olufsen", "bowers & wilkins", "master & dynamic", "b and o"
+        ],
+        
+        "Keyboards": [
+            # Mechanical keyboards
+            "mechanical keyboard", "mech keyboard", "gaming keyboard", "rgb keyboard",
+            "cherry mx", "custom keyboard", "hot swap keyboard", "60% keyboard",
+            "65% keyboard", "75% keyboard", "tkl keyboard", "full size keyboard",
+            "mechancial", "mechanicl", "mech kybd", "mechanica keyboard",
+            "tenkeyless", "tenkeyless keyboard", "keeb", "mechanical keeb",
+            
+            # Switch types
+            "cherry mx red", "cherry mx blue", "cherry mx brown", "cherry mx black",
+            "cherry mx silent", "gateron switch", "kailh switch", "topre switch",
+            "box jade", "box navy", "holy panda", "zealio", "tealio", "bobagum",
+            "tactile switch", "linear switch", "clicky switch", "optical switch",
+            
+            # Popular brands
+            "logitech keyboard", "corsair keyboard", "razer keyboard", "keychron",
+            "ducky keyboard", "das keyboard", "hyperx keyboard", "steelseries keyboard",
+            "logitec", "corsare", "razor", "steel series", "keycrn", "keychrone",
+            "glorious keyboard", "gmmk", "gmmk pro", "drop keyboard", "wasd keyboard",
+            "varmilo", "leopold", "cooler master", "coolermaster", "filco", "akko",
+            
+            # Specific models
+            "logitech g915", "corsair k70", "razer huntsman", "ducky one 2",
+            "keychron k2", "anne pro", "gmmk pro", "keyboard and mouse combo",
+            "corair k95", "razr black widow", "ducky on2", "anna pro",
+            "logitech mx keys", "logitech g pro", "corsair k65", "razer blackwidow",
+            "hyperx alloy", "steelseries apex", "ducky one 3", "keychron q1", "keychron v1",
+            
+            # Wireless options
+            "wireless keyboard", "bluetooth keyboard", "wireless mechanical",
+            "2.4ghz keyboard", "usb-c keyboard", "multi-device keyboard",
+            "blutooth keyboard", "wi-fi keyboard", "usbc", "wireless gaming keyboard",
+            "low profile keyboard", "low-profile", "ultra thin keyboard", "thin keyboard",
+            
+            # Accessories
+            "keycaps", "pbt keycaps", "abs keycaps", "keyboard foam", "keyboard lube",
+            "custom keycaps", "artisan keycap", "keyboard stabs", "keyboard stabilizers",
+            "keyboard case", "keyboard plate", "keyboard pcb", "keyboard cable",
+            "coiled cable", "aviator cable", "keyboard wrist rest"
+        ],
+        
+        "Graphics Cards": [
+            # NVIDIA cards
+            "rtx 3050", "rtx 3060", "rtx 3060 ti", "rtx 3070", "rtx 3070 ti", 
+            "rtx 3080", "rtx 3080 ti", "rtx 3090", "rtx 3090 ti",
+            "rtx 4060", "rtx 4060 ti", "rtx 4070", "rtx 4070 ti", 
+            "rtx 4080", "rtx 4090", "rtx 4090 ti",
+            "geforce rtx", "nvidia gpu", "gtx 1660", "gtx 1660 super", "gtx 1660 ti",
+            "gtx 1650", "gtx 1650 super", "gtx 1050", "gtx 1050 ti", "gtx 1080", "gtx 1080 ti", "gtx 1070", "gtx 1070 ti",
+            "rtx 3080ti", "rtx 3070ti", "rtx3090", "rtx4090", "nividia",
+            "rtx thirty eighty", "rtx thirty ninety", "rtx forty ninety",
+            "nvidia card", "geforce card", "geforce gtx", "rtx card", "gtx card",
+            "gddr6", "gddr6x", "ray tracing gpu", "dlss gpu", "ai gpu",
+            
+            # AMD cards
+            "amd rx", "radeon rx", "rx 6500", "rx 6600", "rx 6600 xt", "rx 6650 xt",
+            "rx 6700", "rx 6700 xt", "rx 6750 xt", "rx 6800", "rx 6800 xt", "rx 6900 xt", "rx 6950 xt",
+            "rx 7600", "rx 7700 xt", "rx 7800 xt", "rx 7900 xt", "rx 7900 xtx",
+            "radeon gpu", "amd radeon", "rx 580", "rx 570", "rx 5700", "rx 5700 xt", "rx 5600 xt",
+            "vega 56", "vega 64", "amd vega", "radeon vega", "radeon 5000", "radeon 6000", "radeon 7000",
+            "radion", "amd gpu", "rdna 2", "rdna 3", "rx6800xt", "rx6900xt",
+            "amd card", "radeon card", "radion card", "fsr gpu",
+            
+            # Intel cards
+            "intel arc", "intel arc a770", "intel arc a750", "intel arc a580", "intel arc a380",
+            "intel gpu", "intel graphics card", "intl arc", "intel arc alchemist",
+            
+            # Brands
+            "asus gpu", "msi gpu", "evga gpu", "gigabyte gpu", "zotac gpu",
+            "asus rog gpu", "msi gaming x", "evga ftw3", "gigabyte aorus", "zotac amp",
+            "pny gpu", "sapphire gpu", "xfx gpu", "powercolor gpu", "asrock gpu",
+            "founders edition", "fe gpu", "nvidia fe", "reference card", "aib card",
+            
+            # General terms
+            "graphics card", "video card", "gpu", "gaming gpu", "mining gpu",
+            "workstation gpu", "professional gpu", "quadro", "firepro", "nvidia quadro",
+            "amd firepro", "nvidia rtx a", "nvidia a series", "compute gpu", "ai accelerator",
+            "grphics card", "grfx card", "videoscard", "vga card",
+            "dual gpu", "triple fan gpu", "water cooled gpu", "liquid cooled gpu", "hybrid gpu",
+            "overclocked gpu", "factory oc", "low profile gpu", "half height gpu", "single slot gpu"
+        ],
+        
+        "CPUs": [
+            # Intel processors
+            "intel i3", "intel i5", "intel i7", "intel i9", "core i3", "core i5", "core i7", "core i9",
+            "intel core", "intel cpu", "intel processor", "intel chip", "intel desktop cpu",
+            "i3-12100", "i3-13100", "i5-12400", "i5-12600k", "i5-13400", "i5-13600k",
+            "i7-12700k", "i7-13700k", "i9-12900k", "i9-13900k", "i9-14900k", "lga 1700", "lga 1200",
+            "intel 12th gen", "intel 13th gen", "intel 14th gen", "intel alder lake", "intel raptor lake",
+            "intel meteor lake", "intel arrow lake", "intel xeon", "intel celeron", "intel pentium",
+            "intel eye7", "intl i7", "intell", "core eye 7", "core i series",
+            
+            # AMD processors
+            "amd ryzen", "ryzen 3", "ryzen 5", "ryzen 7", "ryzen 9", "threadripper",
+            "amd cpu", "amd processor", "amd chip", "amd desktop cpu",
+            "ryzen 5600", "ryzen 5600x", "ryzen 5700x", "ryzen 5800x", "ryzen 5800x3d",
+            "ryzen 7600", "ryzen 7600x", "ryzen 7700", "ryzen 7700x", "ryzen 7800x3d",
+            "ryzen 7900x", "ryzen 7950x", "ryzen threadripper", "ryzen threadripper pro",
+            "am4 cpu", "am5 cpu", "ryzen 5000", "ryzen 7000", "ryzen 8000",
+            "amd zen 3", "amd zen 4", "amd zen 5",
+            "ryzan", "rizen", "amd ryzn", "ryen", "thred ripper", "thread ripper",
+            
+            # ARM processors
+            "arm cpu", "arm processor", "apple m1", "apple m2", "apple m3",
+            "m1 chip", "m2 chip", "m3 chip", "m1 pro", "m1 max", "m1 ultra",
+            "m2 pro", "m2 max", "m2 ultra", "m3 pro", "m3 max", "m3 ultra",
+            "qualcomm snapdragon", "snapdragon processor", "microsoft sq", "microsoft sq chip",
+            
+            # General terms
+            "processor", "cpu", "desktop cpu", "laptop cpu", "gaming cpu",
+            "workstation cpu", "server cpu", "processer", "proccessor",
+            "multi core cpu", "multi-core", "8 core", "10 core", "12 core", "16 core", "24 core", "32 core",
+            "overclocking cpu", "unlocked cpu", "high performance cpu", "budget cpu", "entry level cpu",
+            "cpu cooler", "air cooler", "liquid cooler", "aio cooler", "heatsink",
+            "cpu socket", "cpu motherboard", "cpu ram compatibility"
+        ],
+        
+        "Laptops": [
+            # MacBooks - expanded
+            "macbook", "macbook pro", "macbook air", "mac book", "macbookpro",
+            "m1 macbook", "m2 macbook", "m3 macbook", "apple laptop",
+            "mac pro", "mac air", "mackbook", "macbok", "mac book pro",
+            "macbook pro 13", "macbook pro 14", "macbook pro 16", "macbook air 13",
+            "macbook pro m1", "macbook pro m2", "macbook pro m3", "macbook air m1",
+            "macbook air m2", "macbook 2020", "macbook 2021", "macbook 2022", "macbook 2023",
+            "macbook pro 2020", "macbook pro 2021", "macbook pro 2022", "macbook pro 2023",
+            "macbook pro retina", "macbook pro touchbar", "macbook pro 13 inch",
+            "macbook pro 14 inch", "macbook pro 16 inch", "macbook air 13 inch",
+            "magsafe", "apple silicon", "apple m chip", "apple m series",
+            
+            # Gaming laptops - expanded
+            "gaming laptop", "rog laptop", "legion laptop", "msi laptop",
+            "alienware laptop", "razer blade", "asus rog", "predator laptop",
+            "gamming laptop", "rogen laptop", "alisware", "razr blade",
+            "asus rog strix", "rog zephyrus", "rog flow", "rog ally", "msi ge76",
+            "msi gs66", "msi stealth", "msi katana", "msi raider", "legion 5", "legion 5 pro",
+            "legion 7", "legion slim", "alienware m15", "alienware m16", "alienware x14", "alienware x16", "alienware x17",
+            "razer blade 14", "razer blade 15", "razer blade 16", "razer blade 17", "razer blade 18", "acer predator helios",
+            "acer nitro", "hp omen", "rtx laptop", "rtx 3060 laptop", "rtx 3070 laptop", "rtx 3080 laptop",
+            "rtx 4050 laptop", "rtx 4060 laptop", "rtx 4070 laptop", "rtx 4080 laptop", "rtx 4090 laptop",
+            "gaming notebook", "gaming pc laptop", "gamer laptop", "high performance laptop",
+            "high refresh laptop", "144hz laptop", "240hz laptop", "360hz laptop",
+            
+            # Business laptops - expanded
+            "thinkpad", "dell xps", "hp elitebook", "surface laptop",
+            "business laptop", "ultrabook", "2-in-1 laptop", "chromebook",
+            "think pad", "dell xbs", "hp elite", "surface book",
+            "thinkpad x1", "thinkpad carbon", "thinkpad extreme", "thinkpad t14", "thinkpad p1", 
+            "dell xps 13", "dell xps 15", "dell xps 17", "dell latitude", "dell precision",
+            "hp spectre", "hp envy", "hp pavilion", "hp probook", "hp zbook",
+            "surface laptop 4", "surface laptop 5", "surface book 3", "surface pro",
+            "lenovo yoga", "lenovo ideapad", "lenovo flex", "microsoft surface",
+            "asus zenbook", "asus vivobook", "acer swift", "acer aspire", "acer chromebook",
+            "samsung galaxy book", "samsung notebook", "lg gram", "huawei matebook",
+            
+            # General terms - expanded
+            "laptop computer", "notebook", "gaming notebook", "laptop pc",
+            "labtop", "lap top", "note book", "leptop", "portable computer",
+            "intel laptop", "amd laptop", "ryzen laptop", "i7 laptop",
+            "i9 laptop", "16gb ram laptop", "32gb ram laptop", "touch screen laptop",
+            "touchscreen laptop", "4k laptop", "oled laptop", "student laptop",
+            "budget laptop", "thin and light", "lightweight laptop", "ultraportable",
+            "long battery", "all day battery", "video editing laptop", "photo editing laptop",
+            "content creation laptop", "streaming laptop", "developer laptop", "programming laptop",
+            "workstation laptop", "cad laptop", "3d modeling laptop", "ai laptop",
+            "convertible laptop", "detachable laptop", "tablet laptop", "2-in-1", "2 in 1",
+            "backlit keyboard", "numpad", "numeric keypad", "fingerprint reader", "webcam",
+            "hdmi port", "usb-c", "thunderbolt", "sd card reader", "ethernet port"
+        ],
+        
+        "Monitors": [
+            # Gaming monitors
+            "gaming monitor", "144hz monitor", "165hz monitor", "240hz monitor", "360hz monitor", "390hz monitor",
+            "4k monitor", "2k monitor", "1440p monitor", "ultrawide monitor", "curved monitor",
+            "super ultrawide", "qhd monitor", "qd-oled monitor", "ips monitor", "va monitor", "tn monitor", "oled monitor",
+            "gamign monitor", "144 hz", "240 hz", "fourk monitor", "1440p", "2560x1440", "3440x1440", "3840x2160",
+            "high refresh monitor", "fast response monitor", "1ms monitor", "low input lag", "g-sync monitor", "freesync monitor",
+            "adaptive sync", "hdr monitor", "hdr400", "hdr600", "hdr1000", "displayhdr", "gaming display",
+            
+            # Brands and models
+            "lg ultragear", "lg monitor", "samsung odyssey", "samsung monitor", "asus rog monitor", "asus monitor",
+            "acer predator", "acer monitor", "dell monitor", "alienware monitor", "hp monitor", "benq monitor", "viewsonic monitor",
+            "msi monitor", "gigabyte monitor", "aoc monitor", "eve spectrum", "corsair monitor", "philips monitor",
+            "lg ultra gear", "samsuung", "rog swift", "predater monitor", "acer nitro", "dell ultrasharp",
+            
+            # Professional monitors
+            "4k professional", "color accurate monitor", "design monitor", "photo editing monitor",
+            "video editing monitor", "content creation monitor", "srgb monitor", "adobe rgb monitor",
+            "dci-p3 monitor", "rec709 monitor", "color calibrated", "professional display", "reference monitor",
+            "color acurate", "profesional monitor", "adobe rgb", "studio monitor", "production monitor",
+            "color grading monitor", "graphic design monitor", "cad monitor", "medical imaging monitor",
+            
+            # General specifications
+            "ips panel", "va panel", "tn panel", "oled panel", "mini-led", "qled", "nano ips",
+            "100% srgb", "100% adobe rgb", "100% dci-p3", "10-bit monitor", "10bit color", "8-bit+frc",
+            "vesa mount", "vesa compatible", "monitor arm", "monitor stand", "monitor riser",
+            "usb-c monitor", "thunderbolt monitor", "daisy chain", "kvm switch", "monitor hub",
+            "eye care monitor", "low blue light", "flicker free", "anti-glare", "matte display",
+            "glossy display", "borderless monitor", "frameless monitor", "slim bezel",
+            
+            # Sizes and types
+            "24 inch monitor", "27 inch monitor", "32 inch monitor", "34 inch monitor", "38 inch monitor",
+            "49 inch monitor", "24in monitor", "27in monitor", "32in monitor", "dual monitor", "triple monitor",
+            "portable monitor", "touchscreen monitor", "touch screen monitor", "drawing monitor", "pen display",
+            "smart monitor", "tv monitor", "gaming tv", "external monitor", "second screen"
+        ],
+        
+        "SSDs": [
+            # Popular brands
+            "samsung ssd", "samsung evo", "samsung pro", "samsung 970", "samsung 980", "samsung 990",
+            "crucial ssd", "crucial mx500", "crucial p3", "crucial p5", "crucial p5 plus",
+            "western digital ssd", "wd ssd", "wd black", "wd blue", "sandisk ssd", "sandisk extreme",
+            "kingston ssd", "kingston fury", "kingston nv1", "kingston kc3000", "sk hynix ssd",
+            "corsair ssd", "corsair mp600", "sabrent ssd", "sabrent rocket", "teamgroup ssd", "addlink ssd",
+            "samsuung ssd", "cruicial", "westurn digital", "sanddisc", "kingson", "kioxia",
+            
+            # Storage capacities
+            "128gb ssd", "256gb ssd", "512gb ssd", "500gb ssd", "1tb ssd", "2tb ssd", "4tb ssd", "8tb ssd",
+            "128 gb ssd", "256 gb ssd", "512 gb ssd", "500 gb ssd", "1 tb ssd", "2 tb ssd", "4 tb ssd", "8 tb ssd",
+            "1 terabyte ssd", "2 terabyte ssd", "half terabyte ssd", "quarter terabyte ssd",
+            
+            # Types and interfaces
+            "pcie ssd", "pcie 3.0 ssd", "pcie 4.0 ssd", "pcie 5.0 ssd", "gen3 ssd", "gen4 ssd", "gen5 ssd",
+            "nvme ssd", "nvme m.2", "m.2 ssd", "m.2 2280", "m.2 2242", "m.2 22110", "sata ssd", "sata iii",
+            "msata", "u.2 ssd", "add-in card ssd", "aic ssd", "m key", "b key", "b+m key",
+            "tlc ssd", "mlc ssd", "qlc ssd", "slc ssd", "3d nand", "v-nand",
+            
+            # External and portable
+            "portable ssd", "external ssd", "usb ssd", "usb-c ssd", "thunderbolt ssd", "gaming ssd",
+            "rugged ssd", "waterproof ssd", "shockproof ssd", "durable ssd", "backup ssd",
+            "solid state", "solid state drive", "solidsate drive", "solid-state drive",
+            
+            # Performance metrics
+            "high speed ssd", "fast ssd", "high performance ssd", "high endurance ssd",
+            "ssd cache", "ssd boot drive", "ssd game drive", "ssd upgrade",
+            "read speed", "write speed", "transfer speed", "iops", "tbw", "terabytes written",
+            "heatsink ssd", "heatspreader", "ps5 compatible", "ps5 ssd", "xbox series x ssd"
+        ],
+        
+        "Routers": [
+            # Popular brands
+            "netgear router", "netgear nighthawk", "netgear orbi", "tp link router", "tp-link archer",
+            "asus router", "asus rog router", "asus zen wifi", "linksys router", "linksys velop",
+            "google nest wifi", "google wifi", "amazon eero", "eero router", "ubiquiti router",
+            "ubiquiti unifi", "ubiquiti amplifi", "netgeer", "tp-link", "tplink", "linksis", "googl wifi",
+            "d-link router", "belkin router", "arris router", "motorola router", "synology router",
+            
+            # Technologies
+            "wifi 6 router", "wifi 6e router", "wifi 7 router", "ax router", "be router", "ac router",
+            "802.11ax router", "802.11be router", "802.11ac router", "mesh wifi", "mesh network", "mesh system",
+            "gaming router", "5g router", "lte router", "4g router", "tri band router", "dual band router",
+            "wi-fi 6", "wi-fi 6e", "wi-fi 7", "wfi router", "wifi raouter", "roter", "ruter",
+            "gigabit router", "multi-gigabit", "2.5g router", "10g router", "10 gigabit",
+            "vpn router", "secure router", "parental control router", "smart router",
+            
+            # Models
+            "archer ax73", "archer ax90", "archer ax6000", "nighthawk rax80", "nighthawk rax120",
+            "asus rt-ax88u", "asus rt-ax86u", "asus gt-ax11000", "linksys mr9600", "orbi rbk852",
+            "eero pro 6", "eero pro 6e", "google wifi pack", "nest wifi pro", "deco x60", "deco xe75",
+            "rog rapture", "rog strix", "netgear raxe500", "ubiquiti dream router", "synology rt6600ax",
+            
+            # Features and specifications
+            "router modem combo", "modem router", "gateway router", "all in one router", "router access point",
+            "long range router", "high power router", "coverage router", "whole home wifi",
+            "smart home router", "iot router", "alexa compatible router", "homekit router",
+            "mu-mimo router", "ofdma router", "beamforming", "high gain antennas", "external antennas",
+            "qos router", "traffic prioritization", "bandwidth management", "guest network",
+            "port forwarding", "dmz router", "firewall router", "secure dns", "wpa3 router",
+            
+            # Accessories and add-ons
+            "wifi extender", "range extender", "wifi booster", "wifi repeater", "access point",
+            "ethernet cable", "cat 6 cable", "cat 7 cable", "cat 8 cable", "router power adapter",
+            "router mount", "wall mount", "ceiling mount", "router cooling", "router fan"
+        ],
+        
+        "Vintage Tech": [
+            # Classic audio devices
+            "walkman", "sony walkman", "cassette walkman", "cd walkman", "minidisc walkman",
+            "discman", "sony discman", "portable cd player", "minidisc player", "dat player",
+            "ipod classic", "ipod nano", "ipod shuffle", "ipod mini", "ipod touch", "ipod video",
+            "mp3 player", "creative zen", "zune", "sandisk sansa", "iriver", "archos",
+            "walk man", "disc man", "i pod", "classic ipod", "ipod 160gb", "ipod 80gb", "ipod 30gb",
+            "vintage audio", "portable cassette", "portable stereo", "boombox", "ghetto blaster",
+            
+            # Retro gaming handhelds
+            "gameboy", "game boy", "gameboy color", "gameboy advance", "gameboy pocket", "gameboy micro",
+            "game boy color", "game boy advance", "game boy pocket", "game boy micro", "gba", "gbc",
+            "nintendo ds", "nintendo ds lite", "nintendo dsi", "nintendo 3ds", "nintendo 2ds",
+            "psp", "psp 1000", "psp 2000", "psp 3000", "psp go", "ps vita", "playstation portable",
+            "playstation vita", "sega game gear", "atari lynx", "neo geo pocket", "wonderswan",
+            "game boy advance sp", "nintendo gameboy", "nintendo handhelds", "retro handheld",
+            
+            # Vintage computers and consoles
+            "commodore 64", "commodore 128", "commodore vic-20", "commodore amiga", "amiga 500",
+            "amiga 1200", "atari 800", "atari st", "atari 2600", "atari 5200", "atari 7800", "atari jaguar",
+            "nes", "nintendo nes", "famicom", "super nintendo", "snes", "super famicom", "nintendo 64", "n64",
+            "sega genesis", "sega mega drive", "sega master system", "sega saturn", "sega dreamcast",
+            "neo geo", "neo geo aes", "turbografx", "pc engine", "3do", "philips cdi", "vectrex",
+            "comodore", "amega", "nintendo 64", "super nintendo", "nintendos", "segga", "vintage console",
+            "retro console", "vintage computer", "retro computer", "vintage game system",
+            
+            # Vintage phones and PDAs
+            "nokia 3310", "nokia 3390", "nokia 8110", "nokia n-gage", "nokia n95", "nokia 6310",
+            "motorola razr", "motorola startac", "motorola dynatac", "motorola microtac", "flip phone",
+            "blackberry", "blackberry bold", "blackberry curve", "blackberry pearl", "blackberry passport",
+            "palm pilot", "palm treo", "palm pre", "handspring visor", "compaq ipaq", "hp ipaq",
+            "nokia brick", "razor phone", "black berry", "vintage cell", "vintage mobile", "pda",
+            "sidekick phone", "t-mobile sidekick", "old smartphone", "early smartphone", "brick phone",
+            
+            # Vintage cameras and photo equipment
+            "polaroid camera", "polaroid 600", "polaroid sx-70", "polaroid spectra", "polaroid land camera",
+            "kodak camera", "kodak instamatic", "kodak disc", "kodak brownie", "kodak retina",
+            "film camera", "35mm camera", "slr camera", "rangefinder camera", "twin lens reflex",
+            "medium format camera", "large format camera", "instant camera", "analog camera", "vintage camera",
+            "lomography", "lomo camera", "holga", "diana camera", "disposable camera", "film photography",
+            "darkroom equipment", "photo enlarger", "developing tank", "vintage tripod", "vintage flash"
         ]
+    },
     
-    @staticmethod
-    def _keyboards_keywords() -> List[str]:
-        return [
-            "keyboard", "keyboards", "mechanical keyboard", "gaming keyboard", "typing keyboard",
-            "wired keyboard", "wireless keyboard", "bluetooth keyboard", "rgb keyboard", "backlit keyboard",
-            "cherry mx", "mechanical switches", "gaming keyboard rgb", "mechanical gaming keyboard",
-            "keyboard switches", "tkl keyboard", "tenkeyless", "full size keyboard", "60% keyboard",
-            "65% keyboard", "75% keyboard", "keycaps", "pbt keycaps", "custom keyboard", "hotswap keyboard", 
-            "hot swap keyboard", "hot-swap keyboard", "clicky keyboard", "tactile keyboard", "linear switches",
-            "clicky switches", "tactile switches", "logitech keyboard", "razer keyboard", "corsair keyboard", 
-            "steelseries keyboard", "hyperx keyboard", "ducky keyboard", "anne pro keyboard", "keychron", 
-            "royal kludge", "rk keyboard", "gmmk keyboard", "custom coiled cable", "keyboard kit",
-            "low profile keyboard", "ergonomic keyboard", "split keyboard", "keyboard wrist rest",
-            "keyboard foam", "keyboard lube", "keyboard stabs", "stabilizers", "keyboard mod",
-            "keyboard plate", "pcb keyboard", "keyborad", "keboard", "keybord", "mechanicle keyboard",
-            "keybaord", "keyboar", "keeboard", "gammers keyboard", "mechboard", "mech keeb", "keeb", 
-            "typist keyboard", "programmer keyboard", "gatetron switches", "cherry switches", 
-            "cherry blue", "cherry brown", "cherry red", "gateron", "kailh", "outemu", "zealio",
-            "holy panda", "glorious panda", "akko keyboard", "kbd keyboard", "varmilo", "leopold keyboard"
+    "Collectibles": {
+        "Pokémon": [
+            # Card types
+            "pokemon cards", "pokemon card lot", "pokemon booster box", "pokemon tcg",
+            "pokemon etb", "pokemon elite trainer box", "pokemon graded cards",
+            "charizard card", "pikachu card", "japanese pokemon cards", "pokemon psa",
+            "pokemom cards", "pokmon", "pokeman", "pocket monsters", "pokemon collection",
+            "pokemon sealed", "pokemon wotc", "pokemon shadowless", "pokemon 1st edition",
+            
+            # Specific sets
+            "base set", "shadowless", "1st edition", "neo genesis", "team rocket",
+            "hidden fates", "shining fates", "evolving skies", "brilliant stars", "silver tempest",
+            "crown zenith", "scarlet violet", "fusion strike", "chilling reign", "vivid voltage",
+            "first edition", "1st ed", "baseset", "x y cards", "sun moon", "black white",
+            "cosmic eclipse", "sword shield", "burning shadows", "ancient origins", "xy evolutions",
+            
+            # PSA grades
+            "psa 10", "psa 9", "psa 8", "psa 7", "beckett graded", "cgc graded", "bgs graded",
+            "gem mint", "mint condition", "near mint", "bgs 9.5", "cgc 9", "sgc graded",
+            "graded pokemon", "slabbed pokemon", "graded card", "mint pokemon", "nm pokemon",
+            
+            # Popular characters
+            "charizard vmax", "rainbow charizard", "pikachu vmax", "pikachu v", "mewtwo v",
+            "blastoise", "venusaur", "umbreon", "lugia", "rayquaza", "mew", "eevee", "gengar",
+            "charzard", "pickachu", "mewto", "blastios", "vingosaur", "reyquaza", "pikchu",
+            "alt art pokemon", "full art pokemon", "pokemon ex", "pokemon gx", "pokemon v",
+            "pokemon vmax", "pokemon vstar", "hyper rare pokemon", "ultra rare pokemon",
+            
+            # Card types and terminology
+            "holo pokemon", "reverse holo", "secret rare", "ultra rare", "full art",
+            "rainbow rare", "alternate art", "gold card", "trainer card", "energy card",
+            "pokemon promos", "black star promo", "prerelease pokemon", "jumbo card",
+            "error card", "miscut", "misprint", "proxy card", "fake pokemon"
+        ],
+        
+        "Magic: The Gathering": [
+            # Product types
+            "mtg cards", "magic cards", "mtg booster box", "commander deck", "magic the gathering",
+            "mtg bundle", "collector booster", "set booster", "draft booster", "mtg sealed",
+            "magik cards", "mgic the gathering", "magic gathering", "tcg magic", "mtg lot",
+            "mtg collection", "mtg deck", "mtg prerelease", "mtg fat pack", "mtg theme booster",
+            
+            # Sets and editions
+            "alpha mtg", "beta mtg", "unlimited", "revised", "arabian nights",
+            "antiquities", "legends", "modern horizons", "commander legends", "dominaria",
+            "innistrad", "ravnica", "zendikar", "mirrodin", "kamigawa", "phyrexia",
+            "alpa", "betta", "arbian nights", "modrn horizons", "4th edition", "5th edition",
+            "new phyrexia", "innestrad", "strixhaven", "eldraine", "kaldheim",
+            
+            # Card types and terminology
+            "mtg rare", "mtg mythic", "mtg uncommon", "mtg common", "foil mtg", "etched foil",
+            "showcase frame", "borderless mtg", "extended art", "alternate art", "full art",
+            "mtg proxy", "mtg alter", "mtg misprint", "mtg miscut", "mtg signed",
+            "magic planeswalker", "magic creature", "magic instant", "magic sorcery", "magic artifact",
+            
+            # Popular cards
+            "black lotus", "mox sapphire", "dual lands", "force of will", "mox pearl", "mox ruby",
+            "wurmcoil engine", "tarmogoyf", "jace the mind sculptor", "volcanic island", "underground sea",
+            "blak lotus", "mox saphire", "duel lands", "taramgoyf", "jayce", "lili of the veil",
+            "goyf", "snapcaster", "cyclonic rift", "fetch lands", "shock lands", "reserve list",
+            
+            # Formats
+            "mtg standard", "mtg modern", "mtg legacy", "mtg vintage", "mtg commander",
+            "mtg edh", "mtg draft", "mtg sealed", "mtg brawl", "mtg pioneer",
+            "mtg pauper", "mtg cube", "mtg limited", "mtg constructed"
+        ],
+        
+        "Yu-Gi-Oh": [
+            # Product types
+            "yugioh cards", "yu-gi-oh cards", "yugioh deck", "structure deck",
+            "yugioh booster box", "yugioh tin", "yugioh mega tin", "yugioh collection",
+            "yugioih", "yu gi oh", "duelist cards", "ygo cards", "konami cards",
+            "yugioh core set", "yugioh starter deck", "yugioh special edition", "yugioh speed duel",
+            
+            # Popular cards
+            "blue eyes white dragon", "dark magician", "red eyes black dragon", "exodia",
+            "pot of greed", "monster reborn", "egyptian god cards", "obelisk", "slifer", "ra",
+            "blue eye", "dark magican", "red eys", "egodia", "blue eyes ultimate", "dark magician girl",
+            "kaiba", "yugi", "joey", "ash blossom", "ghost belle", "effect veiler", "hand trap",
+            
+            # Sets and rarities
+            "lob", "legend of blue eyes", "metal raiders", "magic ruler", "pharaoh's servant",
+            "ghost rare", "starlight rare", "ultimate rare", "prismatic secret", "collector's rare",
+            "ultra rare", "secret rare", "super rare", "common", "gold rare", "platinum rare",
+            "legand of blue eye", "metal raider", "gost rare", "maximum gold", "battles of legend",
+            
+            # Card types and terminology
+            "yugioh monster", "yugioh spell", "yugioh trap", "effect monster", "normal monster",
+            "fusion monster", "synchro monster", "xyz monster", "link monster", "pendulum monster",
+            "ritual monster", "tuner monster", "token card", "field spell", "counter trap",
+            "first edition", "unlimited edition", "graded yugioh", "psa yugioh", "misprint yugioh"
+        ],
+        
+        "Funko Pops": [
+            # General
+            "funko pop", "pop vinyl", "funko soda", "funko exclusive", "funko lot",
+            "chase funko", "flocked funko", "metallic funko", "gitd funko", "glow in dark funko",
+            "funco pop", "funko pops", "pop figure", "bobblehead", "vinyl figure",
+            "funko collection", "funko display", "funko protector", "funko pop lot", "funko grail",
+            
+            # Popular lines
+            "marvel funko", "dc funko", "star wars funko", "anime funko", "disney funko",
+            "dbz funko", "naruto funko", "horror funko", "game of thrones funko", "stranger things funko",
+            "mrvel funko", "starwars funko", "dragonball funko", "harry potter funko", "pokemon funko",
+            "pop animation", "pop movies", "pop television", "pop games", "pop rocks", "pop ad icons",
+            
+            # Exclusives
+            "comic con exclusive", "sdcc funko", "nycc funko", "eccc funko", "wondercon funko",
+            "target exclusive", "walmart exclusive", "hot topic exclusive", "box lunch exclusive",
+            "fye exclusive", "gamestop exclusive", "7-eleven exclusive", "amazon exclusive",
+            "san diego comic con", "new york comic con", "emerald city", "funko shop exclusive",
+            
+            # Special types
+            "funko pop ride", "funko pop town", "funko pop moment", "funko pop deluxe",
+            "funko pop 2-pack", "funko pop 3-pack", "jumbo funko", "super sized funko",
+            "pocket pop", "pop keychain", "pop pin", "art series", "cover art",
+            "diamond collection", "chrome funko", "gold funko", "holiday funko", "convention exclusive"
+        ],
+        
+        "Sports Cards": [
+            # Types
+            "basketball cards", "football cards", "baseball cards", "soccer cards", "hockey cards",
+            "nba cards", "nfl cards", "mlb cards", "rookie cards", "sports card lot",
+            "basket ball cards", "foot ball cards", "base ball cards", "sports card collection",
+            "vintage sports cards", "graded sports cards", "sealed sports cards", "wax pack", "box break",
+            
+            # Brands
+            "panini prizm", "topps chrome", "bowman chrome", "upper deck", "fleer ultra",
+            "select", "mosaic", "optic", "donruss", "hoops", "chronicles", "leaf", "sage",
+            "panini prism", "tops chrome", "upperdeck", "mosaik", "donruss elite", "contenders",
+            "immaculate", "national treasures", "definitive", "gold standard", "spectra", "noir",
+            
+            # Popular players
+            "michael jordan", "lebron james", "tom brady", "patrick mahomes", "aaron rodgers",
+            "luka doncic", "shohei ohtani", "mike trout", "connor mcdavid", "wayne gretzky",
+            "jordon cards", "labron james", "mahommes", "mcdavid cards", "giannis", "steph curry",
+            "zion williamson", "ja morant", "trae young", "kobe bryant", "aaron judge", "vladimir guerrero",
+            
+            # Card types and terminology
+            "autograph card", "auto card", "jersey card", "patch card", "relic card", "memorabilia card",
+            "1/1 card", "one of one", "parallel card", "insert card", "refractor", "numbered card",
+            "short print", "sp card", "ssp card", "ultra rare", "case hit", "hobby exclusive",
+            "retail exclusive", "on card auto", "sticker auto", "rc card", "rpa card"
+        ],
+        
+        "Comic Books": [
+            # Publishers
+            "marvel comics", "dc comics", "image comics", "dark horse comics", "boom studios",
+            "idw comics", "vertigo comics", "valiant comics", "dynamite comics", "archie comics",
+            "marval comics", "detective comics", "independant comics", "alternative comics", "manga",
+            
+            # Popular titles
+            "amazing spider-man", "detective comics", "batman", "superman", "x-men", 
+            "avengers", "fantastic four", "iron man", "captain america", "hulk", "thor",
+            "wonder woman", "flash", "aquaman", "green lantern", "daredevil", "punisher",
+            "walking dead", "invincible", "saga", "hellboy", "spawn", "sandman", "watchmen",
+            
+            # Eras and grades
+            "golden age comics", "silver age comics", "bronze age comics", "copper age comics", 
+            "modern age comics", "cgc graded", "cbcs graded", "pgx graded", "raw comics",
+            "cgc 9.8", "cgc 9.6", "cgc 9.4", "cbcs 9.8", "graded comic", "slabbed comic",
+            
+            # Key issues and terminology
+            "key issue", "first appearance", "origin issue", "death issue", "variant cover",
+            "sketch cover", "virgin cover", "exclusive cover", "retailer incentive", "chase cover",
+            "comic run", "comic lot", "comic collection", "back issues", "floppy comics",
+            "trade paperback", "graphic novel", "omnibus", "hardcover comic", "absolute edition",
+            "signature series", "remarked comic", "signed comic", "comic art", "original art"
+        ],
+        
+        "Action Figures": [
+            # Brands
+            "mcfarlane figures", "neca figures", "hasbro figures", "mattel figures", "bandai figures",
+            "hot toys", "sideshow", "mezco", "s.h. figuarts", "mafex", "figma", "good smile",
+            "nendoroid", "funko action figure", "marvel legends", "star wars black series",
+            "gi joe classified", "marvel select", "dc multiverse", "transformers", "masters of the universe",
+            
+            # Types and franchises
+            "1/6 scale figure", "1/12 scale figure", "1/4 scale figure", "6 inch figure", "3.75 inch figure",
+            "marvel figure", "dc figure", "star wars figure", "wwe figure", "nba figure", "nfl figure",
+            "anime figure", "mcu figure", "tmnt figure", "power rangers figure", "godzilla figure",
+            "predator figure", "alien figure", "robocop figure", "terminator figure", "horror figure",
+            
+            # Condition and terminology
+            "mib figure", "nib figure", "mosc figure", "loose figure", "complete figure", "moc figure",
+            "mint in box", "mint on card", "sealed figure", "action figure lot", "figure collection",
+            "vintage figure", "retro figure", "modern figure", "articulated figure", "poseable figure",
+            "exclusive figure", "convention exclusive", "store exclusive", "chase figure", "variant figure",
+            "action figure accessories", "figure stand", "figure base", "figure display", "diorama"
+        ],
+        
+        "LEGO Sets": [
+            # Themes
+            "lego star wars", "lego harry potter", "lego marvel", "lego dc", "lego city",
+            "lego technic", "lego creator", "lego architecture", "lego ideas", "lego friends",
+            "lego ninjago", "lego castle", "lego space", "lego pirates", "lego train",
+            "lego modular", "lego speed champions", "lego jurassic world", "lego minecraft", "lego disney",
+            
+            # Set types
+            "lego set", "lego kit", "lego collection", "lego bundle", "lego lot",
+            "lego sealed", "lego new", "lego used", "lego complete", "lego incomplete",
+            "lego mib", "lego nisb", "lego nib", "lego vintage", "lego retired",
+            "lego exclusive", "lego limited edition", "lego ucs", "lego moc", "lego instructions",
+            
+            # Parts and specifics
+            "lego minifigure", "lego minifig", "lego figure", "lego parts", "lego pieces",
+            "lego brick", "lego plate", "lego tile", "lego baseplate", "lego building",
+            "lego vehicle", "lego ship", "lego aircraft", "lego train", "lego space ship",
+            "lego castle", "lego house", "lego building", "lego diorama", "lego scene",
+            
+            # Specific popular sets
+            "lego millennium falcon", "lego death star", "lego hogwarts", "lego batmobile", "lego ecto-1",
+            "lego rollercoaster", "lego saturn v", "lego titanic", "lego colosseum", "lego taj mahal",
+            "millenium falcon", "millennium falcon", "death star", "imperial star destroyer", "at-at",
+            "hogwarts castle", "diagon alley", "daily bugle", "batcave", "ghostbusters"
         ]
+    },
     
-    @staticmethod
-    def _graphics_cards_keywords() -> List[str]:
-        return [
-            "graphics card", "gpu", "video card", "graphic card", "graphics processing unit",
-            "nvidia", "amd", "radeon", "geforce", "rtx", "gtx", "rx", "gaming gpu", 
-            "rtx 3090", "rtx 3080", "rtx 3070", "rtx 3060", "rtx 4090", "rtx 4080", "rtx 4070",
-            "rx 6900", "rx 6800", "rx 6700", "rx 6600", "rx 7900", "rx 7800", "rx 7700",
-            "graphics adapter", "display adapter", "graphics accelerator", "vga card", 
-            "gfx card", "grafics card", "grafik card", "grphics card", "graphics bord",
-            "rtx3090", "rtx3080", "rtx3070", "rtx3060", "rtx4090", "rtx4080", "rtx4070",
-            "nvidia rtx", "nvidia geforce", "amd radeon", "nvidia gpu", "amd gpu", 
-            "gaming graphics card", "mining gpu", "crypto mining gpu", "rendering gpu",
-            "video editing gpu", "graphics card 8gb", "graphics card 12gb", "graphics card 16gb",
-            "gddr6 graphics card", "display card", "pcie gpu", "pci express graphics",
-            "nvidia founders edition", "aix", "graphics card bundle", "gpu with warranty",
-            "geforce rtx ti", "nvidia cuda", "opencl gpu", "directx 12 gpu", "graphics card for gaming",
-            "discrete graphics", "graphics card for pc", "graphics card desktop",
-            "rtx 3090 ti", "rtx 3080 ti", "rtx 3070 ti", "rtx 3060 ti", "rtx 4090 ti", "rtx 4080 ti", "rtx 4070 ti",
-            "rtx 2080", "rtx 2070", "rtx 2060", "rtx 2080 ti", "rtx 2070 super", "rtx 2080 super",
-            "gtx 1080", "gtx 1070", "gtx 1660", "gtx 1650", "gtx 1080 ti", "gtx 1070 ti", "gtx 1660 super",
-            "gtx 1660 ti", "gtx 1650 super", "gtx 980", "gtx 970", "gtx 960", "gtx 980 ti", "radeon 6900 xt",
-            "radeon 6800 xt", "radeon 6700 xt", "radeon 6600 xt", "radeon 7900 xtx", "radeon 7900 xt", 
-            "aorus", "asus rog", "asus tuf", "evga", "msi gaming", "gigabyte", "zotac", "pny",
-            "reference card", "blower style", "open air cooler", "water cooled gpu", "hybrid cooled gpu"
+    "Vintage Clothing": {
+        "Jordans": [
+            # Models
+            "jordan 1", "jordan 1 high", "jordan 1 mid", "jordan 1 low", "jordan 1 retro", "aj1", "air jordan 1",
+            "jordan 2", "jordan 3", "jordan 4", "jordan 5", "jordan 6", "jordan 7", "jordan 8",
+            "jordan 9", "jordan 10", "jordan 11", "jordan 12", "jordan 13", "jordan 14",
+            "jordon 1", "jordans 1", "airjordan", "air jordans", "retro jordans", "og jordans",
+            
+            # Colorways
+            "chicago jordan", "chicago 1", "bred jordan", "bred 1", "bred 4", "bred 11",
+            "royal jordan", "royal 1", "shadow jordan", "shadow 1", "black cement 3", "white cement 3",
+            "black cat 4", "fire red 4", "metallic 5", "infrared 6", "bordeaux 7", "aqua 8",
+            "space jam 11", "flu game 12", "he got game 13", "last shot 14", "concord 11",
+            "chicago 1s", "bread 1s", "royle blue", "shadows jordan", "cement 3s", "black toe",
+            
+            # Sizes and conditions
+            "size 7 jordan", "size 8 jordan", "size 8.5 jordan", "size 9 jordan", "size 9.5 jordan",
+            "size 10 jordan", "size 10.5 jordan", "size 11 jordan", "size 11.5 jordan", "size 12 jordan",
+            "size 13 jordan", "size 14 jordan", "gs jordan", "youth jordan", "women jordan",
+            "deadstock jordan", "ds jordan", "vnds jordan", "jordan lot", "used jordan", "worn jordan",
+            "sz 10", "sz 11", "ded stock", "dead stock", "og all", "replacement box"
+        ],
+        
+        "Nike Dunks": [
+            # Models
+            "nike dunk low", "nike dunk high", "dunk sb", "nike sb dunk", "nike dunk mid",
+            "dunk low pro", "dunk high pro", "dunk low retro", "dunk high retro", "dunk premium",
+            "nike dunks low", "nike dnk", "sb dunks", "dunks sb", "nike skate", "nike skateboarding",
+            
+            # Popular colorways
+            "panda dunk", "next nature", "vintage green", "championship red", "coast dunk",
+            "chicago dunk", "syracuse dunk", "unc dunk", "michigan dunk", "spartan green",
+            "travis scott dunk", "strangelove dunk", "off white dunk", "grateful dead dunk",
+            "safari dunk", "chunky dunky", "ray gun dunk", "plum dunk", "purple lobster",
+            "panda dunks", "chicgo dunk", "syrucuse", "trav scott", "university blue", "brazil dunk",
+            
+            # Sizes and conditions
+            "size 7 dunk", "size 8 dunk", "size 8.5 dunk", "size 9 dunk", "size 9.5 dunk",
+            "size 10 dunk", "size 10.5 dunk", "size 11 dunk", "size 11.5 dunk", "size 12 dunk",
+            "size 13 dunk", "size 14 dunk", "gs dunk", "youth dunk", "women dunk",
+            "deadstock dunk", "ds dunk", "vnds dunk", "dunk lot", "used dunk", "worn dunk",
+            "special box dunk", "dunk with special box", "dunk og all", "dunk no box"
+        ],
+        
+        "Vintage Tees": [
+            # Types
+            "vintage band tee", "vintage rap tee", "vintage movie tee", "vintage anime tee",
+            "vintage sports tee", "vintage concert tee", "bootleg tee", "vintage graphic tee",
+            "vintge band t shirt", "vintage t shirt", "t-shirt vintage", "rock tee", "metal band tee",
+            "hip hop tee", "promo tee", "tour tee", "movie promo shirt", "single stitch",
+            
+            # Brands
+            "vintage nike", "vintage adidas", "vintage champion", "vintage tommy hilfiger",
+            "vintage ralph lauren", "vintage harley davidson", "vintage nascar", "vintage stussy",
+            "vintage supreme", "vintage carhartt", "vintage guess", "vintage levis", "vintage starter",
+            "vintge nike", "vintage addidas", "champions vintage", "tommmy", "polo vintage",
+            "vintage band", "vintage sports", "vintage rock", "vintage rap", "vintage logo",
+            
+            # Decades and styles
+            "90s vintage", "80s vintage", "70s vintage", "y2k vintage", "00s vintage",
+            "90s tee", "80s tee", "70s tee", "nineties vintage", "eighties", "y2k tee",
+            "grunge tee", "skate tee", "surf tee", "rave tee", "club tee", "festival tee",
+            "distressed vintage", "faded vintage", "worn in", "vintage look", "retro tee",
+            
+            # Popular bands and themes
+            "nirvana tee", "metallica tee", "tupac tee", "biggie tee", "rolling stones tee",
+            "grateful dead tee", "led zeppelin tee", "acdc tee", "guns n roses tee", "pink floyd tee",
+            "beastie boys tee", "wu tang tee", "nwa tee", "run dmc tee", "public enemy tee",
+            "iron maiden tee", "slayer tee", "megadeth tee", "snoop dogg tee", "dr dre tee"
+        ],
+        
+        "Band Tees": [
+            # Rock bands
+            "nirvana shirt", "metallica shirt", "guns n roses shirt", "rolling stones shirt", "led zeppelin shirt",
+            "pink floyd shirt", "acdc shirt", "aerosmith shirt", "queen shirt", "the who shirt",
+            "black sabbath shirt", "deep purple shirt", "iron maiden shirt", "judas priest shirt", "motorhead shirt",
+            "kiss shirt", "ramones shirt", "clash shirt", "sex pistols shirt", "dead kennedys shirt",
+            
+            # Metal bands
+            "slayer shirt", "megadeth shirt", "anthrax shirt", "pantera shirt", "slipknot shirt",
+            "tool shirt", "system of a down shirt", "korn shirt", "disturbed shirt", "rammstein shirt",
+            "cannibal corpse shirt", "death shirt", "morbid angel shirt", "obituary shirt", "deicide shirt",
+            "black metal shirt", "death metal shirt", "thrash metal shirt", "doom metal shirt", "nu metal shirt",
+            
+            # Hip hop and rap
+            "tupac shirt", "biggie shirt", "wu tang shirt", "nwa shirt", "run dmc shirt",
+            "public enemy shirt", "beastie boys shirt", "eminem shirt", "dr dre shirt", "snoop dogg shirt",
+            "ice cube shirt", "eazy e shirt", "50 cent shirt", "jay z shirt", "nas shirt",
+            "wu-tang clan", "notorious big", "2pac shirt", "a tribe called quest", "de la soul",
+            
+            # Pop and alternative
+            "beatles shirt", "michael jackson shirt", "madonna shirt", "prince shirt", "david bowie shirt",
+            "elton john shirt", "bob marley shirt", "fleetwood mac shirt", "radiohead shirt", "coldplay shirt",
+            "green day shirt", "blink 182 shirt", "red hot chili peppers shirt", "foo fighters shirt", "pearl jam shirt",
+            "soundgarden shirt", "alice in chains shirt", "stone temple pilots shirt", "rage against the machine shirt",
+            
+            # Types and styles
+            "band tee", "concert shirt", "tour shirt", "vintage band tee", "bootleg band tee",
+            "rock tee", "metal tee", "rap tee", "hip hop shirt", "official merchandise",
+            "band merch", "retro band shirt", "graphic band tee", "music shirt", "artist shirt",
+            "concert merch", "promo tee", "rare band shirt", "limited edition band shirt"
+        ],
+        
+        "Denim Jackets": [
+            # Brands
+            "levis denim jacket", "wrangler denim jacket", "lee denim jacket", "gap denim jacket",
+            "calvin klein denim jacket", "tommy hilfiger denim jacket", "guess denim jacket", "diesel denim jacket",
+            "carhartt denim jacket", "dickies denim jacket", "ralph lauren denim jacket", "true religion denim jacket",
+            "vintage levis", "levis trucker", "levis type 3", "levis type 2", "levis type 1",
+            "japanese denim", "raw denim", "selvedge denim", "selvage denim", "sanforized denim",
+            
+            # Types and styles
+            "jean jacket", "denim coat", "trucker jacket", "sherpa denim", "lined denim jacket",
+            "oversized denim jacket", "cropped denim jacket", "distressed denim jacket", "acid wash denim jacket",
+            "stone wash denim jacket", "bleached denim jacket", "faded denim jacket", "embroidered denim jacket",
+            "patched denim jacket", "custom denim jacket", "painted denim jacket", "studded denim jacket",
+            "black denim jacket", "blue denim jacket", "dark wash denim", "light wash denim", "medium wash denim",
+            
+            # Vintage and eras
+            "vintage denim jacket", "80s denim jacket", "90s denim jacket", "70s denim jacket", "y2k denim jacket",
+            "retro denim jacket", "vintage jean jacket", "vintage trucker jacket", "made in usa denim",
+            "big e levis", "single stitch denim", "red tab levis", "orange tab levis", "501 levis",
+            "type iii jacket", "type ii jacket", "type i jacket", "blanket lined denim", "heritage denim",
+            
+            # Themes and decorations
+            "biker denim jacket", "punk denim jacket", "rock denim jacket", "grunge denim jacket", "skate denim jacket",
+            "western denim jacket", "workwear denim jacket", "motorcycle denim jacket", "denim chore coat",
+            "patched denim", "battle jacket", "kutte jacket", "band patches", "pin jacket", "chain jacket",
+            "embellished denim", "beaded denim", "rhinestone denim", "graffiti denim", "airbrushed denim"
+        ],
+        
+        "Designer Brands": [
+            # Luxury fashion houses
+            "gucci", "louis vuitton", "chanel", "prada", "dior", "versace", "fendi",
+            "balenciaga", "saint laurent", "ysl", "valentino", "burberry", "hermes", "celine",
+            "givenchy", "bottega veneta", "loewe", "balmain", "alexander mcqueen", "miu miu",
+            "guccy", "luis vuitton", "loui vitton", "chanell", "prado", "dioor", "versachi",
+            "fende", "balenciga", "yves saint laurent", "valintino", "burbury", "hermes paris",
+            
+            # Contemporary designer brands
+            "off white", "fear of god", "vetements", "palm angels", "amiri", "rick owens",
+            "comme des garcons", "acne studios", "maison margiela", "raf simons", "thom browne",
+            "stone island", "bape", "supreme", "kith", "palace", "chrome hearts", "vlone",
+            "off-white", "fog essentials", "vetemens", "cdg", "margeila", "mastermind japan",
+            
+            # Popular designer items
+            "designer bag", "designer wallet", "designer belt", "designer shoes", "designer glasses",
+            "designer sunglasses", "designer dress", "designer coat", "designer jacket", "designer denim",
+            "designer tee", "designer hoodie", "designer sweater", "designer polo", "designer shirt",
+            "designer watch", "designer jewelry", "designer scarf", "designer hat", "designer sneakers",
+            
+            # Authentication and condition
+            "authentic designer", "guaranteed authentic", "authentic gucci", "authentic louis vuitton",
+            "real designer", "fake designer", "replica designer", "counterfeit designer", "designer authentication",
+            "new with tags", "nwt designer", "new with box", "used designer", "vintage designer",
+            "rare designer", "limited edition designer", "runway piece", "sample piece", "archive designer",
+            
+            # Designer specifics
+            "louis vuitton monogram", "lv damier", "lv epi", "lv canvas", "gucci gg", "gucci monogram",
+            "chanel caviar", "chanel lambskin", "chanel flap", "hermes birkin", "hermes kelly", "hermes constance",
+            "prada saffiano", "prada nylon", "fendi zucca", "fendi peekaboo", "burberry check", "burberry nova check",
+            "dior saddle", "dior book tote", "ysl sunset", "ysl loulou", "balenciaga city", "balenciaga triple s"
+        ],
+        
+        "Carhartt": [
+            # Jacket and coat styles
+            "carhartt detroit jacket", "carhartt chore coat", "carhartt active jacket", "carhartt duck jacket",
+            "carhartt wip jacket", "carhartt quilted jacket", "carhartt lined jacket", "carhartt vest",
+            "carhartt montana jacket", "carhartt bartlett jacket", "carhartt michigan coat", "carhartt og detroit",
+            "detroit jacket", "chore coat", "duck jacket", "carhartt j130", "carhartt j131", "carhartt j140",
+            
+            # Pants and overalls
+            "carhartt double knee", "carhartt carpenter pants", "carhartt work pants", "carhartt dungarees",
+            "carhartt jeans", "carhartt overalls", "carhartt bib overalls", "carhartt cargo pants",
+            "carhartt duck pants", "carhartt canvas pants", "carhartt b01", "carhartt b03", "carhartt b136",
+            "double knee pants", "double front", "duck canvas pants", "firm duck", "loose fit", "relaxed fit",
+            
+            # Shirts
+            "carhartt shirt", "carhartt tee", "carhartt long sleeve", "carhartt henley", "carhartt pocket tee",
+            "carhartt work shirt", "carhartt button up", "carhartt flannel", "carhartt chamois", "carhartt thermal",
+            "carhartt heavyweight", "carhartt logo shirt", "carhartt graphic tee", "carhartt pocket logo",
+            "work shirt", "pocket tee", "heavyweight tee", "k87 tee", "k124 shirt", "relaxed fit shirt",
+            
+            # Hoodies and sweats
+            "carhartt hoodie", "carhartt sweatshirt", "carhartt pullover", "carhartt crewneck", "carhartt zip up",
+            "carhartt thermal sweatshirt", "carhartt rain defender", "carhartt midweight", "carhartt heavyweight",
+            "carhartt logo hoodie", "carhartt script logo", "carhartt wip hoodie", "carhartt essentials",
+            "hooded sweatshirt", "zip hoodie", "quarter zip", "full zip", "k121 hoodie", "k288 sweatshirt",
+            
+            # Accessories and other items
+            "carhartt beanie", "carhartt hat", "carhartt watch hat", "carhartt cap", "carhartt bucket hat",
+            "carhartt backpack", "carhartt bag", "carhartt belt", "carhartt wallet", "carhartt gloves",
+            "carhartt socks", "carhartt bandana", "carhartt scarf", "carhartt boots", "carhartt shoes",
+            "watch hat", "acrylic hat", "a18 beanie", "canvas bag", "legacy bag", "work gloves",
+            
+            # Colors and materials
+            "carhartt brown", "carhartt duck brown", "carhartt black", "carhartt navy", "carhartt hamilton brown",
+            "carhartt tan", "carhartt olive", "carhartt camo", "carhartt realtree", "carhartt mossy oak",
+            "carhartt duck canvas", "carhartt cotton", "carhartt denim", "carhartt corduroy", "carhartt flannel",
+            "carhartt sherpa", "carhartt quilted", "carhartt blanket lined", "carhartt fleece", "carhartt thermal",
+            
+            # Vintage and special editions
+            "vintage carhartt", "made in usa carhartt", "carhartt wip", "carhartt work in progress",
+            "carhartt heritage", "carhartt limited edition", "carhartt collaboration", "carhartt x",
+            "carhartt streetwear", "carhartt archive", "carhartt 90s", "carhartt 80s", "carhartt deadstock",
+            "union made carhartt", "big c logo", "j97 detroit", "santa fe jacket", "weathered duck", "broken in"
+        ],
+        
+        "Patagonia": [
+            # Jacket and fleece styles
+            "patagonia fleece", "patagonia synchilla", "patagonia retro x", "patagonia retro pile",
+            "patagonia snap t", "patagonia better sweater", "patagonia down jacket", "patagonia nano puff",
+            "patagonia torrentshell", "patagonia rain jacket", "patagonia baggies jacket", "patagonia vest",
+            "synchilla fleece", "retro pile", "snap-t pullover", "r1 fleece", "r2 fleece", "down sweater",
+            "nano air", "micro puff", "torrentshell rain", "houdini jacket", "triolet jacket", "das parka",
+            
+            # Pants and shorts
+            "patagonia baggies", "patagonia baggies shorts", "patagonia stand up shorts", "patagonia quandary pants",
+            "patagonia venga rock pants", "patagonia gi pants", "patagonia hiking pants", "patagonia board shorts",
+            "patagonia sweatpants", "patagonia all-wear shorts", "patagonia performance pants", "patagonia snow pants",
+            "baggies 5\"", "baggies 7\"", "stand up shorts", "duck pants", "hemp pants", "capilene pants",
+            "guidewater pants", "happy hike pants", "dirt craft pants", "powder bowl pants", "untracked pants",
+            
+            # Shirts and tops
+            "patagonia tee", "patagonia t-shirt", "patagonia graphic tee", "patagonia long sleeve",
+            "patagonia flannel", "patagonia button up", "patagonia polo", "patagonia organic cotton",
+            "patagonia capilene", "patagonia base layer", "patagonia sun shirt", "patagonia responsibili-tee",
+            "patagonia p-6 logo", "patagonia fitz roy", "patagonia flying fish", "fjord flannel", "pima cotton",
+            "capilene cool", "capilene thermal", "capilene midweight", "tropic comfort", "sun stretch shirt",
+            
+            # Bags and accessories
+            "patagonia backpack", "patagonia black hole", "patagonia duffel", "patagonia tote",
+            "patagonia daypack", "patagonia sling", "patagonia messenger bag", "patagonia hip pack",
+            "patagonia hat", "patagonia beanie", "patagonia cap", "patagonia gloves", "patagonia neck gaiter",
+            "black hole backpack", "black hole duffel", "atom sling", "refugio pack", "altvia pack",
+            "ultralight black hole", "stealth sling", "arbor pack", "duckbill cap", "fitz roy trout hat",
+            
+            # Vintage and special editions
+            "vintage patagonia", "made in usa patagonia", "patagonia retro", "patagonia vintage",
+            "patagonia rare", "patagonia deadstock", "patagonia limited edition", "patagonia collaboration",
+            "patagonia early 90s", "patagonia late 80s", "patagonia classic", "patagonia yvon chouinard",
+            "deep pile fleece", "pile fleece", "summit pack", "mars jacket", "guide jacket", "legacy collection",
+            "worn wear", "silent down", "pataloha", "mars jacket", "legacy collection", "patented snap-t"
         ]
+    },
     
-    @staticmethod
-    def _cpus_keywords() -> List[str]:
-        return [
-            "cpu", "processor", "central processing unit", "intel cpu", "amd cpu",
-            "intel core", "amd ryzen", "intel i7", "intel i9", "intel i5", "intel i3",
-            "ryzen 9", "ryzen 7", "ryzen 5", "ryzen 3", "threadripper", "intel xeon",
-            "intel core i7", "intel core i9", "intel core i5", "amd processor",
-            "processor for desktop", "processor for gaming", "processor for pc",
-            "i7 processor", "i9 processor", "i5 processor", "cpu intel", "cpu amd",
-            "amd cpu processor", "intel cpu processor", "boxed processor", "oem processor",
-            "unlocked processor", "lga 1700", "lga 1200", "am4", "am5", "cpu with cooler",
-            "cpu bundle", "cpu motherboard combo", "core i7", "core i9", "core i5",
-            "ryzen 7000", "ryzen 5000", "intel 13th gen", "intel 12th gen", "intel 11th gen",
-            "cpu 8 core", "cpu 10 core", "cpu 12 core", "cpu 16 core", "multicore cpu",
-            "high performance cpu", "budget cpu", "server cpu", "workstation cpu", "desktop cpu",
-            "gaming cpu", "overclockable cpu", "socket am4", "socket am5", "k series cpu",
-            "x series cpu", "cpu with warranty", "processor sealed", "retail cpu", "computer brain",
-            "13th gen", "12th gen", "3d vcache", "ryzn", "rizen", "intel celeron", "intel pentium",
-            "amd athlon", "amd epyc", "intel alderlake", "intel raptorlake", "intel cometlake",
-            "amd zen", "amd zen2", "amd zen3", "amd zen4", "amd zen 4", "x3d", "processor tray",
-            "ryzen 7950x", "ryzen 7900x", "ryzen 7800x3d", "ryzen 7700x", "ryzen 7600x",
-            "ryzen 5950x", "ryzen 5900x", "ryzen 5800x", "ryzen 5700x", "ryzen 5600x",
-            "intel 13900k", "intel 13700k", "intel 13600k", "intel 13900kf", "intel 13700kf",
-            "intel 13600kf", "intel 12900k", "intel 12700k", "intel 12600k", "intel 12900ks",
-            "intel 14900k", "intel 14700k", "intel 14600k", "apu", "igpu", "integrated graphics"
+    "Antiques": {
+        "Coins": [
+            # US coins
+            "morgan dollar", "peace dollar", "buffalo nickel", "mercury dime", "barber dime",
+            "kennedy half dollar", "walking liberty", "indian head penny", "wheat penny", "steel penny",
+            "large cent", "flying eagle cent", "two cent piece", "three cent piece", "half dime",
+            "seated liberty", "shield nickel", "v nickel", "barber quarter", "standing liberty quarter",
+            "washington quarter", "silver quarter", "silver dime", "eisenhower dollar", "susan b anthony",
+            
+            # World coins
+            "british sovereign", "canadian maple leaf", "mexican peso", "chinese panda", "french franc",
+            "german mark", "italian lira", "spanish peseta", "russian ruble", "japanese yen",
+            "australian dollar", "south african krugerrand", "austrian schilling", "dutch guilder", "swiss franc",
+            "roman coin", "greek coin", "byzantine coin", "hammered coin", "milled coin",
+            
+            # Coin types and terminology
+            "gold coin", "silver coin", "copper coin", "bronze coin", "platinum coin",
+            "proof coin", "uncirculated coin", "mint state coin", "brilliant uncirculated", "bu coin",
+            "ms70 coin", "ngc graded", "pcgs graded", "anacs graded", "slabbed coin",
+            "error coin", "key date", "semi key", "double die", "off center", "clipped planchet",
+            "mint error", "type coin", "year set", "mint set", "proof set", "commemorative coin",
+            
+            # Coin collections
+            "coin collection", "coin lot", "coin album", "coin folder", "coin roll",
+            "coin hoard", "coin stash", "coin estate", "coin inheritance", "numismatic collection",
+            "ancient coins", "medieval coins", "colonial coins", "foreign coins", "world coins",
+            "copper coins", "silver coins", "gold coins", "bullion coins", "investment coins"
+        ],
+        
+        "Watches": [
+            # Luxury brands
+            "rolex watch", "omega watch", "patek philippe", "audemars piguet", "vacheron constantin",
+            "jaeger lecoultre", "iwc watch", "panerai watch", "cartier watch", "breitling watch",
+            "tudor watch", "tag heuer watch", "longines watch", "zenith watch", "grand seiko",
+            "blancpain watch", "ulysse nardin", "chopard watch", "hublot watch", "bulgari watch",
+            
+            # Vintage and mid-range brands
+            "vintage watch", "seiko watch", "citizen watch", "tissot watch", "oris watch",
+            "hamilton watch", "bulova watch", "timex watch", "casio watch", "waltham watch",
+            "elgin watch", "gruen watch", "benrus watch", "zodiac watch", "movado watch",
+            "universal geneve", "enicar watch", "glycine watch", "doxa watch", "wittnauer watch",
+            
+            # Watch types and terminology
+            "mechanical watch", "automatic watch", "manual wind watch", "quartz watch", "solar watch",
+            "chronograph watch", "diver watch", "pilot watch", "field watch", "dress watch",
+            "military watch", "railroad watch", "pocket watch", "wrist watch", "smart watch",
+            "vintage timepiece", "luxury timepiece", "luxury watch", "swiss made", "swiss movement",
+            
+            # Watch components and characteristics
+            "watch movement", "watch dial", "watch hands", "watch strap", "watch bracelet",
+            "leather strap", "nato strap", "jubilee bracelet", "oyster bracelet", "president bracelet",
+            "sapphire crystal", "acrylic crystal", "mineral crystal", "screw down crown", "helium escape valve",
+            "water resistant", "waterproof watch", "luminous dial", "patina dial", "tropical dial",
+            
+            # Watch collections and models
+            "rolex submariner", "rolex datejust", "rolex daytona", "rolex gmt", "rolex explorer",
+            "omega speedmaster", "omega seamaster", "omega constellation", "patek nautilus", "patek aquanaut",
+            "audemars royal oak", "cartier tank", "cartier santos", "iwc portuguese", "panerai luminor",
+            "tudor black bay", "breitling navitimer", "tag heuer carrera", "seiko skx", "grand seiko snowflake"
+        ],
+        
+        "Cameras": [
+            # Camera brands
+            "leica camera", "hasselblad camera", "rolleiflex camera", "nikon camera", "canon camera",
+            "minolta camera", "olympus camera", "pentax camera", "mamiya camera", "contax camera",
+            "bronica camera", "zeiss camera", "voigtlander camera", "polaroid camera", "kodak camera",
+            "linhof camera", "sinar camera", "deardorff camera", "graflex camera", "horseman camera",
+            
+            # Camera types
+            "rangefinder camera", "slr camera", "tlr camera", "view camera", "large format camera",
+            "medium format camera", "35mm camera", "half frame camera", "instant camera", "folding camera",
+            "box camera", "point and shoot", "compact camera", "panoramic camera", "stereo camera",
+            "toy camera", "disposable camera", "pinhole camera", "spy camera", "underwater camera",
+            
+            # Film formats and types
+            "film camera", "35mm film", "120 film", "220 film", "4x5 film", "8x10 film",
+            "sheet film", "roll film", "polaroid film", "instax film", "pack film",
+            "black and white film", "color film", "slide film", "negative film", "infrared film",
+            "reversal film", "kodachrome", "ektachrome", "tri-x", "hp5", "portra", "velvia",
+            
+            # Camera lenses
+            "camera lens", "prime lens", "zoom lens", "wide angle lens", "telephoto lens",
+            "normal lens", "macro lens", "fisheye lens", "portrait lens", "leica lens",
+            "zeiss lens", "voigtlander lens", "nikkor lens", "canon lens", "minolta lens",
+            "mamiya lens", "hasselblad lens", "large format lens", "anamorphic lens", "cine lens",
+            
+            # Camera accessories and equipment
+            "camera bag", "camera case", "camera strap", "lens cap", "lens hood",
+            "tripod", "monopod", "light meter", "flash", "cable release",
+            "film back", "focusing screen", "ground glass", "darkcloth", "loupe",
+            "developing tank", "film scanner", "enlarger", "darkroom equipment", "camera repair kit"
+        ],
+        
+        "Typewriters": [
+            # Typewriter brands
+            "remington typewriter", "underwood typewriter", "royal typewriter", "smith corona typewriter",
+            "olivetti typewriter", "olympia typewriter", "hermes typewriter", "adler typewriter",
+            "imperial typewriter", "continental typewriter", "facit typewriter", "erika typewriter",
+            "corona typewriter", "hammond typewriter", "ibm typewriter", "selectric typewriter",
+            "brother typewriter", "torpedo typewriter", "triumph typewriter", "wanderer typewriter",
+            
+            # Typewriter types and eras
+            "antique typewriter", "vintage typewriter", "manual typewriter", "portable typewriter",
+            "standard typewriter", "desktop typewriter", "electric typewriter", "electronic typewriter",
+            "mechanical typewriter", "qwerty typewriter", "dvorak typewriter", "index typewriter",
+            "victorian typewriter", "art deco typewriter", "mid century typewriter", "1920s typewriter",
+            "1930s typewriter", "1940s typewriter", "1950s typewriter", "1960s typewriter",
+            
+            # Typewriter features and components
+            "typewriter ribbon", "typewriter keys", "typewriter platen", "typewriter carriage",
+            "type bars", "typewriter bell", "shift key", "space bar", "return lever", "margin stops",
+            "ribbon selector", "tabulator", "paper bail", "line spacing", "backspace key",
+            "ribbon spool", "typebar guide", "type segment", "type basket", "keyboard",
+            
+            # Typewriter condition and accessories
+            "working typewriter", "functional typewriter", "typewriter repair", "typewriter restoration",
+            "typewriter case", "typewriter cover", "typewriter manual", "typewriter desk", "typewriter table",
+            "typewriter stand", "typewriter ribbon tin", "typewriter eraser", "typewriter brush",
+            "typewriter oil", "typewriter cleaning kit", "typewriter service", "typewriter parts",
+            "typewriter collector", "typewriter lot", "rare typewriter"
+        ],
+        
+        "Vinyl Records": [
+            # Record formats
+            "vinyl record", "lp record", "45 rpm record", "78 rpm record", "33 rpm record",
+            "7 inch record", "10 inch record", "12 inch record", "picture disc", "colored vinyl",
+            "vinyl album", "ep record", "single record", "shellac record", "acetate record",
+            "flexi disc", "box set", "vinyl collection", "record collection", "vinyl lot",
+            
+            # Musical genres
+            "rock vinyl", "jazz vinyl", "blues vinyl", "soul vinyl", "r&b vinyl",
+            "hip hop vinyl", "rap vinyl", "country vinyl", "folk vinyl", "classical vinyl",
+            "pop vinyl", "punk vinyl", "metal vinyl", "progressive rock vinyl", "psychedelic vinyl",
+            "soundtrack vinyl", "ambient vinyl", "electronic vinyl", "indie vinyl", "alternative vinyl",
+            
+            # Condition and grading
+            "mint vinyl", "near mint vinyl", "vg+ vinyl", "vg vinyl", "g+ vinyl",
+            "sealed vinyl", "unopened vinyl", "unplayed vinyl", "first pressing", "original pressing",
+            "reissue vinyl", "repress vinyl", "180 gram vinyl", "200 gram vinyl", "half speed master",
+            "direct to disc", "audiophile vinyl", "mono record", "stereo record", "quadraphonic record",
+            
+            # Record labels and terminology
+            "rare vinyl", "collectible vinyl", "vintage vinyl", "antique records", "promo copy",
+            "white label", "test pressing", "bootleg vinyl", "limited edition", "gatefold cover",
+            "blue note records", "verve records", "columbia records", "rca records", "atlantic records",
+            "decca records", "motown records", "chess records", "stax records", "sub pop records",
+            
+            # Record care and equipment
+            "record player", "turntable", "vinyl cleaner", "record cleaner", "record brush",
+            "record sleeve", "inner sleeve", "outer sleeve", "record jacket", "record album cover",
+            "record storage", "record crate", "record cabinet", "record stand", "record display",
+            "vinyl cleaning kit", "record weight", "record clamp", "record mat", "dust cover"
+        ],
+        
+        "Vintage Tools": [
+            # Hand tool types
+            "vintage hand plane", "antique hand plane", "stanley plane", "block plane", "smoothing plane",
+            "vintage saw", "handsaw", "backsaw", "crosscut saw", "rip saw", "dovetail saw",
+            "vintage chisel", "antique chisel", "socket chisel", "tang chisel", "mortise chisel",
+            "vintage hammer", "antique hammer", "claw hammer", "ball peen hammer", "sledge hammer",
+            "vintage drill", "hand drill", "brace drill", "breast drill", "push drill", "bit and brace",
+            
+            # Tool brands
+            "stanley tools", "disston tools", "millers falls", "sargent tools", "ohio tools",
+            "union tools", "keen kutter", "blue grass tools", "witherby tools", "buck brothers",
+            "lie nielsen", "bailey tools", "bedrock plane", "irwin tools", "craftsman tools",
+            "fulton tools", "dunlap tools", "vaughan tools", "plumb tools", "estwing tools",
+            
+            # Woodworking tools
+            "woodworking tools", "carpentry tools", "cabinetmaker tools", "joiner tools", "timber framing tools",
+            "wood plane", "wood chisel", "drawknife", "spokeshave", "adze tool",
+            "gouge tool", "carving tool", "marking gauge", "mortise gauge", "try square",
+            "combination square", "bevel gauge", "miter box", "saw bench", "workbench",
+            
+            # Metalworking tools
+            "blacksmith tools", "forge tools", "anvil", "vise", "machinist tools", 
+            "bench vise", "leg vise", "post vise", "tool post", "metal lathe",
+            "tin snips", "metal shears", "rivet tool", "tongs", "hammer and tongs",
+            "metalworking hammer", "forge hammer", "sledge hammer", "ball-peen hammer", "cross-peen hammer",
+            
+            # Measurement and layout tools
+            "vintage ruler", "folding ruler", "carpenter rule", "boxwood rule", "stanley rule",
+            "vintage level", "spirit level", "plumb bob", "chalk line", "trammel points",
+            "caliper tool", "divider tool", "compass tool", "marking knife", "scratch awl",
+            "vintage tape measure", "measuring tools", "layout tools", "machinist square", "framing square"
+        ],
+        
+        "Old Maps": [
+            # Map types
+            "antique map", "vintage map", "old map", "hand drawn map", "manuscript map",
+            "world map", "continent map", "country map", "state map", "city map",
+            "road map", "railway map", "nautical map", "sea chart", "celestial map",
+            "star map", "topographical map", "geological map", "military map", "battle map",
+            
+            # Map eras
+            "medieval map", "renaissance map", "18th century map", "19th century map", "early 20th century map",
+            "victorian map", "edwardian map", "colonial map", "post-colonial map", "civil war map",
+            "world war I map", "world war II map", "cold war map", "depression era map", "pre-war map",
+            "mappa mundi", "ptolemaic map", "portolan chart", "explorers map", "discovery map",
+            
+            # Map makers and publishers
+            "rand mcnally map", "national geographic map", "ordnance survey map", "sanborn map", "usgs map",
+            "michelin map", "bartholomew map", "stanford map", "johnston map", "tallis map",
+            "speed map", "ortelius map", "mercator map", "blaeu map", "visscher map",
+            "mitchell map", "colton map", "h.c. tunison map", "cram map", "hammond map",
+            
+            # Map regions and subjects
+            "european map", "american map", "asian map", "african map", "pacific map",
+            "north america map", "south america map", "central america map", "caribbean map", "arctic map",
+            "london map", "paris map", "new york map", "rome map", "tokyo map",
+            "western hemisphere", "eastern hemisphere", "northern hemisphere", "southern hemisphere", "equatorial map",
+            
+            # Map formats and characteristics
+            "folding map", "wall map", "pocket map", "atlas map", "globe map",
+            "map book", "map collection", "map portfolio", "map set", "map series",
+            "color map", "black and white map", "relief map", "political map", "physical map",
+            "historical map", "commemorative map", "propaganda map", "pictorial map", "bird's-eye view"
         ]
+    },
     
-    @staticmethod
-    def _laptops_keywords() -> List[str]:
-        return [
-            "laptop", "notebook", "laptops", "laptop computer", "portable computer",
-            "gaming laptop", "ultrabook", "macbook", "mackbook", "chromebook",
-            "dell laptop", "hp laptop", "lenovo laptop", "asus laptop", "acer laptop",
-            "msi laptop", "razer laptop", "alienware", "thinkpad", "macbook pro",
-            "macbook air", "labtop", "lapptop", "notbook", "mac book", "mac book pro",
-            "gameing laptop", "labtops", "laptop pc", "2-in-1 laptop", "touch screen laptop",
-            "convertible laptop", "thin laptop", "lightweight laptop", "ultraportable",
-            "budget laptop", "student laptop", "business laptop", "workstation laptop",
-            "windows laptop", "linux laptop", "macos laptop", "intel laptop", "amd laptop",
-            "i7 laptop", "i9 laptop", "i5 laptop", "ryzen laptop", "core i7", "core i5",
-            "laptop with ssd", "laptop with 16gb ram", "4k laptop", "high performance laptop",
-            "laptop for gaming", "laptop for video editing", "laptop for programming",
-            "laptop for college", "refurbished laptop", "used laptop", "like new laptop",
-            "laptop bundle", "laptop with warranty", "laptop with accessories", "laptop lot",
-            "apple m1", "apple m2", "apple m3", "apple silicon", "macbook m1", "macbook m2",
-            "laptop 32gb ram", "laptop 64gb ram", "laptop 1tb ssd", "laptop 2tb ssd",
-            "gaming notebook", "rtx laptop", "radeon laptop", "nvidia laptop", "intel arc laptop",
-            "laptop deal", "laptop sale", "laptop discount", "open box laptop", "sealed laptop",
-            "laptop new", "laptop screen", "laptop battery", "laptop charger", "laptop case",
-            "laptop backpack", "laptop sleeve", "laptop stand", "laptop cooling pad",
-            "laptop docking station", "laptop port replicator", "laptop external gpu",
-            "laptop carrying case", "laptop skin", "laptop decal", "laptop sticker"
+    "Gaming": {
+        "Consoles": [
+            # Nintendo consoles
+            "nintendo switch", "nintendo switch lite", "nintendo switch oled", "nintendo wii", "nintendo wii u",
+            "nintendo gamecube", "nintendo 64", "super nintendo", "super nes", "snes", "nes", "nintendo nes",
+            "gameboy", "gameboy color", "gameboy advance", "gba", "nintendo ds", "nintendo 3ds", "nintendo 2ds",
+            "nintende switch", "nintnedo 64", "n64", "supernintendo", "super famicom", "nes classic", "snes classic",
+            
+            # Sony consoles
+            "playstation", "playstation 1", "ps1", "psone", "playstation 2", "ps2", "playstation 3", "ps3",
+            "playstation 4", "ps4", "playstation 4 pro", "playstation 5", "ps5", "playstation 5 digital",
+            "psp", "psp 1000", "psp 2000", "psp 3000", "psp go", "ps vita", "playstation vita", "ps tv",
+            "playstaton", "play station", "ps4 slim", "ps4 pro", "ps5 disc", "ps5 digital", "playstaton portable",
+            
+            # Microsoft consoles
+            "xbox", "xbox original", "xbox 360", "xbox 360 slim", "xbox 360 e", "xbox one", "xbox one s", 
+            "xbox one x", "xbox series x", "xbox series s", "xbox elite", "xbox limited edition",
+            "x box", "exbox", "xbox1", "xbone", "xbox 1", "xbox series", "xsx", "xss",
+            
+            # Retro consoles
+            "atari 2600", "atari 5200", "atari 7800", "atari jaguar", "sega genesis", "sega mega drive",
+            "sega master system", "sega saturn", "sega dreamcast", "neo geo", "neo geo aes", "neo geo mvs",
+            "turbografx 16", "pc engine", "3do", "philips cdi", "vectrex", "intellivision", "colecovision",
+            "atari", "atari system", "sega", "segga", "genesis", "megadrive", "dreamcst", "turbo grafx",
+            
+            # Modern retro consoles
+            "retron", "retron 5", "retron 77", "analogue nt", "analogue super nt", "analogue mega sg",
+            "polymega", "retrousb avs", "retro gaming console", "mini console", "classic console",
+            "nes mini", "snes mini", "playstation classic", "sega genesis mini", "pc engine mini",
+            "turbografx mini", "neo geo mini", "arcade1up", "evercade", "retro console", "handheld retro"
+        ],
+        
+        "Game Controllers": [
+            # Nintendo controllers
+            "nintendo switch pro controller", "switch pro controller", "joy con", "joy-con", "joycon",
+            "wii remote", "wiimote", "wii nunchuck", "wii classic controller", "wii u gamepad",
+            "gamecube controller", "n64 controller", "super nintendo controller", "snes controller",
+            "nes controller", "nintendo 64 controller", "joy con grip", "nintendo pro controller",
+            
+            # PlayStation controllers
+            "playstation controller", "ps1 controller", "ps2 controller", "ps3 controller", "ps4 controller",
+            "ps5 controller", "dualsense controller", "dualshock controller", "dualshock 4", "dualshock 3",
+            "dualshock 2", "dualshock 1", "playstation move", "ps move", "ps5 dualsense", "ps4 dualshock",
+            "duel shock", "dual shock", "ps controller", "playstation joystick", "playstation wheel",
+            
+            # Xbox controllers
+            "xbox controller", "xbox one controller", "xbox series controller", "xbox 360 controller",
+            "xbox duke controller", "xbox elite controller", "xbox paddle controller", "xbox adaptive controller",
+            "xbox wireless controller", "xbox wired controller", "xbox s controller", "xbox original controller",
+            "x box controller", "xbox remote", "xbone controller", "xbx controller", "xbox gamepad",
+            
+            # Third-party controllers
+            "third party controller", "aftermarket controller", "hori controller", "madcatz controller",
+            "pdp controller", "powera controller", "razer controller", "scuf controller", "thrustmaster controller",
+            "logitech controller", "8bitdo controller", "retro-bit controller", "hyperkin controller",
+            "arcade stick", "fight stick", "fighting controller", "racing wheel", "rock band controller",
+            
+            # Accessories and types
+            "wireless controller", "wired controller", "bluetooth controller", "usb controller", "rf controller",
+            "gamepad", "joystick", "arcade stick", "steering wheel", "guitar controller",
+            "dance pad", "light gun", "vr controller", "motion controller", "flight stick",
+            "controller adapter", "controller converter", "battery pack", "charging dock", "controller skin"
+        ],
+        
+        "Rare Games": [
+            # Nintendo rare games
+            "earthbound snes", "chrono trigger", "little samson", "panic restaurant", "stadium events",
+            "super mario rpg", "conker's bad fur day", "fire emblem path of radiance", "mega man x3", "mega man 7",
+            "pokemon emerald", "pokemon crystal", "pokemon heartgold", "pokemon soulsilver", "pokemon box",
+            "paper mario thousand year door", "metroid prime trilogy", "golden sun", "chibi robo", "path of radiance",
+            
+            # PlayStation rare games
+            "suikoden ii", "valkyrie profile", "kuon", "rule of rose", "haunting ground",
+            "silent hill shattered memories", "persona 2", "tales of destiny", "klonoa", "misadventures of tron bonne",
+            "jojo's bizarre adventure", "blood will tell", "echo night", "dragon quest vii", "revelations persona",
+            "xenogears", "einhander", "tomba", "wild arms", "mega man legends 2",
+            
+            # Xbox rare games
+            "steel battalion", "jurassic park operation genesis", "stubbs the zombie", "panzer dragoon orta",
+            "phantom dust", "otogi", "outrun 2006 coast 2 coast", "oddworld stranger's wrath", "metal wolf chaos",
+            "jet set radio future", "blinx 2", "conker live and reloaded", "blood wake", "breakdown",
+            "futurama", "grabbed by the ghoulies", "gun valkyrie", "ikaruga", "phantom crash",
+            
+            # Sega rare games
+            "panzer dragoon saga", "panzer dragoon zwei", "shining force iii", "magic knight rayearth",
+            "burning rangers", "astal", "albert odyssey", "dragon force", "guardian heroes",
+            "lunar silver star story", "lunar eternal blue", "popful mail", "snatcher", "keio flying squadron",
+            "crusader of centy", "ninja princess", "eliminate down", "lords of thunder", "pier solar",
+            
+            # General rare games
+            "sealed video game", "factory sealed game", "complete in box", "cib game", "mint condition game",
+            "new old stock game", "game lot", "game collection", "rare game", "valuable game",
+            "obscure game", "limited release", "japan exclusive", "pal exclusive", "ntsc exclusive",
+            "collector's edition", "limited edition", "promotional copy", "not for resale", "prototype game"
+        ],
+        
+        "Arcade Machines": [
+            # Arcade cabinet types
+            "arcade cabinet", "arcade machine", "arcade game", "upright arcade", "cocktail arcade",
+            "mini arcade", "bartop arcade", "pedestal arcade", "candy cabinet", "vewlix cabinet",
+            "astro city cabinet", "new astro city", "blast city cabinet", "egret cabinet", "taito cabinet",
+            "arcade1up", "countercade", "arcade marquee", "arcade control panel", "arcade monitor",
+            
+            # Popular arcade games
+            "pac-man arcade", "ms pac-man arcade", "galaga arcade", "donkey kong arcade", "street fighter arcade",
+            "mortal kombat arcade", "nba jam arcade", "space invaders arcade", "asteroids arcade", "centipede arcade",
+            "defender arcade", "dig dug arcade", "frogger arcade", "galaxian arcade", "joust arcade",
+            "mario bros arcade", "missile command arcade", "pole position arcade", "q*bert arcade", "robotron arcade",
+            
+            # Arcade components
+            "arcade joystick", "arcade buttons", "arcade trackball", "arcade spinner", "arcade yoke",
+            "arcade monitor", "arcade crt", "arcade pcb", "jamma board", "jamma harness",
+            "arcade power supply", "arcade marquee", "arcade bezel", "arcade t-molding", "arcade coin door",
+            "arcade coin mech", "arcade control panel", "arcade artwork", "arcade side art", "arcade kick plate",
+            
+            # Arcade manufacturers and terminology
+            "atari arcade", "namco arcade", "midway arcade", "konami arcade", "taito arcade",
+            "sega arcade", "capcom arcade", "nintendo arcade", "williams arcade", "gottlieb arcade",
+            "neo geo mvs", "jamma arcade", "mame arcade", "multi game arcade", "multicade",
+            "original arcade", "vintage arcade", "golden age arcade", "classic arcade", "retro arcade",
+            
+            # Arcade-related items
+            "arcade restoration", "arcade repair", "arcade parts", "arcade manual", "arcade schematics",
+            "arcade collector", "arcade auction", "arcade showroom", "arcade warehouse", "arcade room",
+            "gameroom", "game room", "arcade artwork", "arcade decal", "arcade sticker",
+            "arcade controller", "arcade stick", "arcade cabinet kit", "diy arcade", "mame cabinet"
+        ],
+        
+        "Handhelds": [
+            # Nintendo handhelds
+            "gameboy", "game boy", "gameboy color", "gameboy advance", "gameboy advance sp", "gameboy micro",
+            "nintendo ds", "nintendo ds lite", "nintendo dsi", "nintendo dsi xl", "nintendo 3ds",
+            "nintendo 3ds xl", "new nintendo 3ds", "new nintendo 3ds xl", "nintendo 2ds", "nintendo 2ds xl",
+            "gba", "gba sp", "gbc", "gbm", "game boy pocket", "game boy light", "ds", "dsl", "n3ds",
+            
+            # Sony handhelds
+            "psp", "psp 1000", "psp 2000", "psp 3000", "psp go", "psp street", "playstation portable",
+            "ps vita", "ps vita slim", "playstation vita", "ps tv", "playstation tv", "vita", "psvita",
+            "psp fat", "psp slim", "psp brite", "ps vita oled", "ps vita lcd", "pch-1000", "pch-2000",
+            
+            # Sega handhelds
+            "game gear", "sega game gear", "sega nomad", "sega genesis nomad", "sega genesis portable",
+            "sega vmm", "vmm", "visual memory unit", "vmu", "sega master gear", "genesis portable",
+            "sega portable", "sega handheld", "portable genesis", "sonic handheld", "game gear micro",
+            
+            # Other vintage handhelds
+            "atari lynx", "neo geo pocket", "neo geo pocket color", "wonderswan", "wonderswan color",
+            "game.com", "tiger electronics", "mattel electronics", "coleco handheld", "bandai lcd game",
+            "game & watch", "game and watch", "pokemon mini", "pokemin", "pokemini", "digimon",
+            "tamagotchi", "virtual pet", "giga pet", "nano pet", "digital pet", "electronic pet",
+            
+            # Modern handhelds
+            "steam deck", "valve steam deck", "rog ally", "asus rog ally", "ayaneo", "ayaneo air",
+            "ayaneo 2", "gpd win", "gpd win 2", "gpd win 3", "gpd win max", "onexplayer", "onexplayer mini",
+            "retroid pocket", "anbernic", "rg351", "rg552", "miyoo mini", "powkiddy", "handheld pc",
+            "gaming handheld", "portable pc", "windows handheld", "emulation handheld", "android handheld"
+        ],
+        
+        "Gaming Headsets": [
+            # Brands and models
+            "astro gaming headset", "astro a40", "astro a50", "hyperx headset", "hyperx cloud", "hyperx cloud 2",
+            "razer headset", "razer kraken", "razer blackshark", "logitech headset", "logitech g pro", "logitech g733",
+            "steelseries headset", "steelseries arctis", "arctis 7", "arctis pro", "corsair headset", "corsair void",
+            "corsair virtuoso", "sennheiser gaming", "sennheiser gsp", "audio technica gaming", "turtle beach headset",
+            
+            # Features and types
+            "wireless gaming headset", "wired gaming headset", "wireless headphones", "wired headphones",
+            "7.1 surround", "surround sound", "spatial audio", "noise cancelling", "gaming microphone",
+            "detachable microphone", "retractable microphone", "boom mic", "rgb headset", "programmable headset",
+            "lightweight headset", "comfort headset", "memory foam", "breathable ear cups", "cooling gel",
+            
+            # Platform compatibility
+            "ps5 headset", "ps4 headset", "playstation headset", "xbox headset", "xbox series x headset",
+            "xbox one headset", "nintendo switch headset", "pc gaming headset", "pc headset", "mac compatible",
+            "multi platform headset", "cross platform headset", "universal gaming headset", "console headset",
+            "mobile gaming headset", "bluetooth gaming headset", "usb headset", "3.5mm headset", "wireless dongle",
+            
+            # Gaming terms and terminology
+            "pro gaming headset", "esports headset", "tournament headset", "competitive headset", "streamer headset",
+            "gaming audio", "game sound", "footstep audio", "directional audio", "audio positioning",
+            "mic monitoring", "sidetone", "game chat balance", "game mix", "voice chat",
+            "gaming sound card", "dolby atmos", "dts headphone", "thx spatial", "virtual surround"
+        ],
+        
+        "VR Gear": [
+            # VR headsets
+            "oculus quest", "oculus quest 2", "meta quest", "meta quest 2", "meta quest pro", "meta quest 3",
+            "valve index", "htc vive", "htc vive pro", "htc vive cosmos", "htc vive focus", "playstation vr", "psvr",
+            "playstation vr2", "psvr2", "hp reverb", "windows mixed reality", "samsung odyssey", "pimax",
+            "oculus rift", "oculus rift s", "oculus go", "meta horizon", "vr headset", "virtual reality headset",
+            
+            # VR accessories
+            "vr controllers", "vr motion controllers", "valve knuckles", "index controllers", "touch controllers",
+            "vr base stations", "vr lighthouses", "vr sensors", "vr tracking", "vr headphones", "vr audio",
+            "vr lens", "prescription lens", "vr lens adapter", "vr face cushion", "vr facial interface",
+            "vr cover", "vr case", "vr stand", "vr mount", "headset display", "cable management", "vr pulley",
+            
+            # VR hardware and upgrades
+            "vr ready pc", "oculus link", "oculus link cable", "virtual desktop", "wireless vr", "vr wireless adapter",
+            "vr power bank", "vr battery pack", "extended battery", "vr graphics card", "vr gpu", "vr cpu",
+            "vr cooling", "vr comfort", "vr resolution", "vr display", "vr screen", "vr refresh rate", "high fov",
+            "wide field of view", "eye tracking", "face tracking", "full body tracking", "vr trackers",
+            
+            # VR gaming and apps
+            "vr games", "vr gaming", "vr experience", "vr app", "vr software", "vr steam", "steamvr",
+            "oculus store", "meta store", "sidequest", "beat saber", "half life alyx", "vr chat", "vrchat",
+            "vr fitness", "vr workout", "vr social", "vr meeting", "vr movie", "vr video", "360 video",
+            
+            # VR terminology
+            "virtual reality", "mixed reality", "augmented reality", "xr", "extended reality", "immersive",
+            "6dof", "3dof", "room scale", "standing experience", "seated experience", "vr motion sickness",
+            "vr comfort", "vr locomotion", "vr teleport", "vr smooth turning", "vr snap turning", "vr ipd"
         ]
+    },
     
-    @staticmethod
-    def _monitors_keywords() -> List[str]:
-        return [
-            "monitor", "computer monitor", "display", "lcd monitor", "led monitor", "screen",
-            "gaming monitor", "144hz monitor", "240hz monitor", "4k monitor", "1440p monitor",
-            "ultrawide monitor", "curved monitor", "flat monitor", "ips monitor", "tn monitor",
-            "va monitor", "oled monitor", "ultra hd monitor", "computer screen", "display screen",
-            "computer display", "desktop monitor", "pc monitor", "widescreen monitor",
-            "144 hz", "240 hz", "360 hz", "75 hz", "high refresh rate", "adaptive sync",
-            "freesync monitor", "g-sync monitor", "hdr monitor", "4k uhd", "2k monitor",
-            "1ms monitor", "response time", "27 inch monitor", "32 inch monitor", "24 inch monitor",
-            "dual monitor", "triple monitor", "monitor arm", "monitor stand", "monitor with speakers",
-            "monitor with webcam", "touch screen monitor", "touchscreen display", "portable monitor",
-            "usb c monitor", "hdmi monitor", "displayport monitor", "ultra wide", "super ultrawide",
-            "professional monitor", "color accurate monitor", "photo editing monitor", "video editing monitor",
-            "gaming screen", "high resolution monitor", "retina display", "studio display",
-            "monitor with warranty", "open box monitor", "like new monitor", "sealed monitor",
-            "monitor bulk", "business monitor", "home office monitor", "external monitor",
-            "144hz gaming monitor", "240hz gaming monitor", "360hz monitor", "4k 144hz", "1440p 240hz",
-            "1080p monitor", "1080p 240hz", "budget monitor", "cheap monitor", "luxury monitor",
-            "acer monitor", "asus monitor", "benq monitor", "dell monitor", "hp monitor", "lg monitor",
-            "samsung monitor", "alienware monitor", "msi monitor", "gigabyte monitor", "aoc monitor",
-            "viewsonic monitor", "curved gaming monitor", "wqhd monitor", "1440p monitor", "uwqhd monitor",
-            "34 inch monitor", "49 inch monitor", "qled monitor", "mini led monitor", "ips gaming monitor",
-            "va gaming monitor", "dual setup monitor", "streaming monitor", "console gaming monitor",
-            "ps5 monitor", "xbox monitor", "vesa mount", "monitor swivel", "monitor pivot", "height adjustable",
-            "moniter", "computor screen", "desplay", "moniters", "displaies", "screns", "gaming moniter"
+    "Music Gear": {
+        "Electric Guitars": [
+            # Brands
+            "fender guitar", "gibson guitar", "prs guitar", "ibanez guitar", "esp guitar", "jackson guitar",
+            "epiphone guitar", "squier guitar", "schecter guitar", "gretsch guitar", "charvel guitar", "evh guitar",
+            "yamaha guitar", "guild guitar", "rickenbacker guitar", "musicman guitar", "ernie ball music man",
+            "danelectro guitar", "reverend guitar", "g&l guitar", "suhr guitar", "strandberg guitar", "chapman guitar",
+            
+            # Models
+            "stratocaster", "telecaster", "les paul", "sg guitar", "flying v", "explorer", "jazzmaster", "jaguar",
+            "mustang guitar", "prs custom", "prs ce", "prs se", "ibanez rg", "ibanez s", "ibanez jem", "esp eclipse",
+            "jackson soloist", "jackson dinky", "gretsch white falcon", "gretsch duo jet", "rickenbacker 330",
+            "strat guitar", "tele guitar", "custom guitar", "les pol", "sg style", "v guitar", "hollow body",
+            
+            # Guitar specifics
+            "electric guitar", "solid body guitar", "semi hollow guitar", "hollow body guitar", "vintage guitar",
+            "custom shop guitar", "signature guitar", "guitar body", "guitar neck", "guitar fretboard", "guitar frets",
+            "guitar tuners", "guitar bridge", "guitar pickups", "guitar electronics", "guitar wiring", "guitar nut",
+            "guitar strings", "guitar strap", "guitar case", "guitar stand", "guitar wall hanger", "hardshell case",
+            
+            # Guitar electronics
+            "humbucker pickup", "single coil pickup", "p90 pickup", "active pickup", "passive pickup", "emg pickup",
+            "seymour duncan", "dimarzio pickup", "bare knuckle pickup", "pickup set", "guitar potentiometer",
+            "guitar switch", "guitar jack", "guitar wiring", "guitar soldering", "guitar shielding", "guitar mod",
+            "humbucker", "single coil", "p90", "gibson pickup", "fender pickup", "hot pickup", "vintage pickup",
+            
+            # Guitar condition and types
+            "new guitar", "used guitar", "vintage guitar", "relic guitar", "aged guitar", "player grade",
+            "mint condition", "guitar project", "partscaster", "project guitar", "guitar kit", "diy guitar",
+            "left handed guitar", "lefty guitar", "right handed guitar", "short scale guitar", "baritone guitar",
+            "extended range", "seven string", "8 string guitar", "7 string guitar", "multiscale guitar", "fanned fret"
+        ],
+        
+        "Guitar Pedals": [
+            # Pedal types
+            "distortion pedal", "overdrive pedal", "fuzz pedal", "boost pedal", "delay pedal",
+            "reverb pedal", "chorus pedal", "phase pedal", "flanger pedal", "tremolo pedal",
+            "vibrato pedal", "wah pedal", "envelope filter", "eq pedal", "compressor pedal",
+            "noise gate", "octave pedal", "pitch shifter", "harmonizer pedal", "looper pedal",
+            
+            # Pedal brands
+            "boss pedal", "mxr pedal", "electro harmonix", "ehx pedal", "strymon pedal",
+            "tc electronic", "walrus audio", "jhs pedal", "keeley pedal", "wampler pedal",
+            "earthquaker devices", "death by audio", "chase bliss", "zvex pedal", "digitech pedal",
+            "eventide pedal", "line 6 pedal", "source audio", "meris pedal", "neunaber pedal",
+            
+            # Specific pedal models
+            "tube screamer", "ibanez ts9", "boss ds1", "rat distortion", "klon centaur",
+            "big muff", "blues driver", "boss dd", "carbon copy", "strymon timeline",
+            "strymon big sky", "ehx pog", "digitech whammy", "cry baby wah", "boss ce2",
+            "small clone", "mxr phase 90", "univibe", "fuzz face", "boss rc",
+            
+            # Pedal components and features
+            "guitar pedal", "effects pedal", "stompbox", "multi effect", "pedal board",
+            "pedal power supply", "pedal patch cable", "pedal switcher", "true bypass", "buffered bypass",
+            "analog pedal", "digital pedal", "vintage pedal", "boutique pedal", "clone pedal",
+            "diy pedal", "pedal kit", "pedal mod", "pedal clone", "nos components",
+            
+            # Pedal-related terms and accessories
+            "pedalboard", "pedal board", "pedaltrain", "temple audio", "pedal platform",
+            "pedal case", "pedal bag", "pedal power", "isolated power", "voodoo lab",
+            "cioks power", "1spot power", "patch cable", "pedal coupler", "pedal riser",
+            "pedal velcro", "pedal tape", "pedal cable", "pedal chain", "signal path"
+        ],
+        
+        "Synthesizers": [
+            # Synthesizer types
+            "analog synthesizer", "digital synthesizer", "modular synthesizer", "semi modular", "hybrid synthesizer",
+            "monophonic synth", "polyphonic synth", "duophonic synth", "paraphonic synth", "virtual analog",
+            "fm synthesizer", "wavetable synth", "additive synthesizer", "subtractive synthesizer", "granular synthesizer",
+            "sample based synth", "rompler", "physical modeling", "vector synthesis", "linear arithmetic",
+            
+            # Synthesizer brands
+            "moog synthesizer", "korg synthesizer", "roland synthesizer", "yamaha synthesizer", "sequential synth",
+            "arturia synthesizer", "behringer synthesizer", "elektron synthesizer", "novation synthesizer", "dsi synth",
+            "oberheim synthesizer", "arp synthesizer", "eurorack modular", "make noise", "doepfer",
+            "nord synthesizer", "waldorf synthesizer", "modal electronics", "buchla synthesizer", "teenage engineering",
+            
+            # Popular models
+            "minimoog", "moog model d", "moog grandmother", "moog matriarch", "moog one",
+            "korg minilogue", "korg monologue", "korg prologue", "korg ms20", "korg arp odyssey",
+            "roland jupiter", "roland juno", "roland system", "yamaha dx7", "yamaha reface",
+            "prophet 5", "prophet 6", "prophet rev2", "ob-6", "oberheim ob-x8",
+            "sequential pro 3", "op-1", "op-z", "mini nova", "ultranova",
+            
+            # Synthesizer components and features
+            "vco", "voltage controlled oscillator", "dco", "digital oscillator", "vca", "voltage controlled amplifier",
+            "vcf", "voltage controlled filter", "envelope generator", "adsr", "attack decay sustain release",
+            "sequencer", "arpeggiator", "lfo", "low frequency oscillator", "eurorack module",
+            "synthesizer keyboard", "synth keybed", "aftertouch", "mod wheel", "pitch bend",
+            
+            # Synthesizer connectivity and accessories
+            "midi controller", "usb midi", "din midi", "cv gate", "control voltage",
+            "audio interface", "synth case", "synth stand", "synthesizer dust cover", "synthesizer power supply",
+            "patch cable", "patch bay", "patch book", "patch storage", "patch memory",
+            "sustain pedal", "expression pedal", "synthesizer software", "daw integration", "hardware sequencer"
+        ],
+        
+        "Vintage Amps": [
+            # Tube amp brands
+            "fender amp", "marshall amp", "vox amp", "orange amp", "ampeg amp",
+            "mesa boogie", "hiwatt amp", "matchless amp", "supro amp", "silvertone amp",
+            "gibson amp", "traynor amp", "gretsch amp", "sunn amp", "magnatone amp",
+            "selmer amp", "sound city amp", "laney amp", "acoustic amp", "kustom amp",
+            
+            # Classic amp models
+            "fender tweed", "fender blackface", "fender silverface", "fender champ", "fender deluxe",
+            "fender twin", "fender princeton", "fender bassman", "fender vibrolux", "fender bandmaster",
+            "marshall plexi", "marshall jtm", "marshall jmp", "marshall jcm", "marshall bluesbreaker",
+            "vox ac30", "vox ac15", "vox ac10", "vox ac4", "vox cambridge",
+            
+            # Amp specifications
+            "tube amp", "valve amp", "solid state amp", "combo amp", "amp head",
+            "speaker cabinet", "amp cabinet", "guitar amplifier", "bass amplifier", "keyboard amplifier",
+            "watt amp", "class a amp", "class ab amp", "class d amp", "point to point wiring",
+            "handwired amp", "pcb amp", "turret board", "amp circuit", "amp schematic",
+            
+            # Amp components
+            "amp tubes", "preamp tube", "power tube", "rectifier tube", "12ax7 tube",
+            "el34 tube", "6l6 tube", "6v6 tube", "el84 tube", "kt88 tube",
+            "amp transformer", "output transformer", "power transformer", "amp capacitor", "amp resistor",
+            "amp potentiometer", "amp speaker", "alnico speaker", "celestion speaker", "jensen speaker",
+            
+            # Amp condition and features
+            "vintage amp", "original amp", "reissue amp", "amp clone", "amp restoration",
+            "amp repair", "amp mod", "amp maintenance", "biased amp", "retubed amp",
+            "reverb tank", "spring reverb", "tremolo circuit", "vibrato circuit", "amp footswitch",
+            "amp cover", "tolex covering", "tweed covering", "grill cloth", "amp handle"
+        ],
+        
+        "Microphones": [
+            # Microphone types
+            "condenser microphone", "dynamic microphone", "ribbon microphone", "tube microphone", "usb microphone",
+            "large diaphragm", "small diaphragm", "shotgun microphone", "lavalier microphone", "boundary microphone",
+            "omnidirectional microphone", "cardioid microphone", "supercardioid microphone", "figure 8 microphone", "multi pattern microphone",
+            "vocal microphone", "instrument microphone", "drum microphone", "stereo microphone", "broadcast microphone",
+            
+            # Microphone brands
+            "neumann microphone", "akg microphone", "shure microphone", "sennheiser microphone", "rode microphone",
+            "audio technica microphone", "beyerdynamic microphone", "electrovoice microphone", "blue microphone", "audix microphone",
+            "telefunken microphone", "royer microphone", "coles microphone", "earthworks microphone", "warm audio microphone",
+            "golden age microphone", "cloud microphone", "mojave microphone", "miktek microphone", "avantone microphone",
+            
+            # Specific microphone models
+            "neumann u87", "neumann tlm", "neumann km", "akg c414", "akg c214",
+            "shure sm7b", "shure sm57", "shure sm58", "sennheiser md421", "sennheiser e609",
+            "rode nt1", "rode nt2", "rode ntk", "blue yeti", "blue bluebird",
+            "audio technica at2020", "audio technica at4040", "electrovoice re20", "shure beta", "akg perception",
+            
+            # Microphone accessories
+            "microphone stand", "mic stand", "boom stand", "desktop mic stand", "microphone shock mount",
+            "pop filter", "windscreen", "microphone reflection filter", "microphone case", "microphone bag",
+            "xlr cable", "microphone preamp", "microphone amplifier", "phantom power", "microphone interface",
+            "mic activator", "cloudlifter", "fethead", "microphone pad", "inline pad",
+            
+            # Microphone terminology
+            "mic placement", "recording technique", "proximity effect", "off axis rejection", "phase cancellation",
+            "room treatment", "acoustic treatment", "reflection", "reverberation", "signal chain",
+            "signal to noise ratio", "self noise", "sensitivity", "frequency response", "transient response",
+            "vintage microphone", "classic microphone", "studio microphone", "live microphone", "field recording"
+        ],
+        
+        "DJ Equipment": [
+            # DJ controllers and decks
+            "dj controller", "dj deck", "turntable", "cdj", "media player",
+            "pioneer dj", "pioneer ddj", "pioneer cdj", "pioneer xdj", "rekordbox",
+            "denon dj", "denon sc", "denon prime", "traktor controller", "traktor kontrol",
+            "numark controller", "numark mixer", "technics turntable", "technics 1200", "direct drive turntable",
+            
+            # DJ mixers
+            "dj mixer", "battle mixer", "club mixer", "four channel mixer", "two channel mixer",
+            "pioneer djm", "allen heath xone", "rane mixer", "rane seventy", "denon mixer",
+            "mixer effects", "send return", "aux channel", "crossfader", "upfader",
+            "eq controls", "filter knob", "mixer isolator", "mixer routing", "mixer output",
+            
+            # DJ software and digital systems
+            "dj software", "serato dj", "traktor pro", "rekordbox dj", "virtual dj",
+            "ableton live", "dj control vinyl", "dvs system", "timecode vinyl", "timecode cd",
+            "dj mapping", "custom mapping", "dj effects", "dj plugins", "stems",
+            "remix deck", "sample deck", "dj loop", "beat grid", "beat sync",
+            
+            # DJ accessories and equipment
+            "dj headphones", "dj needle", "cartridge stylus", "slipmats", "record weight",
+            "dj cables", "dj booth", "dj stand", "dj case", "dj bag",
+            "dj flight case", "dj coffin", "dj monitor", "booth monitor", "dj lighting",
+            "dj microphone", "dj facade", "dj screen", "dj table", "cable management",
+            
+            # DJ techniques and terminology
+            "beatmatching", "scratching", "juggling", "beat juggling", "mixing",
+            "crossfading", "cueing", "hot cue", "loop roll", "sampler",
+            "back to back", "b2b", "mashup", "remix", "bootleg",
+            "beat drop", "breakdown", "buildup", "transition", "turntablism"
         ]
+    },
     
-    @staticmethod
-    def _ssds_keywords() -> List[str]:
-        return [
-            "ssd", "solid state drive", "solid-state drive", "nvme", "m.2", "sata ssd",
-            "nvme ssd", "m.2 ssd", "pcie ssd", "sata solid state drive", "flash drive",
-            "storage drive", "internal ssd", "external ssd", "portable ssd", "usb ssd",
-            "1tb ssd", "2tb ssd", "500gb ssd", "4tb ssd", "8tb ssd", "256gb ssd", "512gb ssd",
-            "samsung ssd", "wd ssd", "western digital", "crucial ssd", "kingston ssd", "sandisk ssd",
-            "seagate ssd", "corsair ssd", "pny ssd", "adata ssd", "gigabyte ssd", "sabrent ssd",
-            "gen4 ssd", "gen 4 ssd", "pcie 4.0 ssd", "pcie 3.0 ssd", "pcie gen4", "pcie gen 4",
-            "high speed ssd", "fast ssd", "gaming ssd", "ssd for gaming", "ssd for pc", "ssd for laptop",
-            "ssd upgrade", "ssd kit", "ssd with heatsink", "m.2 heatsink", "ssd enclosure", "ssd adapter",
-            "ssd caddy", "ssd dock", "ssd cloner", "ssd backup", "ssd external case", "thunderbolt ssd",
-            "usb c ssd", "usb 3.2 ssd", "usb 3.1 ssd", "usb 3.0 ssd", "ssd with cable", "ssd bundle",
-            "ssd deal", "ssd sale", "ssd discount", "new ssd", "sealed ssd", "oem ssd", "retail ssd",
-            "ssd for mac", "ssd for ps5", "ssd for xbox", "ssd for console", "ssd for video editing",
-            "ssd for content creation", "ssd for photography", "high endurance ssd", "tlc ssd", "qlc ssd",
-            "mlc ssd", "slc ssd", "3d nand", "ssd cache", "ssd controller", "ssd dram", "dram cache",
-            "dram-less ssd", "dramless ssd", "ssd read speed", "ssd write speed", "ssd transfer speed",
-            "ssd benchmark", "ssd performance", "solide state drive", "solid state", "solid-state", "nvme drive",
-            "m2 drive", "m2 ssd", "m-2 ssd", "nvm express", "flash storage", "samsung 980", "samsung 970",
-            "samsung 990", "samsung 870", "samsung 860", "wd black", "wd blue", "wd red", "wd green",
-            "crucial p3", "crucial p5", "crucial mx", "crucial bx", "kingston a2000", "kingston kc3000"
+    "Tools & DIY": {
+        "Power Tools": [
+            # Drill types
+            "power drill", "cordless drill", "drill driver", "impact driver", "hammer drill",
+            "drill press", "right angle drill", "magnetic drill", "rotary hammer", "sds drill",
+            "corded drill", "brushless drill", "keyless chuck", "drill bit set", "drill accessories",
+            "hex shank", "quick change", "drill clutch", "drill speed", "drill torque",
+            
+            # Saws
+            "circular saw", "miter saw", "table saw", "jigsaw", "reciprocating saw",
+            "band saw", "scroll saw", "track saw", "chop saw", "compound miter saw",
+            "sliding miter saw", "portable saw", "cordless saw", "corded saw", "trim saw",
+            "saw blade", "saw fence", "saw stand", "saw guide", "saw dust collection",
+            
+            # Sanders and grinders
+            "power sander", "random orbit sander", "belt sander", "disc sander", "palm sander",
+            "detail sander", "spindle sander", "bench sander", "angle grinder", "bench grinder",
+            "die grinder", "surface grinder", "sanding disc", "sanding belt", "sanding pad",
+            "sanding sheet", "grinding wheel", "grinding disc", "flap disc", "polishing pad",
+            
+            # Power tool brands
+            "dewalt tools", "milwaukee tools", "makita tools", "bosch tools", "ryobi tools",
+            "ridgid tools", "craftsman tools", "hitachi tools", "metabo tools", "festool tools",
+            "porter cable", "kobalt tools", "hilti tools", "flex tools", "skil tools",
+            "dremel tools", "black and decker", "stanley tools", "worx tools", "hart tools",
+            
+            # Power tool batteries and features
+            "power tool battery", "lithium ion battery", "18v battery", "20v battery", "40v battery",
+            "brushless motor", "variable speed", "quick connect", "tool free", "led light",
+            "dust collection", "anti vibration", "ergonomic grip", "tool less", "tool lock",
+            "cordless tool", "corded tool", "tool combo", "tool kit", "tool set"
+        ],
+        
+        "Hand Tools": [
+            # Common hand tools
+            "screwdriver set", "wrench set", "pliers set", "hammer", "hand saw",
+            "socket set", "ratchet set", "hex key", "allen wrench", "torx bit",
+            "utility knife", "chisel set", "file set", "clamp", "level",
+            "tape measure", "square", "pry bar", "punch set", "tin snips",
+            
+            # Screwdrivers
+            "phillips screwdriver", "flathead screwdriver", "precision screwdriver", "insulated screwdriver", "multi bit screwdriver",
+            "magnetic screwdriver", "ratcheting screwdriver", "screwdriver handle", "screwdriver shaft", "screwdriver grip",
+            "stubby screwdriver", "long screwdriver", "impact driver", "manual screwdriver", "jeweler screwdriver",
+            "torx screwdriver", "hex screwdriver", "robertson screwdriver", "tri wing", "security bit",
+            
+            # Wrenches and sockets
+            "combination wrench", "adjustable wrench", "crescent wrench", "box wrench", "open end wrench",
+            "pipe wrench", "torque wrench", "socket wrench", "ratchet handle", "breaker bar",
+            "deep socket", "shallow socket", "impact socket", "universal joint", "extension bar",
+            "metric wrench", "sae wrench", "spanner wrench", "monkey wrench", "allen wrench",
+            
+            # Pliers and cutters
+            "needle nose pliers", "slip joint pliers", "channel lock pliers", "vise grip", "locking pliers",
+            "diagonal cutter", "wire cutter", "lineman pliers", "end nipper", "crimping tool",
+            "wire stripper", "hose clamp pliers", "snap ring pliers", "fencing pliers", "tongue and groove pliers",
+            "bent nose pliers", "long nose pliers", "round nose pliers", "side cutter", "flush cutter",
+            
+            # Measuring and layout tools
+            "tape measure", "folding ruler", "laser measure", "digital caliper", "vernier caliper",
+            "dial caliper", "micrometer", "combination square", "speed square", "framing square",
+            "t square", "try square", "bevel gauge", "protractor", "angle finder",
+            "marking gauge", "chalk line", "straight edge", "level", "plumb bob"
+        ],
+        
+        "Welding Equipment": [
+            # Welding machine types
+            "welding machine", "mig welder", "tig welder", "stick welder", "arc welder",
+            "multi process welder", "flux core welder", "spot welder", "engine driven welder", "inverter welder",
+            "plasma cutter", "transformer welder", "spool gun", "push pull feeder", "wire feeder",
+            "ac welder", "dc welder", "ac/dc welder", "single phase welder", "three phase welder",
+            
+            # Welding brands
+            "lincoln welder", "miller welder", "hobart welder", "esab welder", "everlast welder",
+            "fronius welder", "kemppi welder", "eastwood welder", "weldpro welder", "yeswelder",
+            "klutch welder", "hitbox welder", "primeweld welder", "lincoln electric", "miller electric",
+            "amico welder", "forney welder", "razorweld", "unimig welder", "cigweld",
+            
+            # Welding accessories
+            "welding helmet", "auto darkening helmet", "welding gloves", "welding jacket", "welding apron",
+            "welding sleeves", "welding cap", "welding table", "welding clamp", "welding magnets",
+            "welding pliers", "welding cart", "welding leads", "ground clamp", "electrode holder",
+            "welding blanket", "welding curtain", "welding screen", "welding glasses", "welding respirator",
+            
+            # Welding consumables
+            "welding wire", "flux core wire", "solid wire", "welding electrode", "welding rod",
+            "tig filler rod", "tungsten electrode", "tig tungsten", "welding gas", "argon gas",
+            "co2 gas", "75/25 gas", "tri mix gas", "gas regulator", "flow meter",
+            "welding flux", "welding tip", "contact tip", "gas nozzle", "gas diffuser",
+            
+            # Welding terminology
+            "mig welding", "tig welding", "stick welding", "flux core welding", "arc welding",
+            "spot welding", "gas welding", "brazing", "soldering", "cutting",
+            "amperage", "voltage", "duty cycle", "polarity", "shielding gas",
+            "wire feed speed", "arc length", "weld bead", "weld joint", "weld penetration"
+        ],
+        
+        "Toolboxes": [
+            # Toolbox types
+            "metal toolbox", "plastic toolbox", "wooden toolbox", "toolbox with drawers", "portable toolbox",
+            "rolling toolbox", "mechanic toolbox", "job site box", "tool chest", "top chest",
+            "middle chest", "bottom chest", "tool cabinet", "tool storage", "tool cart",
+            "stackable toolbox", "modular toolbox", "cantilever toolbox", "truck toolbox", "trailer toolbox",
+            
+            # Toolbox brands
+            "snap on toolbox", "mac tools box", "matco toolbox", "craftsman toolbox", "husky toolbox",
+            "milwaukee packout", "dewalt tough system", "ridgid pro tool box", "stanley toolbox", "kobalt toolbox",
+            "us general toolbox", "harbor freight toolbox", "kennedy toolbox", "gerstner toolbox", "veto pro pac",
+            "keter toolbox", "bosch l-boxx", "makita systainer", "festool systainer", "kaizen foam",
+            
+            # Toolbox features
+            "tool box drawer", "tool box drawer liner", "tool box slide", "tool box hinge", "tool box latch",
+            "tool box lock", "tool box handle", "tool box caster", "tool box wheel", "tool box organizer",
+            "tool tray", "tool sorter", "socket organizer", "wrench organizer", "screwdriver organizer",
+            "tool drawer divider", "tool box foam", "tool box liner", "tool box insert", "tool box divider",
+            
+            # Portable toolboxes and bags
+            "tool bag", "tool tote", "tool backpack", "tool pouch", "tool belt",
+            "electrician bag", "plumber bag", "framer bag", "hvac bag", "tech pouch",
+            "technician bag", "contractor bag", "jobsite bag", "bucket tool organizer", "tool bucket",
+            "open top tool bag", "closed top tool bag", "rolling tool bag", "hard case tool bag", "soft case tool bag"
+        ],
+        
+        "Measuring Devices": [
+            # Distance measurement
+            "tape measure", "laser measure", "measuring wheel", "digital measure", "folding ruler",
+            "measuring tape", "distance meter", "range finder", "sonic measure", "surveyor wheel",
+            "yard stick", "meter stick", "telescoping measure", "architect scale", "engineer scale",
+            "folding meter", "pocket tape", "chalk line", "laser level", "rotary laser",
+            
+            # Angle measurement
+            "angle finder", "digital angle gauge", "protractor", "bevel gauge", "combination square",
+            "speed square", "framing square", "try square", "t bevel", "angle measure",
+            "angle cube", "digital protractor", "angle ruler", "miter gauge", "level protractor",
+            "magnetic angle finder", "digital level", "inclinometer", "clinometer", "transit level",
+            
+            # Precision measurement
+            "digital caliper", "vernier caliper", "dial caliper", "micrometer", "depth gauge",
+            "dial indicator", "feeler gauge", "radius gauge", "thread gauge", "pitch gauge",
+            "go no go gauge", "bore gauge", "telescoping gauge", "small hole gauge", "height gauge",
+            "digital micrometer", "dial test indicator", "depth micrometer", "inside micrometer", "outside micrometer",
+            
+            # Level measurement
+            "spirit level", "bubble level", "torpedo level", "post level", "line level",
+            "i beam level", "box level", "mason level", "digital level", "digital angle level",
+            "pocket level", "level tool", "plumb bob", "laser level", "cross line laser",
+            "self leveling laser", "multi line laser", "rotary laser level", "dot laser level", "green laser level",
+            
+            # Environmental measurement
+            "moisture meter", "thermal camera", "infrared thermometer", "digital thermometer", "humidity meter",
+            "temperature gauge", "pressure gauge", "air quality monitor", "light meter", "sound meter",
+            "wind speed meter", "anemometer", "multimeter", "voltage tester", "stud finder",
+            "metal detector", "pipe locator", "cable tracer", "magnetic detector", "wall scanner"
+        ],
+        
+        "Woodworking Tools": [
+            # Hand tools for woodworking
+            "woodworking chisel", "wood chisel set", "mortise chisel", "paring chisel", "bench chisel",
+            "hand plane", "jack plane", "block plane", "smoothing plane", "jointer plane",
+            "rabbet plane", "shoulder plane", "spokeshave", "card scraper", "cabinet scraper",
+            "back saw", "dovetail saw", "tenon saw", "coping saw", "japanese saw",
+            
+            # Power tools for woodworking
+            "table saw", "band saw", "scroll saw", "miter saw", "compound miter saw",
+            "sliding miter saw", "track saw", "circular saw", "jigsaw", "reciprocating saw",
+            "router", "plunge router", "fixed base router", "trim router", "router table",
+            "wood lathe", "bench top lathe", "midi lathe", "mini lathe", "full size lathe",
+            
+            # Sanders
+            "random orbit sander", "palm sander", "belt sander", "disc sander", "spindle sander",
+            "benchtop sander", "detail sander", "drum sander", "edge sander", "oscillating sander",
+            "hand sanding", "sanding block", "sanding disc", "sanding belt", "sanding spindle",
+            "sandpaper", "sanding sheet", "sanding pad", "sanding screen", "sanding sponge",
+            
+            # Joinery and shaping
+            "biscuit joiner", "domino joiner", "doweling jig", "pocket hole jig", "dovetail jig",
+            "mortiser", "benchtop mortiser", "hollow chisel mortiser", "tenon jig", "box joint jig",
+            "router bit", "router table", "router fence", "dovetail bit", "roundover bit",
+            "flush trim bit", "straight bit", "chamfer bit", "v groove bit", "panel raising bit",
+            
+            # Workshop accessories
+            "workbench", "woodworking bench", "bench vise", "bench dog", "bench hook",
+            "clamp", "bar clamp", "pipe clamp", "quick clamp", "corner clamp",
+            "wood glue", "wood finish", "wood stain", "woodworking plan", "wood joint",
+            "dust collection", "dust collector", "wood chisel", "sharpening stone", "marking gauge"
         ]
+    },
     
-    @staticmethod
-    def _routers_keywords() -> List[str]:
-        return [
-            "router", "wifi router", "wireless router", "home router", "network router", "internet router",
-            "wifi 6 router", "wifi 6e router", "wifi 7 router", "ax router", "wifi router", "router wifi",
-            "mesh router", "mesh wifi", "mesh network", "mesh system", "whole home wifi", "wifi system",
-            "dual band router", "tri band router", "gigabit router", "gaming router", "vpn router",
-            "secure router", "router with parental controls", "long range router", "high speed router",
-            "asus router", "netgear router", "tp-link router", "linksys router", "d-link router",
-            "belkin router", "ubiquiti router", "eero router", "google wifi", "amazon eero", "orbi router",
-            "nest wifi", "nighthawk router", "asus rog router", "asus rt-ax", "asus rog rapture",
-            "netgear rax", "netgear r7000", "netgear r8000", "asus rt-ac", "tp link archer",
-            "linksys velop", "5ghz router", "2.4ghz router", "802.11ax router", "802.11ac router",
-            "wifi 5 router", "wifi 4 router", "smart router", "intelligent router", "router with app",
-            "router with usb", "router with storage", "router with print server", "router with modem",
-            "modem router", "modem router combo", "gateway router", "router gateway", "cable router",
-            "dsl router", "fiber router", "router for fiber", "router for cable", "router for dsl",
-            "router for streaming", "router for gaming", "router for large home", "router for small home",
-            "router for apartment", "router for office", "small business router", "enterprise router",
-            "commercial router", "industrial router", "outdoor router", "waterproof router",
-            "wifi 6e mesh", "wifi 6 mesh", "wifi extender", "wifi booster", "wifi repeater",
-            "range extender", "wireless access point", "wap router", "access point router",
-            "rounter", "rooter", "ruter", "wi-fi router", "wirelss router", "wify router",
-            "wired router", "portable router", "travel router", "mini router", "pocket router"
+    "Outdoors & Sports": {
+        "Bikes": [
+            # Bike types
+            "mountain bike", "road bike", "hybrid bike", "gravel bike", "cruiser bike",
+            "bmx bike", "folding bike", "electric bike", "fat bike", "touring bike",
+            "commuter bike", "fixed gear bike", "single speed bike", "triathlon bike", "cyclocross bike",
+            "downhill bike", "dirt jumper", "enduro bike", "trail bike", "xc bike",
+            
+            # Bike brands
+            "trek bike", "specialized bike", "giant bike", "cannondale bike", "santa cruz bike",
+            "schwinn bike", "diamondback bike", "fuji bike", "bianchi bike", "cervelo bike",
+            "gt bike", "kona bike", "marin bike", "norco bike", "pivot bike",
+            "salsa bike", "surly bike", "yeti bike", "canyon bike", "colnago bike",
+            
+            # Bike components
+            "bike frame", "bike fork", "bike wheel", "bike tire", "bike tube",
+            "bike handlebar", "bike stem", "bike seatpost", "bike saddle", "bike pedal",
+            "bike chain", "bike cassette", "bike crankset", "bike derailleur", "bike shifter",
+            "bike brake", "bike disc brake", "bike hub", "bike spoke", "bike rim",
+            
+            # Bike accessories
+            "bike helmet", "bike lock", "bike light", "bike pump", "bike computer",
+            "bike rack", "bike bag", "bike basket", "bike fender", "bike mirror",
+            "bike water bottle", "bike cage", "bike stand", "bike repair stand", "bike repair kit",
+            "bike multi tool", "bike chain tool", "bike lock mount", "bike phone mount", "bike gopro mount",
+            
+            # Bike clothing and gear
+            "cycling jersey", "cycling shorts", "cycling bibs", "cycling tights", "cycling jacket",
+            "cycling gloves", "cycling shoes", "cycling socks", "cycling cap", "cycling glasses",
+            "cycling sunglasses", "chamois cream", "cycling underwear", "cycling base layer", "cycling vest",
+            "cycling rain gear", "bike cleats", "cycling shoe covers", "arm warmers", "leg warmers"
+        ],
+        
+        "Skateboards": [
+            # Skateboard types
+            "skateboard", "longboard", "cruiser skateboard", "penny board", "electric skateboard",
+            "old school skateboard", "street skateboard", "park skateboard", "vert skateboard", "pool skateboard",
+            "mini cruiser", "drop through longboard", "pintail longboard", "dancing longboard", "downhill longboard",
+            "freeride longboard", "carving longboard", "freestyle skateboard", "tech skateboard", "transition skateboard",
+            
+            # Skateboard components
+            "skateboard deck", "skateboard truck", "skateboard wheel", "skateboard bearing", "skateboard grip tape",
+            "skateboard hardware", "skateboard riser", "skateboard rail", "skateboard nose", "skateboard tail",
+            "longboard deck", "longboard truck", "longboard wheel", "longboard bearing", "longboard grip tape",
+            "skateboard complete", "longboard complete", "cruiser complete", "skateboard kit", "build your own skateboard",
+            
+            # Skateboard brands
+            "element skateboard", "baker skateboard", "santa cruz skateboard", "powell peralta skateboard", "blind skateboard",
+            "zero skateboard", "toy machine skateboard", "girl skateboard", "chocolate skateboard", "flip skateboard",
+            "alien workshop skateboard", "real skateboard", "anti hero skateboard", "almost skateboard", "dgk skateboard",
+            "enjoi skateboard", "primitive skateboard", "plan b skateboard", "darkstar skateboard", "deathwish skateboard",
+            
+            # Longboard brands
+            "sector 9 longboard", "loaded longboard", "landyachtz longboard", "arbor longboard", "rayne longboard",
+            "madrid longboard", "pantheon longboard", "moonshine longboard", "bustin longboard", "db longboard",
+            "dusters longboard", "earthwing longboard", "gravity longboard", "never summer longboard", "original longboard",
+            "omen longboard", "zenit longboard", "hamboards longboard", "prism longboard", "carmen longboard",
+            
+            # Skateboarding gear and accessories
+            "skate shoe", "skate helmet", "skate pad", "knee pad", "elbow pad",
+            "wrist guard", "skate tool", "skate wax", "skate backpack", "skate bag",
+            "skate rack", "skate storage", "skate leash", "skate grip", "skate cleaner",
+            "skate video", "skate magazine", "skate shop", "skate park", "skate spot"
+        ],
+        
+        "Scooters": [
+            # Scooter types
+            "kick scooter", "pro scooter", "stunt scooter", "electric scooter", "folding scooter",
+            "adult scooter", "kids scooter", "commuter scooter", "three wheel scooter", "off road scooter",
+            "freestyle scooter", "trick scooter", "push scooter", "mobility scooter", "vespa scooter",
+            "motor scooter", "gas scooter", "seated scooter", "foldable scooter", "portable scooter",
+            
+            # Stunt scooter components
+            "scooter deck", "scooter bar", "scooter wheel", "scooter fork", "scooter clamp",
+            "scooter grip", "scooter brake", "scooter headset", "scooter bearing", "scooter spacer",
+            "scooter compression", "scs clamp", "hic compression", "ihc compression", "scooter peg",
+            "scooter standoff", "scooter hub", "scooter core", "scooter complete", "custom scooter",
+            
+            # Scooter brands
+            "razor scooter", "micro scooter", "xiaomi scooter", "segway scooter", "ninebot scooter",
+            "envy scooter", "lucky scooter", "tilt scooter", "ethic scooter", "aztec scooter",
+            "native scooter", "flavor scooter", "root scooter", "district scooter", "phoenix scooter",
+            "proto scooter", "ao scooter", "mgp scooter", "madd gear scooter", "fuzion scooter",
+            
+            # Electric scooter features
+            "electric scooter battery", "electric scooter motor", "electric scooter range", "electric scooter speed",
+            "electric scooter charger", "electric scooter controller", "electric scooter display", "electric scooter light",
+            "electric scooter suspension", "electric scooter brake", "electric scooter tire", "electric scooter tube",
+            "electric scooter throttle", "electric scooter app", "electric scooter lock", "electric scooter alarm",
+            
+            # Scooter accessories and gear
+            "scooter helmet", "scooter pad", "scooter glove", "scooter bag", "scooter stand",
+            "scooter rack", "scooter hanger", "scooter lock", "scooter light", "scooter bell",
+            "scooter basket", "scooter phone mount", "scooter repair kit", "scooter tool", "scooter maintenance",
+            "scooter lubricant", "scooter cleaner", "scooter cover", "scooter storage", "scooter transportation"
+        ],
+        
+        "Camping Gear": [
+            # Shelter
+            "camping tent", "backpacking tent", "family tent", "instant tent", "pop up tent",
+            "dome tent", "cabin tent", "ultralight tent", "tarp tent", "hammock tent",
+            "tent footprint", "tent stakes", "tent poles", "tent rainfly", "tent vestibule",
+            "tarp shelter", "bivy sack", "camping hammock", "camping cot", "sleeping pad",
+            
+            # Sleeping
+            "sleeping bag", "camping quilt", "mummy bag", "rectangular bag", "double sleeping bag",
+            "down sleeping bag", "synthetic sleeping bag", "sleeping bag liner", "compression sack", "stuff sack",
+            "air mattress", "sleeping pad", "self inflating pad", "foam pad", "inflatable pillow",
+            "camping pillow", "sleeping bag hood", "camp bedding", "camping blanket", "emergency blanket",
+            
+            # Cooking
+            "camping stove", "backpacking stove", "camp grill", "camp chef", "portable stove",
+            "propane stove", "butane stove", "alcohol stove", "wood burning stove", "dual fuel stove",
+            "camp cookware", "mess kit", "cooking pot", "frying pan", "camping kettle",
+            "camping utensils", "camping dishes", "camping mug", "camping plate", "camping bowl",
+            
+            # Packs and storage
+            "hiking backpack", "camping backpack", "internal frame pack", "external frame pack", "frameless pack",
+            "day pack", "hydration pack", "dry bag", "stuff sack", "compression sack",
+            "bear canister", "food storage", "bear bag", "camping box", "gear organizer",
+            "pack cover", "pack liner", "waterproof bag", "roll top bag", "camping duffel",
+            
+            # Accessories and tools
+            "camping knife", "multi tool", "hiking pole", "trekking pole", "camp axe",
+            "camping saw", "paracord", "tent repair kit", "first aid kit", "emergency kit",
+            "headlamp", "camping lantern", "flashlight", "camp light", "rechargeable light",
+            "compass", "gps device", "map case", "survival gear", "emergency shelter"
+        ],
+        
+        "Hiking Gear": [
+            # Footwear
+            "hiking boots", "hiking shoes", "trail runners", "approach shoes", "mountaineering boots",
+            "waterproof boots", "waterproof shoes", "hiking sandals", "trekking shoes", "outdoor shoes",
+            "boot insole", "hiking sock", "wool sock", "sock liner", "gaiters",
+            "boot laces", "boot care", "waterproofing spray", "boot wax", "boot conditioner",
+            
+            # Clothing
+            "hiking pants", "hiking shorts", "convertible pants", "hiking shirt", "base layer",
+            "hiking jacket", "rain jacket", "softshell jacket", "hardshell jacket", "down jacket",
+            "fleece jacket", "insulated jacket", "hiking underwear", "hiking bra", "hiking hat",
+            "sun hat", "beanie", "buff headwear", "neck gaiter", "hiking gloves",
+            
+            # Packs
+            "day pack", "hiking backpack", "trekking pack", "ultralight pack", "frame pack",
+            "hip pack", "fanny pack", "waist pack", "hydration pack", "hydration bladder",
+            "water bottle", "water filter", "water purifier", "gravity filter", "bottle filter",
+            "pack rain cover", "pack liner", "pack organizer", "compression strap", "load lifter",
+            
+            # Accessories
+            "trekking pole", "hiking pole", "walking stick", "monopod", "camera tripod",
+            "hiking gps", "handheld gps", "outdoor watch", "altimeter", "compass",
+            "topographic map", "trail map", "guidebook", "map case", "waterproof map",
+            "binoculars", "monocular", "spotting scope", "field guide", "nature guide",
+            
+            # Safety and protection
+            "hiking first aid", "blister kit", "moleskin", "insect repellent", "tick remover",
+            "bear spray", "bear bell", "emergency whistle", "signal mirror", "emergency blanket",
+            "sunscreen", "lip balm", "sun protection", "sun shirt", "sun gloves",
+            "rain cover", "pack cover", "dry bag", "waterproof case", "waterproof pouch"
+        ],
+        
+        "Fishing Gear": [
+            # Rods
+            "fishing rod", "spinning rod", "baitcasting rod", "fly rod", "ice fishing rod",
+            "telescopic rod", "travel rod", "ultralight rod", "medium rod", "heavy rod",
+            "surf rod", "offshore rod", "trolling rod", "jigging rod", "crappie rod",
+            "bass rod", "trout rod", "salmon rod", "catfish rod", "musky rod",
+            
+            # Reels
+            "fishing reel", "spinning reel", "baitcasting reel", "fly reel", "spincast reel",
+            "conventional reel", "trolling reel", "centerpin reel", "surf reel", "offshore reel",
+            "level wind reel", "inline reel", "underspin reel", "baitrunner reel", "low profile reel",
+            "high speed reel", "ultralight reel", "saltwater reel", "freshwater reel", "ice fishing reel",
+            
+            # Terminal tackle
+            "fishing hook", "circle hook", "j hook", "treble hook", "octopus hook",
+            "fishing weight", "split shot", "drop shot", "bullet weight", "egg sinker",
+            "fishing swivel", "snap swivel", "barrel swivel", "three way swivel", "fishing snap",
+            "fishing line", "monofilament line", "fluorocarbon line", "braided line", "fly line",
+            
+            # Lures and bait
+            "fishing lure", "spinner bait", "crank bait", "jig", "soft plastic",
+            "topwater lure", "jerkbait", "stickbait", "popper", "buzzbait",
+            "chatterbait", "spinnerbait", "swimbait", "spoon", "inline spinner",
+            "trolling lure", "fly", "dry fly", "wet fly", "streamer fly",
+            
+            # Accessories
+            "fishing pliers", "hook remover", "fish gripper", "landing net", "fishing gaff",
+            "tackle box", "fishing bag", "rod holder", "rod rack", "fishing vest",
+            "fishing waders", "fishing boots", "fishing rain gear", "fishing hat", "polarized sunglasses",
+            "fish finder", "fishing electronics", "fishing scale", "fish ruler", "fillet knife"
+        ],
+        
+        "Snowboards": [
+            # Snowboard types
+            "all mountain snowboard", "freestyle snowboard", "freeride snowboard", "powder snowboard", "park snowboard",
+            "directional snowboard", "twin tip snowboard", "true twin snowboard", "directional twin snowboard", "tapered snowboard",
+            "camber snowboard", "rocker snowboard", "hybrid camber", "flat snowboard", "volume shifted snowboard",
+            "men's snowboard", "women's snowboard", "kids snowboard", "beginner snowboard", "intermediate snowboard",
+            
+            # Snowboard brands
+            "burton snowboard", "lib tech snowboard", "gnu snowboard", "arbor snowboard", "jones snowboard",
+            "k2 snowboard", "ride snowboard", "capita snowboard", "never summer snowboard", "rome snowboard",
+            "salomon snowboard", "rossignol snowboard", "nitro snowboard", "dc snowboard", "yes snowboard",
+            "gnu board", "mervin board", "bataleon board", "endeavor board", "academy board",
+            
+            # Snowboard bindings
+            "snowboard binding", "burton binding", "union binding", "rome binding", "flux binding",
+            "now binding", "k2 binding", "ride binding", "salomon binding", "nitro binding",
+            "strap binding", "rear entry binding", "step on binding", "split board binding", "binding baseplate",
+            "binding highback", "binding strap", "binding ratchet", "binding disc", "binding hardware",
+            
+            # Snowboard boots
+            "snowboard boot", "snowboard shoe", "burton boot", "thirty two boot", "dc boot",
+            "vans boot", "k2 boot", "ride boot", "nitro boot", "salomon boot",
+            "traditional lace boot", "boa boot", "dual boa boot", "speed lace boot", "therm ic boot",
+            "stiff boot", "medium flex boot", "soft boot", "snowboard liner", "boot heat mold",
+            
+            # Snowboard gear and accessories
+            "snowboard jacket", "snowboard pants", "snowboard bib", "snowboard helmet", "snowboard goggles",
+            "snowboard gloves", "snowboard mittens", "snowboard backpack", "snowboard stomp pad", "snowboard leash",
+            "snowboard socks", "base layer", "snowboard wax", "waxing iron", "edge tuner",
+            "snowboard bag", "snowboard lock", "roof rack", "impact shorts", "snowboard tool"
         ]
+    }
+}
+
+def get_keywords_for_subcategory(subcategory):
+    """
+    Get a list of keywords for a specific subcategory.
     
-    @staticmethod
-    def _vintage_tech_keywords() -> List[str]:
-        return [
-            "vintage tech", "vintage technology", "retro tech", "retro technology", "classic tech",
-            "antique technology", "old tech", "old technology", "legacy tech", "obsolete tech",
-            "vintage computer", "retro computer", "classic computer", "antique computer", "old computer",
-            "vintage pc", "retro pc", "classic pc", "vintage apple", "vintage mac", "vintage macintosh",
-            "vintage ibm", "vintage commodore", "commodore 64", "commodore amiga", "amiga computer",
-            "atari computer", "atari st", "atari 800", "tandy computer", "radio shack computer",
-            "trs-80", "apple ii", "apple iie", "apple iic", "apple iiGS", "apple lisa", "apple newton",
-            "vintage laptop", "vintage notebook", "vintage portable", "vintage calculator", "vintage pda",
-            "palm pilot", "handspring", "blackberry", "vintage blackberry", "vintage cell phone",
-            "vintage mobile phone", "vintage telephone", "rotary phone", "push button phone",
-            "vintage video game", "vintage game console", "vintage console", "vintage nintendo",
-            "vintage sega", "nintendo nes", "super nintendo", "sega genesis", "sega master system",
-            "atari 2600", "atari 5200", "atari 7800", "atari jaguar", "colecovision", "intellivision",
-            "vintage walkman", "sony walkman", "cassette walkman", "portable cassette player",
-            "portable cd player", "sony discman", "minidisc player", "md player", "vintage stereo",
-            "vintage hifi", "vintage amplifier", "vintage receiver", "vintage turntable",
-            "vintage record player", "reel to reel", "8-track player", "8 track player",
-            "vintage television", "vintage tv", "tube tv", "crt tv", "crt monitor", "black and white tv",
-            "vintage vcr", "betamax", "laserdisc", "laserdisc player", "vintage camcorder",
-            "vintage video camera", "vintage film camera", "vintage typewriter", "vintage adding machine",
-            "vintage cash register", "vintage toy", "vintage electronic game", "vintage electronic toy",
-            "vintage arcade", "arcade machine", "arcade cabinet", "vintage pinball", "pinball machine",
-            "vintage radio", "vintage transistor radio", "tube radio", "vintage clock radio",
-            "vintage time", "vintage watch", "vintage digital watch", "led watch", "lcd watch",
-            "vintage calculator watch", "casio calculator watch", "vintage electronic dictionary"
-        ]
+    Args:
+        subcategory (str): The subcategory to get keywords for
+        
+    Returns:
+        list: A list of keywords for the subcategory, or an empty list if not found
+    """
+    for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+        if subcategory in subcats:
+            return subcats[subcategory]
+    return []
+
+def generate_keywords(subcategory, include_variations=True, max_keywords=20):
+    """
+    Generate a list of keywords for a subcategory, optionally with variations.
     
-    # === COLLECTIBLES CATEGORY ===
+    Args:
+        subcategory (str): The subcategory to generate keywords for
+        include_variations (bool): Whether to include common typos and variations
+        max_keywords (int): Maximum number of keywords to return
+        
+    Returns:
+        list: A list of keywords for the subcategory
+    """
+    keywords = get_keywords_for_subcategory(subcategory)
     
-    @staticmethod
-    def _pokémon_keywords() -> List[str]:
-        return [
-            "pokemon cards", "pokemon card", "pokemon tcg", "pokemon booster", "pokemon box",
-            "pokemon collection", "pokemon lot", "pokemon bulk", "pokemon rare", "pokemon holo",
-            "pokemon etb", "pokemon elite trainer box", "pokemon sealed", "pokemon psa", "pokemon cgc",
-            "charizard", "pikachu", "charizard card", "pokemon ex", "pokemon gx", "pokemon v", "pokemon vmax",
-            "pokemon vstar", "pokemon alt art", "pokemon full art", "pokemon secret rare", "pokemon gold card",
-            "pokemon rainbow rare", "pokemon training gallery", "pokemon special delivery", "pokmon", "pokémon",
-            "pokemon base set", "pokemon jungle", "pokemon fossil", "pokemon team rocket", "pokemon gym",
-            "pokemon neo", "pokemon legendary", "pokemon aquapolis", "pokemon skyridge", "pokemon ex series",
-            "pokemon dp", "pokemon hgss", "pokemon black white", "pokemon xy", "pokemon sun moon", "pokemon swsh",
-            "pokemon sword shield", "pokemon scarlet violet", "pokemon sv", "pokemon crown zenith", "pokemon astral radiance",
-            "pokemon brilliant stars", "pokemon silver tempest", "pokemon lost origin", "pokemon go", "pokemon celebrations",
-            "pokemon shining fates", "pokemon hidden fates", "pokemon japanese", "pokemon proxy", "pokemon fake",
-            "pokemon shadowless", "pokemon 1st edition", "pokemon wotc", "pokemon vintage", "pokemon modern",
-            "pokemon promo", "pokemon black star", "pokemon staff", "pokemon championship", "pokemon world championship",
-            "pokemon worlds", "pokemon regionals", "pokemon event", "pokemon league", "pokemon prerelease",
-            "pokemon error", "pokemon misprint", "pokemon miscut", "pokemon oc", "pokemon off center",
-            "pokemon graded", "pokemon psa 10", "pokemon psa 9", "pokemon slab", "pokemon bgs",
-            "pokemon beckett", "pokemon cgc 10", "pokemon cgc 9", "pokemon raw card", "pokemon near mint",
-            "pokemon mint", "pokemon lightly played", "pokemon moderately played", "pokemon heavily played",
-            "pokemon damaged", "pokemon nm", "pokemon lp", "pokemon mp", "pokemon hp", "pokemon dmg",
-            "pokemon theme deck", "pokemon starter deck", "pokemon deck", "pokemon tin", "pokemon blister",
-            "pokemon pack", "pokemon booster pack", "pokemon booster box", "pokemon display", "pokemon case",
-            "pokemon binder", "pokemon album", "pokemon pages", "pokemon sleeves", "pokemon prism star",
-            "pokemon break", "pokemon prime", "pokemon level x", "pokemon ultra rare", "pokemon ur"
-        ]
+    if not keywords:
+        # If subcategory not found, return the subcategory itself as a keyword
+        return [subcategory.lower()]
     
-    @staticmethod
-    def _magic_the_gathering_keywords() -> List[str]:
-        return [
-            "mtg", "magic cards", "magic the gathering", "mtg cards", "mtg lot", "mtg collection",
-            "mtg booster", "mtg box", "mtg booster box", "mtg bundle", "mtg draft booster", "mtg set booster",
-            "mtg collector booster", "mtg prerelease", "mtg commander", "mtg edh", "mtg deck", "magic deck",
-            "magic commander deck", "mtg rare", "mtg mythic", "mtg foil", "mtg extended art", "mtg showcase",
-            "mtg borderless", "mtg full art", "mtg alt art", "mtg alternate art", "mtg textured", "mtg special",
-            "mtg secret lair", "mtg drop", "magic sealed", "mtg sealed", "mtg vintage", "mtg legacy", "mtg modern",
-            "mtg standard", "mtg pioneer", "mtg pauper", "mtg brawl", "mtg arena", "mtg planeswalker", "mtg creature",
-            "mtg land", "mtg instant", "mtg sorcery", "mtg enchantment", "mtg artifact", "mtg equipment", "mtg reserved list",
-            "mtg dual land", "mtg shock land", "mtg fetch land", "mtg check land", "mtg fast land", "mtg pain land",
-            "mtg filter land", "mtg triome", "mtg battle land", "mtg bicycle land", "mtg pathway", "mtg mana base",
-            "mtg moxen", "mtg power", "mtg power nine", "mtg mox", "mtg alpha", "mtg beta", "mtg unlimited",
-            "mtg revised", "mtg fourth", "mtg fifth", "mtg sixth", "mtg seventh", "mtg eighth", "mtg ninth",
-            "mtg tenth", "mtg masters", "mtg modern horizons", "mtg time spiral", "mtg double masters",
-            "mtg jumpstart", "mtg battlebond", "mtg conspiracy", "mtg planechase", "mtg archenemy", "mtg graded",
-            "mtg bgs", "mtg psa", "mtg cgc", "mtg proxy", "mtg reproduction", "mtg repack", "mtg resealed",
-            "mtg black lotus", "mtg mox sapphire", "mtg mox ruby", "mtg mox pearl", "mtg mox jet", "mtg mox emerald",
-            "mtg ancestral recall", "mtg time walk", "mtg timetwister", "mtg underground sea", "mtg volcanic island",
-            "mtg tropical island", "mtg bayou", "mtg savannah", "mtg taiga", "mtg scrubland", "mtg badlands",
-            "mtg plateau", "mtg tundra", "mtg mishra's workshop", "mtg library of alexandria", "mtg tabernacle",
-            "mtg gaea's cradle", "mtg serra's sanctum", "mtg tolarian academy", "mtg force of will", "mtg mana drain",
-            "mtg jace the mind sculptor", "mtg liliana of the veil", "mtg tarmogoyf", "mtg dark confidant",
-            "mtg snapcaster mage", "mtg sensei's divining top", "mtg chrome mox", "mtg mox opal", "mtg ragavan",
-            "mtg sol ring", "mtg demonic tutor", "mtg vampiric tutor", "mtg imperial seal", "mtg mana crypt",
-            "mtg lords of the rings", "mtg doctor who", "mtg universes beyond", "mtg secret lair drop",
-            "mtg masterpiece", "mtg expedition", "mt
+    # If variations not needed, return original keywords up to max_keywords
+    if not include_variations:
+        return keywords[:max_keywords]
+    
+    # Add common typos and variations based on existing keywords
+    expanded_keywords = []
+    for keyword in keywords[:max_keywords//2]:  # Use half the slots for original keywords
+        expanded_keywords.append(keyword)
+        
+        # Add typo variations for keywords that are long enough
+        if len(keyword) > 3:
+            # Swap adjacent characters
+            for i in range(len(keyword) - 1):
+                if keyword[i].isalpha() and keyword[i+1].isalpha():
+                    typo = keyword[:i] + keyword[i+1] + keyword[i] + keyword[i+2:]
+                    expanded_keywords.append(typo)
+                    
+            # Missing characters
+            for i in range(1, len(keyword) - 1):
+                if keyword[i].isalpha():
+                    typo = keyword[:i] + keyword[i+1:]
+                    expanded_keywords.append(typo)
+    
+    # Remove duplicates and limit to max_keywords
+    return list(dict.fromkeys(expanded_keywords))[:max_keywords]
