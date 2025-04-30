@@ -428,7 +428,7 @@ class AmazonScraper:
         if price_elem:
             price_text = price_elem.text.strip()
             try:
-                details['price'] = float(price_text.replace(', '').replace(',', ''))
+                details['price'] = float(price_text.replace(', ', '').replace(',', ''))
             except ValueError:
                 pass
         
