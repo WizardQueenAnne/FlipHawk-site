@@ -3,13 +3,15 @@ from flask_cors import CORS
 import os
 import logging
 from datetime import datetime, timedelta
-from arbitrage_bot import run_arbitrage_scan
 from models import db, User, PromoCode, SubscriptionTier, PriceHistory, CategoryPerformance, SavedOpportunity
 from auth import auth_bp, token_required, record_price_history
 from subscription import subscription, init_promo_codes
 from analytics import analytics, create_item_identifier
 from filters import filters, OpportunityFilter
 from risk_assessment import risk, RiskAnalyzer
+
+# Import the marketplace scanner - NEW!
+from marketplace_scanner import run_arbitrage_scan
 
 # Set up logging
 logging.basicConfig(
@@ -67,7 +69,7 @@ def health_check():
 @app.route('/api/v1/scan', methods=['POST'])
 @token_required
 def run_scan(current_user):
-    """Enhanced scan endpoint with new features."""
+    """Enhanced scan endpoint using the new marketplace scanner."""
     try:
         # Check if user can scan
         if not current_user.can_scan():
@@ -88,7 +90,7 @@ def run_scan(current_user):
         
         logger.info(f"Running scan for user {current_user.username}: {category}, {subcategories}")
         
-        # Run the real-time arbitrage scan
+        # Run the marketplace arbitrage scan
         start_time = datetime.now()
         results = run_arbitrage_scan(subcategories)
         end_time = datetime.now()
@@ -105,65 +107,31 @@ def run_scan(current_user):
             filter_system = OpportunityFilter(current_user)
             results = filter_system.apply_filters(results, filters_params)
         
-        # Process results with new features
+        # Process results with additional category metadata
         processed_results = []
-        risk_analyzer = RiskAnalyzer()
         
         for result in results:
-            # Calculate additional metrics
-            estimated_tax = result['buyPrice'] * 0.08
-            estimated_shipping = determine_shipping_cost(result)
-            ebay_fee = calculate_ebay_fee(result['sellPrice'])
-            paypal_fee = result['sellPrice'] * 0.029 + 0.30
+            # Record price history for buy and sell items
+            buy_title = result.get('buy_title', result.get('title', ''))
+            sell_title = result.get('sell_title', result.get('title', ''))
             
-            total_cost = result['buyPrice'] + estimated_tax + estimated_shipping
-            total_fees = ebay_fee + paypal_fee
-            net_profit = result['sellPrice'] - total_cost - total_fees
-            net_profit_percentage = (net_profit / total_cost) * 100 if total_cost > 0 else 0
+            buy_price = result.get('buy_price', 0)
+            sell_price = result.get('sell_price', 0)
             
-            # Record price history
-            item_identifier = create_item_identifier(result['title'])
-            record_price_history(item_identifier, result['buyPrice'], 'eBay-Buy', result.get('buyCondition'))
-            record_price_history(item_identifier, result['sellPrice'], 'eBay-Sell', result.get('sellCondition'))
+            item_identifier = create_item_identifier(buy_title)
+            record_price_history(item_identifier, buy_price, result.get('buy_marketplace', 'Unknown'), result.get('buy_condition'))
+            record_price_history(item_identifier, sell_price, result.get('sell_marketplace', 'Unknown'), result.get('sell_condition'))
             
             # Update category performance
-            update_category_performance(category, result['subcategory'], net_profit, net_profit_percentage)
+            update_category_performance(category, result.get('subcategory', subcategories[0]), 
+                                      result.get('net_profit', 0), result.get('net_profit_percentage', 0))
             
-            # Calculate new features
-            velocity_score = calculate_velocity_score(result)
-            estimated_sell_days = estimate_sell_days(result, velocity_score)
-            suggested_price = calculate_suggested_price(result)
-            authenticity_risk = check_authenticity_risk(result)
+            # Add scan metadata
+            result['scan_duration'] = scan_duration
+            result['scan_timestamp'] = datetime.now().isoformat()
+            result['category'] = category
             
-            # Perform risk assessment
-            risk_score = None
-            risk_level = None
-            if current_user.subscription_tier != SubscriptionTier.FREE.value:
-                risk_score, risk_factors = risk_analyzer.calculate_risk_score(result)
-                risk_level = 'low' if risk_score < 30 else 'medium' if risk_score < 60 else 'high'
-            
-            processed_result = {
-                **result,
-                'id': item_identifier,
-                'estimatedTax': round(estimated_tax, 2),
-                'estimatedShipping': round(estimated_shipping, 2),
-                'ebayFee': round(ebay_fee, 2),
-                'paypalFee': round(paypal_fee, 2),
-                'totalCost': round(total_cost, 2),
-                'totalFees': round(total_fees, 2),
-                'netProfit': round(net_profit, 2),
-                'netProfitPercentage': round(net_profit_percentage, 2),
-                'scanDuration': scan_duration,
-                'itemIdentifier': item_identifier,
-                'riskScore': risk_score,
-                'riskLevel': risk_level,
-                'velocityScore': velocity_score,
-                'estimatedSellDays': estimated_sell_days,
-                'suggestedPrice': round(suggested_price, 2),
-                'authenticityRisk': authenticity_risk
-            }
-            
-            processed_results.append(processed_result)
+            processed_results.append(result)
         
         return jsonify(processed_results)
         
@@ -192,13 +160,17 @@ def run_bulk_scan(current_user):
         
         logger.info(f"Running bulk scan for user {current_user.username}: {len(keywords)} keywords")
         
+        # Convert each keyword to a subcategory for the marketplace scanner
+        # This allows running multiple independent scans
         all_results = []
         for keyword in keywords[:10]:  # Limit to 10 keywords per request
-            results = run_arbitrage_scan([keyword])
-            all_results.extend(results)
+            keyword_results = run_arbitrage_scan([keyword])
+            all_results.extend(keyword_results)
         
-        # Process and return results similar to regular scan
-        # ... (similar processing as above)
+        # Apply filters if specified
+        if filters_params:
+            filter_system = OpportunityFilter(current_user)
+            all_results = filter_system.apply_filters(all_results, filters_params)
         
         return jsonify(all_results)
         
@@ -211,135 +183,76 @@ def run_bulk_scan(current_user):
 def save_favorite(current_user):
     """Save an item to favorites."""
     data = request.get_json()
-    item_id = data.get('itemId')
+    opportunity_data = data.get('opportunity')
+    notes = data.get('notes', '')
     
-    if not item_id:
-        return jsonify({"error": "Item ID is required"}), 400
+    if not opportunity_data:
+        return jsonify({"error": "Opportunity data is required"}), 400
     
-    # TODO: Create favorites table and save
-    return jsonify({"message": "Favorite saved"})
+    try:
+        saved_opportunity = SavedOpportunity(
+            user_id=current_user.id,
+            opportunity_data=opportunity_data,
+            notes=notes
+        )
+        
+        db.session.add(saved_opportunity)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Opportunity saved successfully",
+            "id": saved_opportunity.id
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error saving favorite: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/v1/favorites', methods=['DELETE'])
+@app.route('/api/v1/favorites', methods=['GET'])
 @token_required
-def remove_favorite(current_user):
-    """Remove an item from favorites."""
-    data = request.get_json()
-    item_id = data.get('itemId')
-    
-    if not item_id:
-        return jsonify({"error": "Item ID is required"}), 400
-    
-    # TODO: Remove from favorites table
-    return jsonify({"message": "Favorite removed"})
+def get_favorites(current_user):
+    """Get user's saved opportunities."""
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        opportunities = SavedOpportunity.query.filter_by(user_id=current_user.id)\
+            .order_by(SavedOpportunity.created_at.desc())\
+            .paginate(page=page, per_page=per_page, error_out=False)
+        
+        return jsonify({
+            'opportunities': [{
+                'id': opp.id,
+                'opportunity': opp.opportunity_data,
+                'notes': opp.notes,
+                'created_at': opp.created_at.isoformat()
+            } for opp in opportunities.items],
+            'total': opportunities.total,
+            'pages': opportunities.pages,
+            'current_page': page
+        })
+    except Exception as e:
+        logger.error(f"Error fetching favorites: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
-def calculate_velocity_score(item):
-    """Calculate how fast an item is likely to sell."""
-    score = 50  # Base score
-    
-    # Adjust based on various factors
-    if item.get('profitPercentage', 0) > 50:
-        score += 20
-    elif item.get('profitPercentage', 0) > 30:
-        score += 10
-    
-    if item.get('confidence', 0) > 90:
-        score += 15
-    elif item.get('confidence', 0) > 80:
-        score += 10
-    
-    # Consider sold count from similar items
-    if item.get('sold_count', 0) > 100:
-        score += 15
-    elif item.get('sold_count', 0) > 50:
-        score += 10
-    
-    return min(100, max(0, score))
-
-def estimate_sell_days(item, velocity_score):
-    """Estimate how many days until the item sells."""
-    if velocity_score > 80:
-        return 3
-    elif velocity_score > 60:
-        return 7
-    elif velocity_score > 40:
-        return 14
-    else:
-        return 21
-
-def calculate_suggested_price(item):
-    """Calculate optimal resale price."""
-    base_price = item.get('sellPrice', 0)
-    profit_target = item.get('buyPrice', 0) * 1.3  # Target 30% profit
-    
-    # Adjust based on confidence and market conditions
-    if item.get('confidence', 0) > 90:
-        base_price *= 1.05  # Can price higher for exact matches
-    
-    return max(profit_target, base_price)
-
-def check_authenticity_risk(item):
-    """Check risk of counterfeit items."""
-    risk = 0
-    
-    # High-risk categories
-    high_risk_items = ['designer', 'luxury', 'rolex', 'gucci', 'supreme', 'yeezy', 'jordan']
-    title_lower = item.get('title', '').lower()
-    
-    for term in high_risk_items:
-        if term in title_lower:
-            risk += 30
-    
-    # Suspiciously low prices for luxury items
-    if item.get('profitPercentage', 0) > 70 and any(term in title_lower for term in high_risk_items):
-        risk += 40
-    
-    # New seller or low rating
-    if item.get('sellerRating', 100) < 90:
-        risk += 20
-    
-    return min(100, risk)
-
-def determine_shipping_cost(item):
-    """Calculate shipping cost based on item category."""
-    category = item.get('subcategory', '')
-    price = item.get('buyPrice', 0)
-    
-    # Base shipping costs by category
-    shipping_rates = {
-        'default': 5.99,
-        'Laptops': 15.99,
-        'Gaming Consoles': 12.99,
-        'Guitars': 25.99,
-        'Monitors': 18.99,
-        'Vintage Tech': 12.99,
-        'Collectibles': 4.99,
-        'Trading Cards': 3.99,
-        'Small Electronics': 7.99
-    }
-    
-    # Determine base rate
-    base_rate = shipping_rates.get(category, shipping_rates['default'])
-    
-    # Adjust for item value (insurance)
-    if price > 1000:
-        base_rate += 10.00
-    elif price > 500:
-        base_rate += 5.00
-    
-    return base_rate
-
-def calculate_ebay_fee(sell_price):
-    """Calculate eBay selling fees."""
-    if sell_price <= 1:
-        return 0
-    
-    # eBay fee structure (simplified)
-    if sell_price <= 150:
-        return sell_price * 0.105  # 10.5% for low-value items
-    elif sell_price <= 1000:
-        return 150 * 0.105 + (sell_price - 150) * 0.085  # 8.5% for medium-value
-    else:
-        return 150 * 0.105 + 850 * 0.085 + (sell_price - 1000) * 0.065  # 6.5% for high-value
+@app.route('/api/v1/favorites/<int:favorite_id>', methods=['DELETE'])
+@token_required
+def delete_favorite(current_user, favorite_id):
+    """Delete a saved opportunity."""
+    try:
+        opportunity = SavedOpportunity.query.filter_by(id=favorite_id, user_id=current_user.id).first()
+        
+        if not opportunity:
+            return jsonify({'message': 'Opportunity not found'}), 404
+        
+        db.session.delete(opportunity)
+        db.session.commit()
+        
+        return jsonify({'message': 'Opportunity deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting favorite: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 def update_category_performance(category, subcategory, profit, profit_margin):
     """Update category performance metrics."""
