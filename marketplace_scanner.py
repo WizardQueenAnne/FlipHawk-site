@@ -20,6 +20,7 @@ from walmart_scraper import run_walmart_search
 from stockx_scraper import run_stockx_search
 from facebook_scraper import run_facebook_search
 from tcgplayer_scraper import run_tcgplayer_search
+from comprehensive_keywords import COMPREHENSIVE_KEYWORDS, generate_keywords
 
 # Set up logging
 logging.basicConfig(
@@ -241,6 +242,35 @@ class ArbitrageAnalyzer:
             confidence = 90  # Minimum 90% confidence for very similar items
         
         return max(0, min(100, confidence))
+
+def get_all_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
+    """
+    Get all keywords for the specified subcategories.
+    
+    Args:
+        subcategories (List[str]): List of subcategories to get keywords for
+        
+    Returns:
+        List[str]: Combined list of keywords for all subcategories
+    """
+    all_keywords = []
+    
+    # Loop through all categories and subcategories in COMPREHENSIVE_KEYWORDS
+    for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+        for subcat, keywords in subcats.items():
+            # Check if this subcategory is in our list
+            if subcat in subcategories:
+                # Add all keywords for this subcategory
+                all_keywords.extend(keywords)
+    
+    # Remove duplicates while preserving order
+    unique_keywords = []
+    for keyword in all_keywords:
+        if keyword not in unique_keywords:
+            unique_keywords.append(keyword)
+    
+    logger.info(f"Generated {len(unique_keywords)} keywords for subcategories: {subcategories}")
+    return unique_keywords
 
 async def scan_marketplaces(subcategories: List[str]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
