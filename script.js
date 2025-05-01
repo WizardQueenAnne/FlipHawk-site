@@ -123,7 +123,11 @@ function setupEventListeners() {
         loginModal.classList.remove('active');
         signupModal.classList.add('active');
     });
-
+    // Add this inside the setupEventListeners function in script.js
+    // Right after the other modal-related event listeners (around line 126)
+    document.getElementById('cancel-subscription-modal').addEventListener('click', function() {
+        subscriptionModal.classList.remove('active');
+    });
     switchToLogin.addEventListener('click', function() {
         signupModal.classList.remove('active');
         loginModal.classList.add('active');
