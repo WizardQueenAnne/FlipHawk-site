@@ -423,7 +423,6 @@ function handleLogout() {
 }
 
 // Show subcategories for selected category
-// Show subcategories for selected category
 function showSubcategories(category) {
     const subcats = categories[category];
     if (!subcats) return;
@@ -705,7 +704,7 @@ function displayResults(results) {
         
         // Prepare the display values
         const title = result.title || result.buyTitle || '';
-        const buyPrice = result.buyPrice || result.buy_price || 0;
+        const buyPrice = result.buyPrice || result.price || 0;
         const sellPrice = result.sellPrice || result.sell_price || 0;
         const profit = result.netProfit || result.profit || (sellPrice - buyPrice);
         const profitPercentage = result.netProfitPercentage || result.profitPercentage || (profit * 100 / buyPrice);
@@ -716,14 +715,30 @@ function displayResults(results) {
         const subcategory = result.subcategory || selectedSubcategories[0];
         const confidence = result.confidence || result.similarity_score || 85;
         
+        // Calculate tax (8% of buy price)
+        const tax = buyPrice * 0.08;
+        
+        // Calculate platform fee (default 10%)
+        const platformFee = result.platformFee || sellPrice * 0.1;
+        
+        // Calculate shipping
+        const shipping = result.buyShipping || 0;
+        
+        // Calculate net profit
+        const netProfit = result.netProfit || (profit - tax - platformFee);
+        
+        // Calculate ROI
+        const roi = (netProfit / (buyPrice + tax + shipping)) * 100;
+        
         resultCard.innerHTML = `
             ${imageHtml}
             <div class="result-details">
                 <div class="profit-badge">$${profit.toFixed(2)} profit</div>
                 <h3>${title}</h3>
                 <p>Buy for: $${buyPrice.toFixed(2)} from ${buyMarketplace} | Sell for: $${sellPrice.toFixed(2)} on ${sellMarketplace}</p>
-                <p>ROI: ${profitPercentage.toFixed(1)}% | Similarity Confidence: ${confidence}%</p>
+                <p>ROI: ${profitPercentage.toFixed(1)}% | Net Profit: $${netProfit.toFixed(2)} | Similarity Confidence: ${confidence}%</p>
                 <p>Category: ${selectedCategory} > ${subcategory}</p>
+                <p>Tax: $${tax.toFixed(2)} | Platform Fee: $${platformFee.toFixed(2)} | Shipping: $${shipping.toFixed(2)}</p>
                 <div style="margin-top: 15px; display: flex; gap: 10px;">
                     <a href="${buyLink}" target="_blank" style="
                         background: var(--primary-color);
@@ -747,6 +762,9 @@ function displayResults(results) {
         
         resultsContainer.appendChild(resultCard);
     });
+    
+    // Scroll to results
+    resultsHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Show toast notification
