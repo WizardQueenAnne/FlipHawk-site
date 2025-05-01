@@ -1,5 +1,5 @@
 """
-Unified marketplace scanner for FlipHawk arbitrage system.
+Enhanced unified marketplace scanner for FlipHawk arbitrage system.
 This module combines all the marketplace scrapers and finds arbitrage opportunities.
 """
 
@@ -193,8 +193,8 @@ class ArbitrageAnalyzer:
                                 
                                 opportunities.append(opportunity)
         
-        # Sort opportunities by profit percentage
-        opportunities.sort(key=lambda x: x['profitPercentage'], reverse=True)
+        # Sort opportunities by profit
+        opportunities.sort(key=lambda x: x['profit'], reverse=True)
         
         logger.info(f"Found {len(opportunities)} arbitrage opportunities")
         return opportunities
@@ -261,7 +261,7 @@ def get_all_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
             # Check if this subcategory is in our list
             if subcat in subcategories:
                 # Add all keywords for this subcategory
-                subcat_keywords = generate_keywords(subcat, include_variations=True, max_keywords=10)
+                subcat_keywords = generate_keywords(subcat, include_variations=True, max_keywords=20)
                 all_keywords.extend(subcat_keywords)
     
     # Remove duplicates while preserving order
@@ -290,23 +290,23 @@ async def scan_marketplaces(subcategories: List[str]) -> Tuple[List[Dict[str, An
         amazon_task = asyncio.create_task(run_amazon_search(subcategories))
         ebay_task = asyncio.create_task(run_ebay_search(subcategories))
         
-        # Only include other marketplaces if needed
-        # This helps reduce load and avoid rate limiting
-        include_walmart = any(subcat in ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "SSDs", "Monitors"] for subcat in subcategories)
-        include_stockx = any(subcat in ["Jordans", "Nike Dunks", "Vintage Tees", "Consoles"] for subcat in subcategories)
-        include_facebook = any(subcat in ["Vintage Tech", "Cameras", "Vinyl Records", "Consoles", "Camping Gear"] for subcat in subcategories)
-        
-        # Determine if we should include TCGPlayer based on subcategories
-        tcg_subcategories = ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Trading Cards", "Sports Cards"]
-        include_tcgplayer = any(subcat in tcg_subcategories for subcat in subcategories)
-        
-        # Create the necessary marketplace tasks
+        # Include other marketplaces based on subcategory
         marketplace_tasks = [amazon_task, ebay_task]
         
-        if include_walmart:
-            walmart_task = asyncio.create_task(run_walmart_search(subcategories))
-            marketplace_tasks.append(walmart_task)
+        # Always include Walmart for better comparison
+        walmart_task = asyncio.create_task(run_walmart_search(subcategories))
+        marketplace_tasks.append(walmart_task)
         
+        # Determine if we should include specialized marketplaces
+        include_stockx = any(subcat in ["Jordans", "Nike Dunks", "Vintage Tees", "Sneakers", "Consoles"] 
+                            for subcat in subcategories)
+        
+        include_facebook = True  # Include Facebook Marketplace for all searches to improve results
+        
+        tcg_subcategories = ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Sports Cards", "Collectibles"]
+        include_tcgplayer = any(subcat in tcg_subcategories for subcat in subcategories)
+        
+        # Add specialized marketplace tasks if needed
         if include_stockx:
             stockx_task = asyncio.create_task(run_stockx_search(subcategories))
             marketplace_tasks.append(stockx_task)
@@ -325,7 +325,8 @@ async def scan_marketplaces(subcategories: List[str]) -> Tuple[List[Dict[str, An
         # Combine all listings
         all_listings = []
         for result in results:
-            all_listings.extend(result)
+            if result:  # Verify that result is not None or empty
+                all_listings.extend(result)
         
         logger.info(f"Total listings found: {len(all_listings)}")
         
@@ -386,6 +387,19 @@ def calculate_profit_metrics(opportunity: Dict[str, Any]) -> Dict[str, Any]:
         updated['platformFee'] = round(sell_fee, 2)
         updated['paymentFee'] = 0  # Included in platform fee
     
+    elif 'facebook' in sell_marketplace:
+        # Facebook fee: 5% of sell price
+        sell_fee = sell_price * 0.05
+        updated['platformFee'] = round(sell_fee, 2)
+        updated['paymentFee'] = 0  # Included in platform fee
+    
+    elif 'stockx' in sell_marketplace:
+        # StockX fee: 9.5% + payment processing (3%)
+        sell_fee = sell_price * 0.095
+        updated['platformFee'] = round(sell_fee, 2)
+        payment_fee = sell_price * 0.03
+        updated['paymentFee'] = round(payment_fee, 2)
+    
     else:
         # Default fees if marketplace is unknown
         sell_fee = sell_price * 0.10
@@ -411,6 +425,13 @@ def calculate_profit_metrics(opportunity: Dict[str, Any]) -> Dict[str, Any]:
     net_profit_percentage = (net_profit / total_cost) * 100 if total_cost > 0 else 0
     updated['netProfitPercentage'] = round(net_profit_percentage, 2)
     
+    # Add velocity score and estimated sell days
+    velocity_score = calculate_velocity_score(updated)
+    estimated_sell_days = estimate_sell_days(updated, velocity_score)
+    
+    updated['velocityScore'] = velocity_score
+    updated['estimatedSellDays'] = estimated_sell_days
+    
     return updated
 
 def calculate_velocity_score(opportunity: Dict[str, Any]) -> int:
@@ -425,33 +446,53 @@ def calculate_velocity_score(opportunity: Dict[str, Any]) -> int:
     """
     score = 50  # Base score
     
-    # Adjust based on profit percentage
+    # Adjust based on profit percentage and confidence
     profit_percentage = opportunity.get('profitPercentage', 0)
-    if profit_percentage > 50:
-        score += 20
-    elif profit_percentage > 30:
-        score += 10
+    confidence = opportunity.get('confidence', 0)
+    
+    # Adjust based on profit - higher profit is typically slower to sell
+    if profit_percentage > 100:
+        score -= 15
+    elif profit_percentage > 70:
+        score -= 10
+    elif profit_percentage > 40:
+        score -= 5
+    elif profit_percentage < 20:
+        score += 10  # Lower margins tend to sell faster
     
     # Adjust based on confidence
-    confidence = opportunity.get('confidence', 0)
     if confidence > 90:
         score += 15
     elif confidence > 80:
         score += 10
+    elif confidence < 70:
+        score -= 10
     
-    # Adjust based on marketplace
+    # Adjust based on marketplace - some platforms sell faster
     sell_marketplace = opportunity.get('sellMarketplace', '').lower()
-    if 'ebay' in sell_marketplace:
-        score += 5  # eBay tends to have higher velocity
-    elif 'amazon' in sell_marketplace:
-        score += 10  # Amazon typically has highest velocity
-    
-    # Adjust based on subcategory (if available)
-    subcategory = opportunity.get('subcategory', '')
-    high_velocity_categories = ['Headphones', 'Graphics Cards', 'Laptops', 'Consoles', 'Nike Dunks', 'Jordans']
-    if any(subcat in subcategory for subcat in high_velocity_categories):
+    if 'amazon' in sell_marketplace:
+        score += 15  # Amazon typically sells fastest
+    elif 'ebay' in sell_marketplace:
         score += 10
+    elif 'walmart' in sell_marketplace:
+        score += 5
+    elif 'facebook' in sell_marketplace:
+        score -= 5  # Facebook Marketplace can be slower
     
+    # Adjust based on category
+    subcategory = opportunity.get('subcategory', '').lower()
+    fast_categories = ["headphones", "graphics cards", "consoles", "jordans", "nike dunks", "pokémon"]
+    medium_categories = ["keyboards", "monitors", "ssds", "laptop", "action figures"]
+    slow_categories = ["vintage", "antique", "collectible", "rare"]
+    
+    if any(fast in subcategory for fast in fast_categories):
+        score += 15
+    elif any(medium in subcategory for medium in medium_categories):
+        score += 5
+    elif any(slow in subcategory for slow in slow_categories):
+        score -= 10
+    
+    # Cap score between 0 and 100
     return min(100, max(0, score))
 
 def estimate_sell_days(opportunity: Dict[str, Any], velocity_score: int) -> int:
@@ -465,14 +506,26 @@ def estimate_sell_days(opportunity: Dict[str, Any], velocity_score: int) -> int:
     Returns:
         int: Estimated number of days to sell
     """
-    if velocity_score > 80:
+    # Convert velocity score to estimated days
+    # Higher velocity score = fewer days to sell
+    if velocity_score > 90:
+        return 1  # Almost immediate sale
+    elif velocity_score > 80:
+        return 2
+    elif velocity_score > 70:
         return 3
     elif velocity_score > 60:
+        return 5
+    elif velocity_score > 50:
         return 7
     elif velocity_score > 40:
+        return 10
+    elif velocity_score > 30:
         return 14
-    else:
+    elif velocity_score > 20:
         return 21
+    else:
+        return 30  # Slow moving item
 
 def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
     """
@@ -503,14 +556,6 @@ def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
             for opportunity in opportunities:
                 # Calculate additional profit metrics
                 processed = calculate_profit_metrics(opportunity)
-                
-                # Calculate velocity score and estimated sell days
-                velocity_score = calculate_velocity_score(processed)
-                estimated_sell_days = estimate_sell_days(processed, velocity_score)
-                
-                processed['velocityScore'] = velocity_score
-                processed['estimatedSellDays'] = estimated_sell_days
-                
                 processed_results.append(processed)
             
             end_time = time.time()
