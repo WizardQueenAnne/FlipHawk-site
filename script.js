@@ -175,7 +175,7 @@ function setupEventListeners() {
         });
     });
     
-    // Redeem promo code - special handling for "Seaprep"
+    // Redeem promo code
     redeemButton.addEventListener('click', function() {
         const code = promoCodeInput.value.trim();
         if (code) {
@@ -301,7 +301,6 @@ function checkAuth() {
                 }
             }
             updateUIForLoggedInUser();
-            updatePlanButtons();
         } catch (e) {
             console.error('Error parsing user data:', e);
             localStorage.removeItem('user');
@@ -534,9 +533,9 @@ function abortScan() {
     showToast('Scan cancelled', 'error');
 }
 
-// Scan with progress updates for real-time marketplace scanning
+// Scan with progress updates (simulated for frontend demo)
 function scanWithProgressUpdates(requestData) {
-    // Set up a progress interval to provide UI feedback
+    // Simulate a multi-step scanning process
     const totalSteps = 100;
     let currentStep = 0;
     
@@ -588,7 +587,8 @@ function scanWithProgressUpdates(requestData) {
     fetch('/api/v1/scan', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.getItem('token') || 'guest-token')
         },
         body: JSON.stringify(requestData)
     })
@@ -692,21 +692,21 @@ function displayResults(results) {
         // Create image element if available
         let imageHtml = '';
         if (result.image_url) {
-            imageHtml = `<img src="${result.image_url}" alt="${result.buyTitle || result.title}" class="result-image">`;
+            imageHtml = `<img src="${result.image_url}" alt="${result.buy_title || result.title}" class="result-image">`;
         } else if (result.buy_image_url) {
-            imageHtml = `<img src="${result.buy_image_url}" alt="${result.buyTitle || result.title}" class="result-image">`;
+            imageHtml = `<img src="${result.buy_image_url}" alt="${result.buy_title || result.title}" class="result-image">`;
         }
         
         // Prepare the display values
-        const title = result.buyTitle || result.title || '';
-        const buyPrice = result.buyPrice || result.buy_price || 0;
-        const sellPrice = result.sellPrice || result.sell_price || 0;
-        const profit = result.netProfit || result.profit || (sellPrice - buyPrice);
-        const profitPercentage = result.netProfitPercentage || result.profitPercentage || (profit * 100 / buyPrice);
-        const buyLink = result.buyLink || result.buy_link || '#';
-        const sellLink = result.sellLink || result.sell_link || '#';
-        const buyMarketplace = result.buyMarketplace || 'Unknown';
-        const sellMarketplace = result.sellMarketplace || 'Unknown';
+        const title = result.buy_title || result.title || '';
+        const buyPrice = result.buy_price || result.buyPrice || 0;
+        const sellPrice = result.sell_price || result.sellPrice || 0;
+        const profit = result.net_profit || result.profit || (sellPrice - buyPrice);
+        const profitPercentage = result.net_profit_percentage || result.profitPercentage || (profit * 100 / buyPrice);
+        const buyLink = result.buy_link || result.buyLink || '#';
+        const sellLink = result.sell_link || result.sellLink || '#';
+        const buyMarketplace = result.buy_marketplace || 'Unknown';
+        const sellMarketplace = result.sell_marketplace || 'Unknown';
         const subcategory = result.subcategory || selectedSubcategories[0];
         const confidence = result.similarity_score || result.confidence || 85;
         
