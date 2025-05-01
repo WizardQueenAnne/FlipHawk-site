@@ -257,11 +257,12 @@ def get_all_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
     
     # Loop through all categories and subcategories in COMPREHENSIVE_KEYWORDS
     for category, subcats in COMPREHENSIVE_KEYWORDS.items():
-        for subcat, keywords in subcats.items():
+        for subcat in subcats:
             # Check if this subcategory is in our list
             if subcat in subcategories:
                 # Add all keywords for this subcategory
-                all_keywords.extend(keywords)
+                subcat_keywords = generate_keywords(subcat, include_variations=True, max_keywords=10)
+                all_keywords.extend(subcat_keywords)
     
     # Remove duplicates while preserving order
     unique_keywords = []
