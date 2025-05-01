@@ -45,8 +45,15 @@ class WalmartListing:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the listing to a dictionary."""
-        features_list = self.features if self.features else []
-        categories_list = self.categories if self.categories else []
+        if self.features is None:
+            features_list = []
+        else:
+            features_list = self.features
+            
+        if self.categories is None:
+            categories_list = []
+        else:
+            categories_list = self.categories
         
         return {
             'title': self.title,
@@ -270,23 +277,30 @@ class WalmartScraper:
         soup = BeautifulSoup(html, 'html.parser')
         listings = []
         
-        # Find all search result items
-        # Walmart uses different selectors over time, so we try several common ones
-        result_elements = soup.select('div[data-item-id], div.product-item')
+        # Updated selectors to handle Walmart's current structure
+        product_tiles = soup.select('div[data-item-id], div.product-item, div[data-automation-id="product"]')
         
-        for element in result_elements:
+        if not product_tiles:
+            # Fallback to more generic selectors if specific ones don't work
+            product_tiles = soup.select('.search-result-gridview-item, .Grid-col, [data-testid="list-view"]')
+        
+        for product in product_tiles:
             try:
                 # Extract item ID
-                item_id = element.get('data-item-id', '')
+                item_id = product.get('data-item-id') or product.get('data-product-id') or ''
                 if not item_id:
-                    # Try another attribute format
-                    item_id = element.get('data-product-id', '')
+                    # Try finding ID in other attributes
+                    for attr in product.attrs:
+                        if 'item' in attr or 'product' in attr and 'id' in attr:
+                            item_id = product.get(attr, '')
+                            break
                 
+                # Skip if no ID found
                 if not item_id:
                     continue
                 
                 # Extract title
-                title_elem = element.select_one('a.product-title-link, a.product-name-link, span.product-title-text')
+                title_elem = product.select_one('span.product-title-text, .product-title, [data-automation-id="product-title"], h3, h2')
                 if not title_elem:
                     continue
                 
@@ -295,38 +309,35 @@ class WalmartScraper:
                     continue
                 
                 # Extract link
-                link = None
-                if 'href' in title_elem.attrs:
-                    link = title_elem['href']
-                    # Handle relative URLs
-                    if link.startswith('/'):
-                        link = f"https://www.walmart.com{link}"
-                
-                if not link:
+                link_elem = product.select_one('a[href*="/ip/"], a.product-title-link, a[data-automation-id="product-title-link"]')
+                if not link_elem or 'href' not in link_elem.attrs:
                     continue
                 
+                link = link_elem['href']
+                if link.startswith('/'):
+                    link = f'https://www.walmart.com{link}'
+                
                 # Extract price
-                price = None
-                price_elem = element.select_one('span.price-main, span.product-price-amount, .price-group')
+                price_elem = product.select_one('span.price-main, .product-price-amount, [data-automation-id="product-price"], .price')
+                if not price_elem:
+                    continue
                 
-                if price_elem:
-                    price_text = price_elem.text.strip()
-                    price_match = re.search(r'(\d+\.\d+)', price_text)
-                    if price_match:
-                        try:
-                            price = float(price_match.group(1))
-                        except ValueError:
-                            continue
+                price_text = price_elem.text.strip()
+                price_match = re.search(r'\$?(\d+(?:\.\d+)?)', price_text)
+                if not price_match:
+                    continue
                 
-                if price is None:
-                    continue  # Skip if we can't find a price
+                try:
+                    price = float(price_match.group(1))
+                except ValueError:
+                    continue
                 
-                # Extract original price (if on sale)
+                # Extract original price if on sale
                 original_price = None
-                was_price_elem = element.select_one('span.was-price, span.strikethrough-price')
+                was_price_elem = product.select_one('.was-price, .strike-through-price, [data-automation-id="strikethrough-price"]')
                 if was_price_elem:
                     was_price_text = was_price_elem.text.strip()
-                    was_price_match = re.search(r'(\d+\.\d+)', was_price_text)
+                    was_price_match = re.search(r'\$?(\d+(?:\.\d+)?)', was_price_text)
                     if was_price_match:
                         try:
                             original_price = float(was_price_match.group(1))
@@ -335,18 +346,22 @@ class WalmartScraper:
                 
                 # Extract image URL
                 img_url = ""
-                img_elem = element.select_one('img.product-image, img.product-item-image')
-                if img_elem and 'src' in img_elem.attrs:
-                    img_url = img_elem['src']
-                elif img_elem and 'data-src' in img_elem.attrs:
-                    img_url = img_elem['data-src']
+                img_elem = product.select_one('img')
+                if img_elem:
+                    if 'src' in img_elem.attrs and img_elem['src'] != '':
+                        img_url = img_elem['src']
+                    elif 'data-src' in img_elem.attrs and img_elem['data-src'] != '':
+                        img_url = img_elem['data-src']
+                    elif 'srcset' in img_elem.attrs:
+                        srcset = img_elem['srcset'].split(',')[0]
+                        img_url = srcset.strip().split(' ')[0]
                 
                 # Extract rating
                 rating = None
-                rating_elem = element.select_one('div.stars-container, span.stars-reviews-count')
+                rating_elem = product.select_one('[aria-label*="out of"], .stars-container')
                 if rating_elem:
-                    rating_text = rating_elem.get('aria-label', '')
-                    rating_match = re.search(r'(\d+(\.\d+)?)\s+out of', rating_text)
+                    rating_text = rating_elem.get('aria-label') or rating_elem.text
+                    rating_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:out of|\/)\s*\d+', rating_text)
                     if rating_match:
                         try:
                             rating = float(rating_match.group(1))
@@ -355,41 +370,41 @@ class WalmartScraper:
                 
                 # Extract review count
                 review_count = None
-                reviews_elem = element.select_one('div.reviews-count, span.stars-reviews-count')
+                reviews_elem = product.select_one('[aria-label*="reviews"], .reviews-count')
                 if reviews_elem:
                     reviews_text = reviews_elem.text.strip()
-                    review_match = re.search(r'(\d+)\s+reviews', reviews_text)
+                    review_match = re.search(r'(\d+)\s*reviews', reviews_text)
                     if review_match:
                         try:
                             review_count = int(review_match.group(1))
                         except ValueError:
                             pass
                 
-                # Check for Walmart Plus
+                # Check for Walmart+
                 walmart_plus = False
-                plus_elem = element.select_one('.walmart-plus-label, .wplus-icon')
+                plus_elem = product.select_one('.walmart-plus, .wplus-icon, [aria-label*="Walmart+"]')
                 if plus_elem:
                     walmart_plus = True
                 
                 # Extract shipping info
                 free_shipping = False
                 shipping_cost = 0.0
-                shipping_elem = element.select_one('.fulfillment-shipping-text, .free-shipping-label')
+                shipping_elem = product.select_one('.fulfillment-shipping-text, .free-shipping, [data-automation-id="shipping-text"]')
                 if shipping_elem:
                     shipping_text = shipping_elem.text.strip().lower()
                     if 'free' in shipping_text:
                         free_shipping = True
                     else:
-                        shipping_match = re.search(r'\$(\d+\.\d+)', shipping_text)
+                        shipping_match = re.search(r'\$(\d+(?:\.\d+)?)', shipping_text)
                         if shipping_match:
                             try:
                                 shipping_cost = float(shipping_match.group(1))
                             except ValueError:
                                 shipping_cost = 0.0
                 
-                # Extract seller info if available
+                # Extract seller info
                 seller = None
-                seller_elem = element.select_one('.seller-name, .product-seller')
+                seller_elem = product.select_one('.seller-name, .product-seller, [data-automation-id="seller-name"]')
                 if seller_elem:
                     seller = seller_elem.text.strip()
                 
@@ -406,7 +421,9 @@ class WalmartScraper:
                     item_id=item_id,
                     seller=seller,
                     free_shipping=free_shipping,
-                    shipping_cost=shipping_cost
+                    shipping_cost=shipping_cost,
+                    features=[],
+                    categories=[]
                 )
                 
                 listings.append(listing)
@@ -417,17 +434,16 @@ class WalmartScraper:
         
         return listings
     
-    async def get_product_details(self, item_id: str) -> Optional[Dict[str, Any]]:
+    async def get_product_details(self, url: str) -> Optional[Dict[str, Any]]:
         """
-        Get detailed information for a specific product by ID.
+        Get detailed information for a specific product.
         
         Args:
-            item_id (str): Walmart item ID
+            url (str): Walmart product URL
             
         Returns:
             Optional[Dict[str, Any]]: Product details, or None if not found
         """
-        url = f"https://www.walmart.com/ip/{item_id}"
         html = await self.fetch_page(url)
         
         if not html:
@@ -437,88 +453,76 @@ class WalmartScraper:
         details = {}
         
         # Extract title
-        title_elem = soup.select_one('h1.prod-ProductTitle')
+        title_elem = soup.select_one('h1.prod-ProductTitle, [data-automation-id="product-title"]')
         if title_elem:
             details['title'] = title_elem.text.strip()
         
         # Extract price
-        price_elem = soup.select_one('span.price-characteristic')
-        if price_elem and 'content' in price_elem.attrs:
-            try:
-                price = float(price_elem['content'])
-                fraction_elem = soup.select_one('span.price-mantissa')
-                if fraction_elem:
-                    fraction = fraction_elem.text.strip()
-                    if fraction:
-                        price += float(f"0.{fraction}")
-                details['price'] = price
-            except ValueError:
-                pass
+        price_elem = soup.select_one('.price-characteristic, [data-automation-id="product-price"]')
+        if price_elem:
+            price_text = price_elem.text.strip() if not price_elem.get('content') else price_elem.get('content')
+            price_match = re.search(r'(\d+(?:\.\d+)?)', price_text)
+            if price_match:
+                try:
+                    details['price'] = float(price_match.group(1))
+                except ValueError:
+                    pass
         
-        # Extract features
+        # Extract product features
         features = []
-        feature_section = soup.select_one('#product-overview, .about-product')
-        if feature_section:
-            feature_list = feature_section.select('li')
-            for li in feature_list:
-                feature_text = li.text.strip()
-                if feature_text:
-                    features.append(feature_text)
+        feature_elems = soup.select('#product-overview li, .about-product li, [data-automation-id="product-description"] li')
+        for elem in feature_elems:
+            feature = elem.text.strip()
+            if feature:
+                features.append(feature)
         
         if features:
             details['features'] = features
         
         # Extract specifications
-        specifications = {}
-        spec_section = soup.select_one('.specifications-container')
-        if spec_section:
-            spec_rows = spec_section.select('tr')
-            for row in spec_rows:
-                cells = row.select('td')
-                if len(cells) >= 2:
-                    key = cells[0].text.strip()
-                    value = cells[1].text.strip()
-                    if key and value:
-                        specifications[key] = value
+        specs = {}
+        spec_rows = soup.select('.specifications-container tr, .product-specifications tr')
+        for row in spec_rows:
+            cells = row.select('td, th')
+            if len(cells) >= 2:
+                key = cells[0].text.strip()
+                value = cells[1].text.strip()
+                if key and value:
+                    specs[key] = value
         
-        if specifications:
-            details['specifications'] = specifications
+        if specs:
+            details['specifications'] = specs
         
-        # Extract categories
-        categories = []
-        breadcrumb_section = soup.select_one('.breadcrumb-list')
-        if breadcrumb_section:
-            links = breadcrumb_section.select('a')
-            for link in links:
-                category_text = link.text.strip()
-                if category_text and category_text.lower() != 'home':
-                    categories.append(category_text)
+        # Extract seller info
+        seller_elem = soup.select_one('.seller-name, [data-automation-id="seller-name"]')
+        if seller_elem:
+            details['seller'] = seller_elem.text.strip()
         
-        if categories:
-            details['categories'] = categories
+        # Extract shipping info
+        shipping_elem = soup.select_one('.fulfillment-shipping-text, [data-automation-id="shipping-text"]')
+        if shipping_elem:
+            shipping_text = shipping_elem.text.strip().lower()
+            details['free_shipping'] = 'free' in shipping_text
+            if not details.get('free_shipping'):
+                shipping_match = re.search(r'\$(\d+(?:\.\d+)?)', shipping_text)
+                if shipping_match:
+                    try:
+                        details['shipping_cost'] = float(shipping_match.group(1))
+                    except ValueError:
+                        details['shipping_cost'] = 0.0
         
-        # Extract availability
-        availability_elem = soup.select_one('div.fulfillment-text')
-        if availability_elem:
-            details['availability'] = availability_elem.text.strip()
+        # Extract product images
+        images = []
+        img_elems = soup.select('.prod-hero-image img, .carousel-img, [data-automation-id="image-gallery"] img')
+        for img in img_elems:
+            src = img.get('src') or img.get('data-src') or ''
+            if src and src not in images:
+                # Get full-size image when possible
+                src = re.sub(r'\d+X\d+', '1000X1000', src)
+                images.append(src)
         
-        # Extract description
-        description_elem = soup.select_one('#product-description, .product-description-container')
-        if description_elem:
-            details['description'] = description_elem.text.strip()
-        
-        # Extract images (primary and additional)
-        image_urls = []
-        image_elems = soup.select('.prod-hero-image img, .carousel-img')
-        for img in image_elems:
-            if 'src' in img.attrs:
-                img_url = img['src']
-                # Convert thumbnail URLs to full size
-                img_url = re.sub(r'\d+X\d+', '1000X1000', img_url)
-                image_urls.append(img_url)
-        
-        if image_urls:
-            details['image_urls'] = image_urls
+        if images:
+            details['images'] = images
         
         return details
     
@@ -555,7 +559,7 @@ class WalmartScraper:
                     max_pages=pages_per_keyword
                 )
                 
-                # If we need more, search for high-priced items (for selling)
+                # Also search for high-priced items (for selling)
                 high_priced = await self.search_walmart(
                     keyword, 
                     sort="price_high", 
