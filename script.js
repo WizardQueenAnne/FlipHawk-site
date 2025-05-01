@@ -123,11 +123,12 @@ function setupEventListeners() {
         loginModal.classList.remove('active');
         signupModal.classList.add('active');
     });
-    // Add this inside the setupEventListeners function in script.js
-    // Right after the other modal-related event listeners (around line 126)
-    document.getElementById('cancel-subscription-modal').addEventListener('click', function() {
+    
+    // Add this for the subscription modal close button
+    document.getElementById('close-subscription').addEventListener('click', function() {
         subscriptionModal.classList.remove('active');
     });
+    
     switchToLogin.addEventListener('click', function() {
         signupModal.classList.remove('active');
         loginModal.classList.add('active');
@@ -370,7 +371,7 @@ function updatePlanButtons() {
     });
 }
 
-// Redeem promo code - handle special code "Seaprep"
+// Redeem promo code - handle special code "SEAPREP"
 function redeemPromoCode(code) {
     if (code.toLowerCase() === 'seaprep') {
         // Grant Pro access
@@ -421,6 +422,7 @@ function handleLogout() {
     showToast('You have been logged out successfully', 'success');
 }
 
+// Show subcategories for selected category
 // Show subcategories for selected category
 function showSubcategories(category) {
     const subcats = categories[category];
@@ -537,7 +539,7 @@ function abortScan() {
     showToast('Scan cancelled', 'error');
 }
 
-// Scan with progress updates (simulated for frontend demo)
+// Scan with progress updates (improved to show results)
 function scanWithProgressUpdates(requestData) {
     // Simulate a multi-step scanning process
     const totalSteps = 100;
@@ -696,23 +698,23 @@ function displayResults(results) {
         // Create image element if available
         let imageHtml = '';
         if (result.image_url) {
-            imageHtml = `<img src="${result.image_url}" alt="${result.buy_title || result.title}" class="result-image">`;
-        } else if (result.buy_image_url) {
-            imageHtml = `<img src="${result.buy_image_url}" alt="${result.buy_title || result.title}" class="result-image">`;
+            imageHtml = `<img src="${result.image_url}" alt="${result.title || result.buyTitle}" class="result-image">`;
+        } else if (result.buyImage_url) {
+            imageHtml = `<img src="${result.buyImage_url}" alt="${result.title || result.buyTitle}" class="result-image">`;
         }
         
         // Prepare the display values
-        const title = result.buy_title || result.title || '';
-        const buyPrice = result.buy_price || result.buyPrice || 0;
-        const sellPrice = result.sell_price || result.sellPrice || 0;
-        const profit = result.net_profit || result.profit || (sellPrice - buyPrice);
-        const profitPercentage = result.net_profit_percentage || result.profitPercentage || (profit * 100 / buyPrice);
-        const buyLink = result.buy_link || result.buyLink || '#';
-        const sellLink = result.sell_link || result.sellLink || '#';
-        const buyMarketplace = result.buy_marketplace || 'Unknown';
-        const sellMarketplace = result.sell_marketplace || 'Unknown';
+        const title = result.title || result.buyTitle || '';
+        const buyPrice = result.buyPrice || result.buy_price || 0;
+        const sellPrice = result.sellPrice || result.sell_price || 0;
+        const profit = result.netProfit || result.profit || (sellPrice - buyPrice);
+        const profitPercentage = result.netProfitPercentage || result.profitPercentage || (profit * 100 / buyPrice);
+        const buyLink = result.buyLink || result.buy_link || '#';
+        const sellLink = result.sellLink || result.sell_link || '#';
+        const buyMarketplace = result.buyMarketplace || result.buy_marketplace || 'Unknown';
+        const sellMarketplace = result.sellMarketplace || result.sell_marketplace || 'Unknown';
         const subcategory = result.subcategory || selectedSubcategories[0];
-        const confidence = result.similarity_score || result.confidence || 85;
+        const confidence = result.confidence || result.similarity_score || 85;
         
         resultCard.innerHTML = `
             ${imageHtml}
