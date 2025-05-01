@@ -224,6 +224,7 @@ function handleSignup() {
     // Simple validation
     if (!username || !email || !password) {
         showSignupError('Please fill out all fields');
+showSignupError('Please fill out all fields');
         return;
     }
     
@@ -538,7 +539,7 @@ function abortScan() {
     showToast('Scan cancelled', 'error');
 }
 
-// Scan with progress updates (improved to show results)
+// Scan with progress updates and result handling
 function scanWithProgressUpdates(requestData) {
     // Simulate a multi-step scanning process
     const totalSteps = 100;
