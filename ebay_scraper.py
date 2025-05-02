@@ -700,4 +700,30 @@ class EbayScraper:
                     except ValueError:
                         pass
             
-            # Extract bid count
+# Extract bid count
+        bids_elem = element.select_one('.s-item__bids')
+        if bids_elem:
+            bids_text = bids_elem.text.strip()
+            bids_match = re.search(r'(\d+)', bids_text)
+            if bids_match:
+                try:
+                    auction_data['bids'] = int(bids_match.group(1))
+                except ValueError:
+                    pass
+            
+            # Extract Buy It Now price for auctions
+            bin_elem = element.select_one('.s-item__buyItNowPrice')
+            if bin_elem:
+                bin_text = bin_elem.text.strip()
+                bin_match = re.search(r'\$([0-9,]+\.\d+)', bin_text)
+                if bin_match:
+                    try:
+                        auction_data['buy_it_now_price'] = float(bin_match.group(1).replace(',', ''))
+                    except ValueError:
+                        pass
+        
+        # Check for Classified Ad type
+        if element.select_one('.s-item__format-ad'):
+            auction_data['listing_type'] = 'classified'
+    
+    return auction_data
