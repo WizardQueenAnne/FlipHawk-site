@@ -1,205 +1,289 @@
-"""
-Amazon marketplace scraper for FlipHawk arbitrage system.
-This module handles scraping Amazon for products based on keywords from the subcategories.
-"""
-
 import asyncio
-import random
-import time
+import aiohttp
 import logging
-from typing import List, Dict, Any
-from comprehensive_keywords import generate_keywords
+import json
+import re
+from typing import List, Dict, Any, Optional
+from bs4 import BeautifulSoup
+from datetime import datetime
+from urllib.parse import quote
 
-# Set up logging
+from api_integration import EnhancedAPIIntegration
+
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("amazon_scraper.log"),
+        logging.StreamHandler()
+    ]
 )
-logger = logging.getLogger('amazon_scraper')
 
-async def run_amazon_search(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """
-    Run Amazon search for multiple subcategories.
+logger = logging.getLogger(__name__)
+
+class AmazonScraper:
+    """Enhanced Amazon scraper to find product listings"""
     
-    Args:
-        subcategories (List[str]): List of subcategories to search for
+    def __init__(self):
+        self.base_url = "https://www.amazon.com/s"
+        self.session = None
+        self.api = EnhancedAPIIntegration()
         
-    Returns:
-        List[Dict[str, Any]]: Combined list of found products
-    """
-    logger.info(f"Starting Amazon search for subcategories: {subcategories}")
-    
-    all_listings = []
-    
-    # For each subcategory, generate synthetic data for demo purposes
-    for subcategory in subcategories:
-        # Generate keywords for the subcategory
-        keywords = generate_keywords(subcategory, max_keywords=3)
+        # Rotating user agents to avoid detection
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36"
+        ]
+        self.user_agent_index = 0
         
+        # Amazon specific headers
+        self.headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Referer": "https://www.amazon.com/",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0"
+        }
+    
+    async def initialize(self):
+        """Initialize session and headers"""
+        if self.session is None:
+            self.session = aiohttp.ClientSession()
+            await self.api.initialize()
+    
+    async def close(self):
+        """Close session"""
+        if self.session:
+            await self.session.close()
+            self.session = None
+        await self.api.close()
+    
+    def _get_next_user_agent(self):
+        """Rotate through user agents"""
+        agent = self.user_agents[self.user_agent_index]
+        self.user_agent_index = (self.user_agent_index + 1) % len(self.user_agents)
+        return agent
+    
+    async def search_listings(self, keywords: List[str], max_pages: int = 3) -> List[Dict]:
+        """Search Amazon for product listings with the given keywords"""
+        await self.initialize()
+        
+        all_listings = []
         for keyword in keywords:
-            # Generate 5-15 synthetic listings per keyword
-            num_listings = random.randint(5, 15)
+            try:
+                keyword_listings = await self._search_keyword(keyword, max_pages)
+                logger.info(f"Found {len(keyword_listings)} Amazon listings for keyword: {keyword}")
+                all_listings.extend(keyword_listings)
+            except Exception as e:
+                logger.error(f"Error searching Amazon for keyword '{keyword}': {str(e)}")
+        
+        # Output count to console
+        print(f"Amazon scraper found {len(all_listings)} total listings")
+        return all_listings
+    
+    async def _search_keyword(self, keyword: str, max_pages: int) -> List[Dict]:
+        """Search for a specific keyword and collect listings from multiple pages"""
+        listings = []
+        
+        for page in range(1, max_pages + 1):
+            try:
+                url = f"{self.base_url}?k={quote(keyword)}&page={page}"
+                
+                # Update headers with a new user agent
+                self.headers["User-Agent"] = self._get_next_user_agent()
+                
+                async with self.session.get(url, headers=self.headers) as response:
+                    if response.status != 200:
+                        logger.warning(f"Amazon returned status code {response.status} for keyword '{keyword}', page {page}")
+                        continue
+                    
+                    html_content = await response.text()
+                    
+                    # Parse HTML content
+                    page_listings = self._parse_amazon_search_results(html_content, keyword)
+                    listings.extend(page_listings)
+                    
+                    # Respect Amazon's rate limits
+                    await asyncio.sleep(2)  # Delay between page requests
             
-            for i in range(num_listings):
-                # Generate a synthetic listing based on subcategory
-                listing = generate_synthetic_listing(subcategory, keyword)
+            except Exception as e:
+                logger.error(f"Error fetching Amazon page {page} for keyword '{keyword}': {str(e)}")
+                continue
+        
+        return listings
+    
+    def _parse_amazon_search_results(self, html_content: str, keyword: str) -> List[Dict]:
+        """Parse Amazon search results HTML to extract product listings"""
+        listings = []
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Find all product containers
+        product_containers = soup.select('div[data-component-type="s-search-result"]')
+        
+        for container in product_containers:
+            try:
+                # Extract ASIN (Amazon Standard Identification Number)
+                asin = container.get('data-asin', '')
+                if not asin:
+                    continue
                 
-                # Add subcategory to the listing
-                listing['subcategory'] = subcategory
+                # Extract product title
+                title_element = container.select_one('h2 a span')
+                title = title_element.text.strip() if title_element else "Unknown Title"
                 
-                all_listings.append(listing)
+                # Extract price
+                price_element = container.select_one('.a-price .a-offscreen')
+                price_str = price_element.text.strip() if price_element else "0"
+                price = self._extract_price(price_str)
+                
+                # Skip if no valid price found
+                if price <= 0:
+                    continue
+                
+                # Extract product URL
+                url_element = container.select_one('h2 a')
+                relative_url = url_element.get('href', '') if url_element else ""
+                url = f"https://www.amazon.com{relative_url}" if relative_url.startswith('/') else relative_url
+                
+                # Extract image URL
+                image_element = container.select_one('img.s-image')
+                image_url = image_element.get('src', '') if image_element else ""
+                
+                # Extract rating if available
+                rating_element = container.select_one('i.a-icon-star-small span')
+                rating = rating_element.text.strip() if rating_element else "N/A"
+                
+                # Extract number of reviews if available
+                reviews_element = container.select_one('a.a-link-normal .a-size-base')
+                reviews = reviews_element.text.strip() if reviews_element else "0"
+                
+                # Check if it's a sponsored product
+                is_sponsored = bool(container.select_one('span.s-sponsored-label-info-icon'))
+                
+                # Check for Prime eligibility
+                is_prime = bool(container.select_one('.a-icon-prime'))
+                
+                listing = {
+                    "marketplace": "amazon",
+                    "listing_id": asin,
+                    "title": title,
+                    "price": price,
+                    "url": url,
+                    "image_url": image_url,
+                    "rating": rating,
+                    "reviews": reviews,
+                    "is_sponsored": is_sponsored,
+                    "is_prime": is_prime,
+                    "source_keyword": keyword,
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+                listings.append(listing)
+            
+            except Exception as e:
+                logger.error(f"Error parsing Amazon product container: {str(e)}")
+                continue
         
-        # Simulate network delay
-        await asyncio.sleep(random.uniform(0.5, 1.5))
+        return listings
     
-    logger.info(f"Found {len(all_listings)} total Amazon listings across all subcategories")
-    return all_listings
-
-def generate_synthetic_listing(subcategory: str, keyword: str) -> Dict[str, Any]:
-    """
-    Generate a synthetic Amazon listing based on subcategory and keyword.
+    def _extract_price(self, price_str: str) -> float:
+        """Extract numerical price from price string"""
+        try:
+            # Remove currency symbols and commas, then convert to float
+            price_clean = re.sub(r'[^\d.]', '', price_str)
+            return float(price_clean) if price_clean else 0
+        except (ValueError, TypeError):
+            return 0
     
-    Args:
-        subcategory (str): Product subcategory
-        keyword (str): Search keyword
+    async def get_product_details(self, asin: str) -> Dict:
+        """Get detailed information about a specific Amazon product by ASIN"""
+        await self.initialize()
         
-    Returns:
-        Dict[str, Any]: Synthetic Amazon listing
-    """
-    # Base product data
-    brands = {
-        "Headphones": ["Sony", "Bose", "Apple", "Sennheiser", "JBL", "Audio-Technica", "Jabra", "Anker"],
-        "Keyboards": ["Logitech", "Corsair", "Razer", "SteelSeries", "HyperX", "Keychron", "Ducky", "Das Keyboard"],
-        "Graphics Cards": ["NVIDIA", "AMD", "ASUS", "MSI", "EVGA", "Gigabyte", "Zotac", "XFX"],
-        "CPUs": ["Intel", "AMD", "Apple"],
-        "Laptops": ["Apple", "Dell", "HP", "Lenovo", "ASUS", "Acer", "Microsoft", "MSI"],
-        "Monitors": ["LG", "Samsung", "Dell", "ASUS", "AOC", "BenQ", "ViewSonic", "Acer"],
-        "SSDs": ["Samsung", "Western Digital", "Crucial", "SanDisk", "Kingston", "Seagate", "ADATA", "Sabrent"],
-        "Routers": ["TP-Link", "ASUS", "Netgear", "Linksys", "EERO", "Google", "Ubiquiti", "D-Link"],
-        "Consoles": ["Sony", "Microsoft", "Nintendo", "Valve", "Meta"],
-        "Game Controllers": ["Sony", "Microsoft", "Nintendo", "Logitech", "Razer", "SteelSeries", "PowerA", "8BitDo"],
-        "Rare Games": ["Nintendo", "Sony", "Sega", "Microsoft", "Capcom", "Square Enix", "EA", "Activision"],
-        "Electric Guitars": ["Fender", "Gibson", "Ibanez", "PRS", "ESP", "Epiphone", "Jackson", "Schecter"],
-        "Guitar Pedals": ["Boss", "Electro-Harmonix", "Strymon", "MXR", "JHS", "Walrus Audio", "Keeley", "EarthQuaker"],
-        "Synthesizers": ["Moog", "Korg", "Roland", "Arturia", "Behringer", "Sequential", "Novation", "Elektron"]
-    }
-    
-    models = {
-        "Headphones": ["WH-1000XM4", "QuietComfort 45", "AirPods Pro", "HD 660S", "Tune 760NC", "ATH-M50X", "Elite 85t", "Soundcore Q35"],
-        "Keyboards": ["G Pro X", "K70 RGB", "BlackWidow V3", "Apex Pro", "Alloy Origins", "K2 V2", "One 3", "Model S"],
-        "Graphics Cards": ["RTX 4080", "Radeon RX 7900 XT", "ROG Strix 4070 Ti", "GeForce RTX 4060", "RTX 3090", "Radeon RX 6800 XT", "RTX 3070", "RX 6700 XT"],
-        "CPUs": ["Core i9-14900K", "Ryzen 9 7950X", "M3 Pro", "Core i7-14700K", "Ryzen 7 7800X3D", "Core i5-14600K", "Ryzen 5 7600X", "Ryzen 9 5950X"],
-        "Laptops": ["MacBook Pro", "XPS 15", "Spectre x360", "ThinkPad X1", "ROG Zephyrus", "Predator Helios", "Surface Laptop", "GS66 Stealth"],
-        "Monitors": ["UltraGear 27GP950", "Odyssey G7", "S2721DGF", "ROG Swift PG32UQX", "C27G2Z", "ZOWIE XL2546K", "XG27AQM", "Nitro XV272U"],
-        "SSDs": ["970 EVO Plus", "Black SN850X", "MX500", "Extreme Pro", "KC3000", "FireCuda 530", "SU800", "Rocket 4 Plus"],
-        "Routers": ["Archer AX6000", "ROG Rapture GT-AX11000", "Nighthawk RAX120", "Velop MX5300", "eero 6+", "Nest Wifi Pro", "AmpliFi Alien", "DIR-X5460"],
-        "Consoles": ["PlayStation 5", "Xbox Series X", "Nintendo Switch OLED", "Steam Deck", "Meta Quest 3", "PlayStation 4 Pro", "Xbox Series S", "Switch Lite"],
-        "Game Controllers": ["DualSense", "Xbox Wireless", "Pro Controller", "G29", "Wolverine V2", "Arctis Nova Pro", "Enhanced Wired", "SN30 Pro+"],
-        "Rare Games": ["Zelda: Tears of the Kingdom", "God of War Ragnarök", "Sonic the Hedgehog 3", "Halo Infinite", "Resident Evil 4", "Final Fantasy VII", "Madden 24", "Call of Duty: Modern Warfare III"],
-        "Electric Guitars": ["Stratocaster", "Les Paul", "RG550", "Custom 24", "Horizon", "Casino", "Soloist", "C-1"],
-        "Guitar Pedals": ["DS-1", "Big Muff Pi", "Timeline", "Phase 90", "Morning Glory", "Slo", "Compressor Plus", "Plumes"],
-        "Synthesizers": ["Grandmother", "Minilogue XD", "Juno-X", "Microfreak", "Deepmind 12", "Prophet-6", "Circuit Tracks", "Digitone"]
-    }
-    
-    # Select a brand based on subcategory
-    brand = random.choice(brands.get(subcategory, ["Generic Brand"]))
-    
-    # Select a model based on subcategory
-    model = random.choice(models.get(subcategory, ["Model X"]))
-    
-    # Generate a realistic title
-    title = f"{brand} {model} {subcategory} - {keyword.capitalize()}"
-    
-    # Generate a price range based on subcategory
-    price_ranges = {
-        "Headphones": (50, 400),
-        "Keyboards": (30, 250),
-        "Graphics Cards": (200, 1800),
-        "CPUs": (150, 800),
-        "Laptops": (500, 2500),
-        "Monitors": (120, 800),
-        "SSDs": (50, 300),
-        "Routers": (40, 350),
-        "Consoles": (250, 600),
-        "Game Controllers": (40, 200),
-        "Rare Games": (20, 150),
-        "Electric Guitars": (200, 2000),
-        "Guitar Pedals": (50, 400),
-        "Synthesizers": (300, 2000)
-    }
-    
-    price_range = price_ranges.get(subcategory, (20, 200))
-    base_price = random.uniform(price_range[0], price_range[1])
-    price = round(base_price, 2)
-    
-    # Generate an image URL (Amazon-like)
-    image_url = f"https://m.media-amazon.com/images/I/{random.randint(10000, 99999)}.jpg"
-    
-    # Generate a link (Amazon-like)
-    link = f"https://www.amazon.com/dp/{random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}{random.randint(10000000, 99999999)}"
-    
-    # Generate a condition (mostly new)
-    conditions = ["New", "Used - Like New", "Used - Very Good", "Used - Good", "Used - Acceptable", "Renewed"]
-    condition_weights = [0.8, 0.05, 0.05, 0.05, 0.03, 0.02]
-    condition = random.choices(conditions, weights=condition_weights)[0]
-    
-    # Generate a rating
-    rating = round(random.uniform(3.5, 5.0), 1)
-    
-    # Generate a number of ratings
-    num_ratings = random.randint(10, 10000)
-    
-    # Generate shipping information
-    is_prime = random.random() < 0.8  # 80% chance of being Prime
-    
-    shipping_cost = 0.0 if is_prime else round(random.uniform(3.99, 12.99), 2)
-    free_shipping = shipping_cost == 0.0
-    
-    # Generate seller information
-    seller = "Amazon.com" if random.random() < 0.6 else f"Seller{random.randint(100, 999)}"
-    
-    # Random ASIN (Amazon Standard Identification Number)
-    asin = f"B0{random.randint(10000000, 99999999)}"
-    
-    # Generate a randomized listing
-    listing = {
-        "title": title,
-        "price": price,
-        "link": link,
-        "image_url": image_url,
-        "condition": condition,
-        "rating": rating,
-        "num_ratings": num_ratings,
-        "is_prime": is_prime,
-        "shipping_cost": shipping_cost,
-        "free_shipping": free_shipping,
-        "seller": seller,
-        "asin": asin,
-        "brand": brand,
-        "model": model,
-        "source": "Amazon",
-        "normalized_title": title.lower().replace(" - ", " ").replace("-", " ")
-    }
-    
-    return listing
-
-if __name__ == "__main__":
-    # Test the Amazon scraper with a few subcategories
-    async def test_amazon_scraper():
-        subcategories = ["Headphones", "Keyboards", "Graphics Cards"]
-        results = await run_amazon_search(subcategories)
+        try:
+            url = f"https://www.amazon.com/dp/{asin}"
+            
+            # Update headers with a new user agent
+            self.headers["User-Agent"] = self._get_next_user_agent()
+            
+            async with self.session.get(url, headers=self.headers) as response:
+                if response.status != 200:
+                    logger.warning(f"Amazon returned status code {response.status} for ASIN {asin}")
+                    return {}
+                
+                html_content = await response.text()
+                
+                # Parse HTML content for product details
+                return self._parse_product_details(html_content, asin)
         
-        print(f"Found {len(results)} total listings")
-        
-        # Print a few sample listings
-        for i, listing in enumerate(results[:3]):
-            print(f"\nListing {i+1}:")
-            print(f"Title: {listing['title']}")
-            print(f"Price: ${listing['price']}")
-            print(f"Condition: {listing['condition']}")
-            print(f"Free Shipping: {listing['free_shipping']}")
-            print(f"Link: {listing['link']}")
+        except Exception as e:
+            logger.error(f"Error fetching Amazon product details for ASIN {asin}: {str(e)}")
+            return {}
     
-    # Run the test
-    import asyncio
-    asyncio.run(test_amazon_scraper())
+    def _parse_product_details(self, html_content: str, asin: str) -> Dict:
+        """Parse Amazon product page HTML to extract detailed information"""
+        details = {
+            "marketplace": "amazon",
+            "listing_id": asin,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Extract product title
+            title_element = soup.select_one('#productTitle')
+            details["title"] = title_element.text.strip() if title_element else "Unknown Title"
+            
+            # Extract price
+            price_element = soup.select_one('#priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen')
+            price_str = price_element.text.strip() if price_element else "0"
+            details["price"] = self._extract_price(price_str)
+            
+            # Extract product description
+            description_element = soup.select_one('#productDescription p')
+            details["description"] = description_element.text.strip() if description_element else ""
+            
+            # Extract product features
+            feature_elements = soup.select('#feature-bullets ul li span.a-list-item')
+            details["features"] = [feature.text.strip() for feature in feature_elements if feature.text.strip()]
+            
+            # Extract main image URL
+            image_element = soup.select_one('#landingImage, #imgBlkFront')
+            details["image_url"] = image_element.get('src', '') if image_element else ""
+            
+            # Extract rating
+            rating_element = soup.select_one('#acrPopover, .a-icon-star')
+            details["rating"] = rating_element.get('title', 'N/A') if rating_element else "N/A"
+            
+            # Extract number of reviews
+            reviews_element = soup.select_one('#acrCustomerReviewText')
+            details["reviews"] = reviews_element.text.strip() if reviews_element else "0"
+            
+            # Extract availability
+            availability_element = soup.select_one('#availability span')
+            details["availability"] = availability_element.text.strip() if availability_element else "Unknown"
+            
+            # Extract seller information
+            seller_element = soup.select_one('#merchant-info')
+            details["seller"] = seller_element.text.strip() if seller_element else "Unknown"
+            
+            # Extract shipping information
+            shipping_element = soup.select_one('#ourprice_shippingmessage')
+            details["shipping"] = shipping_element.text.strip() if shipping_element else ""
+            
+            # URL
+            details["url"] = f"https://www.amazon.com/dp/{asin}"
+            
+            return details
+        
+        except Exception as e:
+            logger.error(f"Error parsing Amazon product details for ASIN {asin}: {str(e)}")
