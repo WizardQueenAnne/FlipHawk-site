@@ -14,7 +14,7 @@ try:
     
     # Import the scraper manager
     from scraper_manager import ScraperManager
-    from comprehensive_keywords import KEYWORDS
+    from comprehensive_keywords import COMPREHENSIVE_KEYWORDS  # Fixed import
     
     # Configure logging
     logging.basicConfig(
@@ -63,7 +63,13 @@ try:
         """Search for listings across marketplaces and find arbitrage opportunities"""
         try:
             # Use provided keywords or default to comprehensive keywords
-            keywords = request.keywords or KEYWORDS
+            keywords = request.keywords or []
+            if not keywords:
+                # Extract keywords from all categories in COMPREHENSIVE_KEYWORDS
+                for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+                    for subcat, keyword_list in subcats.items():
+                        # Take first 5 keywords from each subcategory
+                        keywords.extend(keyword_list[:5])
             
             # Filter marketplaces if specified
             if request.marketplaces:
@@ -98,7 +104,12 @@ try:
     @app.get("/keywords")
     async def get_keywords():
         """Get all available keywords"""
-        return {"keywords": KEYWORDS}
+        # Extract all keywords from COMPREHENSIVE_KEYWORDS
+        all_keywords = []
+        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+            for subcat, keyword_list in subcats.items():
+                all_keywords.extend(keyword_list)
+        return {"keywords": all_keywords}
     
     @app.get("/opportunities")
     async def get_opportunities():
@@ -127,7 +138,7 @@ except ImportError:
     
     # Import the scraper manager
     from scraper_manager import ScraperManager
-    from comprehensive_keywords import KEYWORDS
+    from comprehensive_keywords import COMPREHENSIVE_KEYWORDS  # Fixed import
     
     # Configure logging
     logging.basicConfig(
@@ -159,7 +170,13 @@ except ImportError:
             data = request.get_json()
             
             # Use provided keywords or default to comprehensive keywords
-            keywords = data.get("keywords") or KEYWORDS
+            keywords = data.get("keywords") or []
+            if not keywords:
+                # Extract keywords from all categories in COMPREHENSIVE_KEYWORDS
+                for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+                    for subcat, keyword_list in subcats.items():
+                        # Take first 5 keywords from each subcategory
+                        keywords.extend(keyword_list[:5])
             
             # Filter marketplaces if specified
             marketplaces = data.get("marketplaces")
@@ -203,7 +220,12 @@ except ImportError:
     @app.route("/keywords")
     def get_keywords():
         """Get all available keywords"""
-        return jsonify({"keywords": KEYWORDS})
+        # Extract all keywords from COMPREHENSIVE_KEYWORDS
+        all_keywords = []
+        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+            for subcat, keyword_list in subcats.items():
+                all_keywords.extend(keyword_list)
+        return jsonify({"keywords": all_keywords})
     
     @app.route("/opportunities")
     def get_opportunities():
