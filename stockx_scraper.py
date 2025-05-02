@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from comprehensive_keywords import generate_keywords
+from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
 
 # Set up logging
 logging.basicConfig(
@@ -155,13 +155,50 @@ class StockXScraper:
             'DNT': '1'
         }
         
-        # Define categories on StockX
-        self.categories = {
-            "Sneakers": ["Sneakers", "Jordans", "Nike Dunks", "Yeezy", "Air Force 1", "New Balance"],
-            "Streetwear": ["Streetwear", "Supreme", "BAPE", "Vintage Tees", "Band Tees", "Denim Jackets"],
-            "Collectibles": ["Collectibles", "Trading Cards", "Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops"],
-            "Electronics": ["Electronics", "Consoles", "Headphones", "Graphics Cards", "CPUs", "Gaming Accessories"],
-            "Accessories": ["Watches", "Handbags", "Sunglasses", "Jewelry"]
+        # Define relevant categories on StockX and their corresponding subcategories
+        self.stockx_categories = {
+            "Jordans": {
+                "endpoint": "sneakers/jordan",
+                "brands": ["Jordan", "Nike"],
+                "category_names": ["Sneakers", "Jordan", "Air Jordan"],
+                "models": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]
+            },
+            "Nike Dunks": {
+                "endpoint": "sneakers/nike-dunk",
+                "brands": ["Nike"],
+                "category_names": ["Sneakers", "Nike", "Dunk"],
+                "models": ["Dunk Low", "Dunk High", "SB Dunk Low", "SB Dunk High", "Dunk Mid"]
+            },
+            "Headphones": {
+                "endpoint": "electronics/headphones",
+                "brands": ["Sony", "Bose", "Apple", "Beats", "Sennheiser", "JBL"],
+                "category_names": ["Electronics", "Headphones", "Audio"],
+                "models": ["WH-1000XM4", "AirPods Pro", "AirPods Max", "QuietComfort", "QuietComfort 45", "Studio"]
+            },
+            "Graphics Cards": {
+                "endpoint": "electronics/pc-parts",
+                "brands": ["NVIDIA", "AMD", "ASUS", "MSI", "EVGA", "Gigabyte"],
+                "category_names": ["Electronics", "Computer Parts", "PC Components"],
+                "models": ["RTX 3070", "RTX 3080", "RTX 3090", "RX 6800 XT", "RX 6900 XT", "RTX 4080", "RTX 4090"]
+            },
+            "Gaming Consoles": {
+                "endpoint": "electronics/gaming-consoles",
+                "brands": ["Sony", "Microsoft", "Nintendo"],
+                "category_names": ["Electronics", "Gaming", "Consoles"],
+                "models": ["PlayStation 5", "Xbox Series X", "Nintendo Switch OLED", "Steam Deck"]
+            },
+            "Pokémon": {
+                "endpoint": "collectibles/trading-cards/pokemon",
+                "brands": ["Pokemon", "Nintendo"],
+                "category_names": ["Collectibles", "Trading Cards", "Pokemon"],
+                "models": ["Charizard", "Pikachu", "Booster Box", "Elite Trainer Box", "Hidden Fates", "Evolving Skies"]
+            },
+            "Magic: The Gathering": {
+                "endpoint": "collectibles/trading-cards/magic-the-gathering",
+                "brands": ["Wizards of the Coast", "Magic: The Gathering"],
+                "category_names": ["Collectibles", "Trading Cards", "Magic: The Gathering"],
+                "models": ["Black Lotus", "Booster Box", "Draft Box", "Collector Booster", "Modern Horizons"]
+            }
         }
     
     def _load_proxies(self) -> List[str]:
@@ -225,234 +262,211 @@ class StockXScraper:
             await asyncio.sleep(self.delay_between_requests)
             return await self.fetch_page(url, retries + 1)
     
-    async def search_stockx(self, keyword: str, sort: str = "most-recent", max_pages: int = 2) -> List[StockXListing]:
+    async def search_stockx(self, keyword: str, category: Optional[str] = None, sort: str = "most-recent", max_pages: int = 2) -> List[StockXListing]:
         """
         Search StockX for a keyword with sorting options.
         
         Args:
             keyword (str): Keyword to search for
+            category (Optional[str]): Category to search within (null for all categories)
             sort (str): Sorting option - "most-recent", "most-popular", "highest-bid", "lowest-ask"
             max_pages (int): Maximum number of pages to scrape
             
         Returns:
             List[StockXListing]: List of found listings
         """
-        logger.info(f"Searching StockX for '{keyword}' with sort={sort}")
+        logger.info(f"Searching StockX for '{keyword}' in category '{category}' with sort={sort}")
         
-        # For demo purposes, we'll generate dummy data without actually scraping
+        # Generate relevant listings based on the keyword and category
+        # For production, this would be actual web scraping, but for demo we'll generate data
+        
+        # Determine which category info to use for generating listings
+        category_info = None
+        for cat_name, info in self.stockx_categories.items():
+            if category and cat_name.lower() == category.lower():
+                category_info = info
+                break
+            elif not category and any(kw.lower() in keyword.lower() for kw in info["brands"] +
+# Determine which category info to use for generating listings
+        category_info = None
+        for cat_name, info in self.stockx_categories.items():
+            if category and cat_name.lower() == category.lower():
+                category_info = info
+                break
+            elif not category and any(kw.lower() in keyword.lower() for kw in info["brands"] + info["models"]):
+                category_info = info
+                break
+        
+        # If no specific category found, use generic product info
+        if not category_info:
+            category_info = {
+                "brands": ["Nike", "Adidas", "Jordan", "Supreme", "Sony", "Apple"],
+                "category_names": ["Sneakers", "Electronics", "Collectibles"],
+                "models": ["Limited Edition", "Special Release", "Exclusive"]
+            }
+        
+        # Generate a random number of listings (based on popularity of keyword)
+        keyword_popularity = len(keyword) // 2  # Simple heuristic based on keyword length
+        num_listings = min(random.randint(5 + keyword_popularity, 25 + keyword_popularity), max_pages * 24)
+        
         listings = []
+        for i in range(num_listings):
+            listings.append(self._generate_stockx_listing(keyword, category_info))
         
-        # Generate some simulated listings
-        for i in range(1, random.randint(10, 25)):
-            # Generate a plausible title based on category/keyword
-            if "Jordan" in keyword or "Nike" in keyword or "Sneaker" in keyword or "Dunk" in keyword:
-                brands = ["Nike", "Jordan", "Adidas", "Yeezy", "New Balance"]
-                models = ["Air Jordan 1", "Dunk Low", "Yeezy 350", "Air Force 1", "Air Max 90", "Jordan 4", "550"]
-                colorways = ["Bred", "Chicago", "University Blue", "Royal", "Black/White", "Panda", "Red October", "Beluga"]
-                title = f"{random.choice(brands)} {random.choice(models)} {random.choice(colorways)}"
-                category = "Sneakers"
-                
-                # Generate a style ID (typical format: ABC123-456)
-                style_id = f"{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{random.randint(100,999)}-{random.randint(100,999)}"
-                
-                # Generate realistic price ranges for sneakers
-                lowest_ask = random.uniform(100, 500)
-                highest_bid = lowest_ask * (0.8 + random.random() * 0.15)  # Typically lower than ask
-                last_sale = lowest_ask * (0.9 + random.random() * 0.2)  # Around the ask price
-                retail_price = lowest_ask * (0.4 + random.random() * 0.3)  # Much lower than market
-                
-            elif "Card" in keyword or "Pokemon" in keyword or "Magic" in keyword or "Yu-Gi-Oh" in keyword:
-                card_types = ["Pokemon", "Magic: The Gathering", "Yu-Gi-Oh"]
-                card_type = next((ct for ct in card_types if ct.lower() in keyword.lower()), random.choice(card_types))
-                
-                if card_type == "Pokemon":
-                    names = ["Charizard", "Pikachu", "Mew", "Mewtwo", "Blastoise", "Venusaur", "Lugia", "Ho-Oh"]
-                    sets = ["Base Set", "Jungle", "Fossil", "Team Rocket", "Hidden Fates", "Vivid Voltage", "Evolving Skies"]
-                    rarities = ["Holo", "1st Edition", "Shadowless", "Secret Rare", "Ultra Rare", "Full Art", "Rainbow Rare"]
-                    title = f"Pokemon {random.choice(names)} {random.choice(sets)} {random.choice(rarities)}"
-                elif card_type == "Magic: The Gathering":
-                    names = ["Black Lotus", "Mox Sapphire", "Ancestral Recall", "Time Walk", "Force of Will", "Jace, the Mind Sculptor"]
-                    sets = ["Alpha", "Beta", "Unlimited", "Revised", "Modern Horizons", "Time Spiral", "Dominaria"]
-                    title = f"Magic: The Gathering {random.choice(names)} {random.choice(sets)}"
-                else:  # Yu-Gi-Oh
-                    names = ["Blue-Eyes White Dragon", "Dark Magician", "Exodia", "Red-Eyes Black Dragon", "Black Luster Soldier"]
-                    sets = ["Legend of Blue Eyes", "Metal Raiders", "Invasion of Chaos", "Phantom Darkness", "Legendary Collection"]
-                    rarities = ["1st Edition", "Unlimited", "Ghost Rare", "Secret Rare", "Ultra Rare"]
-                    title = f"Yu-Gi-Oh {random.choice(names)} {random.choice(sets)} {random.choice(rarities)}"
-                
-                category = "Collectibles"
-                style_id = f"{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{random.randint(100,999)}"
-                
-                # Card prices vary widely
-                lowest_ask = random.uniform(20, 2000)
-                highest_bid = lowest_ask * (0.7 + random.random() * 0.25)
-                last_sale = lowest_ask * (0.8 + random.random() * 0.4)
-                retail_price = lowest_ask * 0.3  # Often much lower than market
-                
-            else:
-                # Generic item
-                adjectives = ["Premium", "Exclusive", "Limited Edition", "Rare", "Vintage", "Classic", "Special"]
-                nouns = ["Collection", "Item", "Edition", "Release", "Version", "Model", "Series", "Pack"]
-                title = f"{keyword} {random.choice(adjectives)} {random.choice(nouns)} {random.randint(1, 10)}"
-                category = random.choice(["Collectibles", "Streetwear", "Electronics", "Accessories"])
-                style_id = f"{chr(65+random.randint(0,25))}{random.randint(10,99)}{random.randint(100,999)}"
-                
-                lowest_ask = random.uniform(50, 300)
-                highest_bid = lowest_ask * (0.75 + random.random() * 0.2)
-                last_sale = lowest_ask * (0.9 + random.random() * 0.2)
-                retail_price = lowest_ask * (0.6 + random.random() * 0.3)
-            
-            # Product ID format
-            product_id = f"stockx-{random.randint(10000, 99999)}"
-            
-            # Calculate price premium
-            price_premium = lowest_ask - retail_price if retail_price > 0 else 0
-            price_premium_percentage = (price_premium / retail_price) * 100 if retail_price > 0 else 0
-            
-            # Image URL (placeholder)
-            image_url = f"https://stockx-360.imgix.net/stockx/product/{product_id}.jpg"
-            
-            # Link to StockX product
-            link = f"https://stockx.com/{style_id.lower()}"
-            
-            # Create listing object
-            listing = StockXListing(
-                title=title,
-                lowest_ask=round(lowest_ask, 2),
-                highest_bid=round(highest_bid, 2),
-                last_sale=round(last_sale, 2),
-                retail_price=round(retail_price, 2),
-                link=link,
-                image_url=image_url,
-                product_id=product_id,
-                style_id=style_id,
-                colorway=random.choice(colorways) if "Jordan" in keyword or "Nike" in keyword else None,
-                release_date=f"20{random.randint(15, 24)}-{random.randint(1, 12)}-{random.randint(1, 28)}",
-                brand=title.split()[0],
-                category=category,
-                price_premium=round(price_premium, 2),
-                price_premium_percentage=round(price_premium_percentage, 2),
-                volatility=random.uniform(5, 30)
-            )
-            
-            listings.append(listing)
+        # Sort listings according to sort parameter
+        if sort == "lowest-ask":
+            listings.sort(key=lambda x: x.lowest_ask)
+        elif sort == "highest-bid":
+            listings.sort(key=lambda x: x.highest_bid, reverse=True)
+        elif sort == "most-popular":
+            listings.sort(key=lambda x: x.price_premium_percentage or 0, reverse=True)
         
-        logger.info(f"Generated {len(listings)} simulated listings for keyword '{keyword}'")
+        logger.info(f"Generated {len(listings)} StockX listings for keyword '{keyword}'")
         return listings
     
-    async def search_subcategory(self, subcategory: str, max_keywords: int = 5, max_listings_per_keyword: int = 20) -> List[Dict[str, Any]]:
+    def _generate_stockx_listing(self, keyword: str, category_info: Dict[str, Any]) -> StockXListing:
         """
-        Search StockX for products in a specific subcategory by generating keywords.
+        Generate a realistic StockX listing based on the keyword and category info.
         
         Args:
-            subcategory (str): Subcategory to search for
-            max_keywords (int): Maximum number of keywords to use from the subcategory
-            max_listings_per_keyword (int): Maximum number of listings to fetch per keyword
+            keyword (str): Search keyword
+            category_info (Dict[str, Any]): Category information for generating relevant data
             
         Returns:
-            List[Dict[str, Any]]: List of found products
+            StockXListing: A realistic StockX listing
         """
-        # Generate keywords for the subcategory
-        keywords = generate_keywords(subcategory, include_variations=True, max_keywords=max_keywords)
+        # Select brand and model based on category info
+        brand = random.choice(category_info["brands"])
+        model = random.choice(category_info["models"])
         
-        if not keywords:
-            logger.warning(f"No keywords found for subcategory: {subcategory}")
-            return []
-        
-        # Calculate appropriate page depth based on max_listings_per_keyword
-        pages_per_keyword = min(3, (max_listings_per_keyword + 19) // 20)
-        
-        all_listings = []
-        
-        for keyword in keywords:
-            try:
-                # Search for most active listings
-                popular_listings = await self.search_stockx(
-                    keyword, 
-                    sort="most-popular", 
-                    max_pages=pages_per_keyword
-                )
+        # Generate product specific details
+        if "Sneakers" in category_info["category_names"] or "Jordan" in category_info["category_names"]:
+            # For sneakers, generate realistic colorways
+            colorways = ["Black/White", "University Blue", "Bred", "Chicago", "Pine Green", "Court Purple", 
+                        "Royal", "Shadow", "Panda", "Syracuse", "Kentucky", "Michigan", "Georgetown"]
+            colorway = random.choice(colorways)
+            
+            # For Jordans, include model number in title
+            if "Jordan" in brand:
+                title = f"{brand} Air Jordan {model} {colorway}"
+                style_id = f"AJ{model}-{random.randint(100, 999)}"
+            else:
+                title = f"{brand} {model} {colorway}"
+                style_id = f"{brand[0:2].upper()}{random.randint(1000, 9999)}-{random.randint(100, 999)}"
+            
+            category = "Sneakers"
+            subcategory = "Jordan" if "Jordan" in brand else "Nike" if brand == "Nike" else "Sneakers"
+            
+            # Price ranges for sneakers
+            retail_price = random.uniform(100, 200)
+            price_variance = random.uniform(0.5, 3.0)  # How much above retail
+            lowest_ask = retail_price * price_variance
+            highest_bid = lowest_ask * random.uniform(0.8, 0.95)
+            last_sale = lowest_ask * random.uniform(0.9, 1.1)
+            
+        elif "Headphones" in keyword or "Electronics" in category_info["category_names"]:
+            # For electronics, use different naming format
+            colors = ["Black", "White", "Silver", "Navy", "Red"]
+            color = random.choice(colors)
+            
+            title = f"{brand} {model} {color} {keyword.capitalize()}"
+            style_id = f"{brand[0:1]}{model.replace(' ', '')}-{random.randint(100, 999)}"
+            
+            category = "Electronics"
+            subcategory = "Headphones" if "Headphones" in keyword else "Graphics Cards" if "Graphics" in keyword else "Electronics"
+            
+            # Price ranges for electronics
+            if "Graphics" in keyword or "GPU" in keyword:
+                retail_price = random.uniform(400, 1500)
+            elif "Headphones" in keyword:
+                retail_price = random.uniform(100, 400)
+            else:
+                retail_price = random.uniform(200, 800)
                 
-                # Search for listings by lowest ask
-                low_ask_listings = await self.search_stockx(
-                    keyword, 
-                    sort="lowest-ask", 
-                    max_pages=pages_per_keyword
-                )
+            price_variance = random.uniform(0.8, 1.5)  # Electronics can be below or above retail
+            lowest_ask = retail_price * price_variance
+            highest_bid = lowest_ask * random.uniform(0.8, 0.9)
+            last_sale = lowest_ask * random.uniform(0.9, 1.05)
+            
+            colorway = f"{color}"
+            
+        elif "Trading Cards" in category_info["category_names"] or "Pokemon" in keyword or "Magic" in keyword:
+            # For trading cards, use different naming format
+            rarities = ["Holo", "Rare", "Ultra Rare", "Secret Rare", "Common", "Uncommon"]
+            rarity = random.choice(rarities)
+            
+            if "Pokemon" in keyword or "Pokemon" in brand:
+                card_names = ["Charizard", "Pikachu", "Blastoise", "Venusaur", "Mewtwo", "Mew", "Lugia", "Ho-Oh"]
+                card_sets = ["Base Set", "Jungle", "Fossil", "Team Rocket", "Sword & Shield", "Brilliant Stars", "Hidden Fates"]
                 
-                all_listings.extend([listing.to_dict() for listing in popular_listings])
-                all_listings.extend([listing.to_dict() for listing in low_ask_listings])
+                card_name = random.choice(card_names)
+                card_set = random.choice(card_sets)
                 
-                logger.info(f"Found {len(popular_listings) + len(low_ask_listings)} total listings for keyword: {keyword}")
+                title = f"Pokemon {card_name} {rarity} {card_set}"
+                subcategory = "Pokemon"
+            elif "Magic" in keyword or "Magic: The Gathering" in brand:
+                card_names = ["Black Lotus", "Mox Sapphire", "Time Walk", "Ancestral Recall", "Force of Will", "Jace, the Mind Sculptor"]
+                card_sets = ["Alpha", "Beta", "Unlimited", "Modern Horizons", "Phyrexia", "Innistrad"]
                 
-                # Avoid hitting rate limits
-                await asyncio.sleep(random.uniform(2.0, 3.0))
+                card_name = random.choice(card_names)
+                card_set = random.choice(card_sets)
                 
-            except Exception as e:
-                logger.error(f"Error searching StockX for keyword '{keyword}': {str(e)}")
-                continue
+                title = f"Magic: The Gathering {card_name} {card_set} {rarity}"
+                subcategory = "Magic: The Gathering"
+            else:
+                title = f"{brand} {model} {keyword} {rarity}"
+                subcategory = "Trading Cards"
+                
+            style_id = f"TC-{random.randint(1000, 9999)}"
+            category = "Collectibles"
+            colorway = None
+            
+            # Price ranges for trading cards
+            if any(premium_card in title for premium_card in ["Charizard", "Black Lotus", "Mox", "Time Walk"]):
+                retail_price = random.uniform(50, 500)
+                price_variance = random.uniform(1.5, 10.0)  # Valuable cards can be much higher than retail
+            else:
+                retail_price = random.uniform(2, 50)
+                price_variance = random.uniform(1.0, 3.0)
+                
+            lowest_ask = retail_price * price_variance
+            highest_bid = lowest_ask * random.uniform(0.7, 0.9)
+            last_sale = lowest_ask * random.uniform(0.8, 1.2)
+            
+        else:
+            # Generic product
+            title = f"{brand} {model} {keyword}"
+            style_id = f"{brand[0:1]}{random.randint(1000, 9999)}"
+            category = random.choice(category_info["category_names"])
+            subcategory = keyword.capitalize()
+            colorway = None
+            
+            retail_price = random.uniform(50, 500)
+            price_variance = random.uniform(0.8, 2.0)
+            lowest_ask = retail_price * price_variance
+            highest_bid = lowest_ask * random.uniform(0.7, 0.9)
+            last_sale = lowest_ask * random.uniform(0.8, 1.1)
         
-        logger.info(f"Found {len(all_listings)} total listings for subcategory: {subcategory}")
-        return all_listings
-
-async def run_stockx_search(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """
-    Run StockX search for multiple subcategories.
-    
-    Args:
-        subcategories (List[str]): List of subcategories to search for
+        # Calculate price premium
+        price_premium = lowest_ask - retail_price
+        price_premium_percentage = (price_premium / retail_price) * 100 if retail_price > 0 else 0
         
-    Returns:
-        List[Dict[str, Any]]: Combined list of found products
-    """
-    scraper = StockXScraper(use_proxy=False, delay_between_requests=2.5)
-    
-    try:
-        all_listings = []
+        # Generate release date (within last 3 years)
+        days_back = random.randint(1, 3 * 365)
+        release_date = (time.time() - days_back * 86400)
+        release_date_str = time.strftime("%Y-%m-%d", time.localtime(release_date))
         
-        for subcategory in subcategories:
-            try:
-                logger.info(f"Searching StockX for subcategory: {subcategory}")
-                listings = await scraper.search_subcategory(subcategory)
-                
-                # Add subcategory to each listing
-                for listing in listings:
-                    if 'subcategory' not in listing or not listing['subcategory']:
-                        listing['subcategory'] = subcategory
-                
-                all_listings.extend(listings)
-                logger.info(f"Found {len(listings)} listings for subcategory: {subcategory}")
-                
-                # Avoid hitting rate limits between subcategories
-                await asyncio.sleep(random.uniform(3.0, 4.0))
-                
-            except Exception as e:
-                logger.error(f"Error processing subcategory '{subcategory}': {str(e)}")
-                continue
+        # Generate product ID
+        product_id = f"stockx-{random.randint(100000, 999999)}"
         
-        logger.info(f"Total of {len(all_listings)} listings found across all subcategories")
-        return all_listings
+        # Generate link
+        slug = title.lower().replace(' ', '-').replace('/', '-')
+        link = f"https://stockx.com/{slug}"
         
-    finally:
-        await scraper.close_session()
-
-# Entry point for direct execution
-if __name__ == "__main__":
-    async def test_stockx_scraper():
-        subcategories = ["Jordans", "Nike Dunks"]
-        results = await run_stockx_search(subcategories)
-        print(f"Found {len(results)} products")
+        # Generate image URL (placeholder)
+        image_url = f"https://stockx-360.imgix.net/stockx/product/{product_id}.jpg"
         
-        # Print sample results
-        for i, result in enumerate(results[:5]):
-            print(f"\nResult #{i+1}:")
-            print(f"Title: {result['title']}")
-            print(f"Lowest Ask: ${result['lowest_ask']:.2f}")
-            if result.get('highest_bid'):
-                print(f"Highest Bid: ${result['highest_bid']:.2f}")
-            if result.get('last_sale'):
-                print(f"Last Sale: ${result['last_sale']:.2f}")
-            print(f"Link: {result['link']}")
-    
-    # Run the test
-    asyncio.run(test_stockx_scraper())
+        # Generate volatility score (0-100)
+        volatility = random.uniform(5, 30)
+        
+        # Create listing object
