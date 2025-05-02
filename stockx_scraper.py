@@ -470,3 +470,143 @@ class StockXScraper:
         volatility = random.uniform(5, 30)
         
         # Create listing object
+        listing = StockXListing(
+            title=title,
+            lowest_ask=round(lowest_ask, 2),
+            highest_bid=round(highest_bid, 2),
+            last_sale=round(last_sale, 2),
+            retail_price=round(retail_price, 2),
+            link=link,
+            image_url=image_url,
+            product_id=product_id,
+            style_id=style_id,
+            colorway=colorway,
+            release_date=release_date_str,
+            brand=brand,
+            category=category,
+            subcategory=subcategory,
+            price_premium=round(price_premium, 2),
+            price_premium_percentage=round(price_premium_percentage, 2),
+            volatility=round(volatility, 2)
+        )
+        
+        return listing
+    
+    async def search_subcategory(self, subcategory: str, max_keywords: int = 5, max_listings_per_keyword: int = 20) -> List[Dict[str, Any]]:
+        """
+        Search StockX for products in a specific subcategory by generating keywords.
+        
+        Args:
+            subcategory (str): Subcategory to search for
+            max_keywords (int): Maximum number of keywords to use from the subcategory
+            max_listings_per_keyword (int): Maximum number of listings to fetch per keyword
+            
+        Returns:
+            List[Dict[str, Any]]: List of found products
+        """
+        # Generate keywords for the subcategory
+        keywords = generate_keywords(subcategory, include_variations=True, max_keywords=max_keywords)
+        
+        if not keywords:
+            logger.warning(f"No keywords found for subcategory: {subcategory}")
+            return []
+        
+        # Calculate appropriate page depth based on max_listings_per_keyword
+        pages_per_keyword = min(3, (max_listings_per_keyword + 19) // 20)
+        
+        all_listings = []
+        
+        for keyword in keywords:
+            try:
+                # Search for most active listings
+                popular_listings = await self.search_stockx(
+                    keyword, 
+                    category=subcategory,
+                    sort="most-popular", 
+                    max_pages=pages_per_keyword
+                )
+                
+                # Search for listings by lowest ask
+                low_ask_listings = await self.search_stockx(
+                    keyword, 
+                    category=subcategory,
+                    sort="lowest-ask", 
+                    max_pages=pages_per_keyword
+                )
+                
+                all_listings.extend([listing.to_dict() for listing in popular_listings])
+                all_listings.extend([listing.to_dict() for listing in low_ask_listings])
+                
+                logger.info(f"Found {len(popular_listings) + len(low_ask_listings)} total listings for keyword: {keyword}")
+                
+                # Avoid hitting rate limits
+                await asyncio.sleep(random.uniform(2.0, 3.0))
+                
+            except Exception as e:
+                logger.error(f"Error searching StockX for keyword '{keyword}': {str(e)}")
+                continue
+        
+        logger.info(f"Found {len(all_listings)} total listings for subcategory: {subcategory}")
+        return all_listings
+
+async def run_stockx_search(subcategories: List[str]) -> List[Dict[str, Any]]:
+    """
+    Run StockX search for multiple subcategories.
+    
+    Args:
+        subcategories (List[str]): List of subcategories to search for
+        
+    Returns:
+        List[Dict[str, Any]]: Combined list of found products
+    """
+    scraper = StockXScraper(use_proxy=False, delay_between_requests=2.5)
+    
+    try:
+        all_listings = []
+        
+        for subcategory in subcategories:
+            try:
+                logger.info(f"Searching StockX for subcategory: {subcategory}")
+                listings = await scraper.search_subcategory(subcategory)
+                
+                # Add subcategory to each listing
+                for listing in listings:
+                    if 'subcategory' not in listing or not listing['subcategory']:
+                        listing['subcategory'] = subcategory
+                
+                all_listings.extend(listings)
+                logger.info(f"Found {len(listings)} listings for subcategory: {subcategory}")
+                
+                # Avoid hitting rate limits between subcategories
+                await asyncio.sleep(random.uniform(3.0, 4.0))
+                
+            except Exception as e:
+                logger.error(f"Error processing subcategory '{subcategory}': {str(e)}")
+                continue
+        
+        logger.info(f"Total of {len(all_listings)} listings found across all subcategories")
+        return all_listings
+        
+    finally:
+        await scraper.close_session()
+
+# Entry point for direct execution
+if __name__ == "__main__":
+    async def test_stockx_scraper():
+        subcategories = ["Jordans", "Nike Dunks"]
+        results = await run_stockx_search(subcategories)
+        print(f"Found {len(results)} products")
+        
+        # Print sample results
+        for i, result in enumerate(results[:5]):
+            print(f"\nResult #{i+1}:")
+            print(f"Title: {result['title']}")
+            print(f"Lowest Ask: ${result['lowest_ask']:.2f}")
+            if result.get('highest_bid'):
+                print(f"Highest Bid: ${result['highest_bid']:.2f}")
+            if result.get('last_sale'):
+                print(f"Last Sale: ${result['last_sale']:.2f}")
+            print(f"Link: {result['link']}")
+    
+    # Run the test
+    asyncio.run(test_stockx_scraper())
