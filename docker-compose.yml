@@ -6,9 +6,8 @@ services:
     container_name: fliphawk-web
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "8000:8000"
     environment:
-      - FLASK_ENV=production
       - DATABASE_URL=postgresql://fliphawk:fliphawk@db:5432/fliphawk
       - REDIS_URL=redis://redis:6379/0
       - CACHE_REDIS_URL=redis://redis:6379/1
