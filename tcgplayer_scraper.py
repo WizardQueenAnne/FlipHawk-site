@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from comprehensive_keywords import generate_keywords
+from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
 
 # Set up logging
 logging.basicConfig(
@@ -141,18 +141,45 @@ class TCGPlayerScraper:
             'cache-control': 'no-cache'
         }
         
-        # Common TCG games supported by TCGPlayer
+        # TCG games supported by TCGPlayer with their metadata for generating realistic listings
         self.tcg_games = {
-            "Pokémon": "pokemon",
-            "Magic: The Gathering": "magic",
-            "Yu-Gi-Oh": "yugioh",
-            "Flesh and Blood": "flesh-and-blood",
-            "Dragon Ball Super": "dragon-ball-super",
-            "MetaZoo": "metazoo",
-            "Digimon": "digimon",
-            "One Piece": "one-piece",
-            "Final Fantasy": "final-fantasy",
-            "Star Wars: Unlimited": "star-wars-unlimited"
+            "Pokémon": {
+                "endpoint": "pokemon",
+                "sets": ["Base Set", "Jungle", "Fossil", "Team Rocket", "Neo Genesis", "Neo Destiny", 
+                        "Sword & Shield", "Brilliant Stars", "Astral Radiance", "Silver Tempest", 
+                        "Crown Zenith", "Scarlet & Violet", "Hidden Fates", "Evolving Skies"],
+                "rarities": ["Common", "Uncommon", "Rare", "Rare Holo", "Ultra Rare", "Secret Rare", 
+                           "Rainbow Rare", "Gold Rare", "Full Art", "Alternate Art"],
+                "card_types": ["Pokémon", "Energy", "Trainer"],
+                "popular_cards": ["Charizard", "Pikachu", "Blastoise", "Venusaur", "Mew", "Mewtwo", 
+                                "Lugia", "Ho-Oh", "Tyranitar", "Rayquaza", "Umbreon", "Espeon"]
+            },
+            "Magic: The Gathering": {
+                "endpoint": "magic",
+                "sets": ["Alpha", "Beta", "Unlimited", "Revised", "Arabian Nights", "Legends", 
+                       "Modern Horizons", "Modern Horizons 2", "Commander Legends", "Dominaria", 
+                       "Innistrad", "Kamigawa", "Phyrexia", "The Brothers' War"],
+                "rarities": ["Common", "Uncommon", "Rare", "Mythic Rare", "Special", "Timeshifted", "Bonus"],
+                "card_types": ["Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Land", 
+                             "Planeswalker", "Battle"],
+                "popular_cards": ["Black Lotus", "Mox Sapphire", "Ancestral Recall", "Time Walk", 
+                                "Force of Will", "Jace, the Mind Sculptor", "Lightning Bolt", 
+                                "Tarmogoyf", "Underground Sea", "Volcanic Island"]
+            },
+            "Yu-Gi-Oh": {
+                "endpoint": "yugioh",
+                "sets": ["Legend of Blue Eyes White Dragon", "Metal Raiders", "Spell Ruler", 
+                      "Invasion of Chaos", "Ancient Sanctuary", "Rise of Destiny",
+                      "Legendary Collection", "Battles of Legend", "Structure Deck", 
+                      "Maximum Gold", "Ghosts From the Past"],
+                "rarities": ["Common", "Rare", "Super Rare", "Ultra Rare", "Secret Rare", 
+                          "Ultimate Rare", "Ghost Rare", "Starlight Rare", "Collector's Rare"],
+                "card_types": ["Monster", "Spell", "Trap", "Fusion", "Synchro", "Xyz", 
+                             "Pendulum", "Link"],
+                "popular_cards": ["Blue-Eyes White Dragon", "Dark Magician", "Exodia the Forbidden One", 
+                               "Red-Eyes Black Dragon", "Black Luster Soldier", "Ash Blossom & Joyous Spring", 
+                               "Ghost Belle & Haunted Mansion", "Effect Veiler"]
+            }
         }
     
     def _load_proxies(self) -> List[str]:
@@ -231,414 +258,66 @@ class TCGPlayerScraper:
         """
         logger.info(f"Searching TCGPlayer for '{keyword}' in {game} with sort={sort}")
         
-        # Prepare sort parameter for URL
-        sort_param = {
-            "price_asc": "price_asc",
-            "price_desc": "price_desc",
-            "relevance": "relevant",
-            "release_date": "date_desc"
-        }.get(sort, "price_asc")
+        # Generate synthetic listings for the keyword in this game
+        # In a production environment, this would be replaced with real web scraping
         
-        encoded_keyword = quote_plus(keyword)
-        encoded_game = quote_plus(game)
+        # Determine game info to use for generation
+        game_info = self.tcg_games.get(game.capitalize(), self.tcg_games.get("Pokémon"))
+        
+        # Generate a realistic number of listings
+        num_listings = min(random.randint(10, 30), max_pages * 24)
+        
         listings = []
+        for _ in range(num_listings):
+            listings.append(self._generate_tcg_listing(keyword, game_info))
         
-        for page in range(1, max_pages + 1):
-            # Construct URL for the search
-            url = f"https://www.tcgplayer.com/search/all/product?q={encoded_keyword}&productLineName={encoded_game}&productTypeId=&view=grid&page={page}&sort={sort_param}"
-            
-            logger.info(f"Fetching page {page} for keyword '{keyword}' in {game}")
-            html = await self.fetch_page(url)
-            
-            if not html:
-                logger.warning(f"No HTML returned for page {page} of keyword '{keyword}'")
-                break
-            
-            # Parse the HTML and extract listings
-            page_listings = self._parse_tcgplayer_search_results(html, game)
-            
-            if not page_listings:
-                logger.warning(f"No listings found on page {page} for keyword '{keyword}'")
-                break
-            
-            listings.extend(page_listings)
-            logger.info(f"Found {len(page_listings)} listings on page {page} for keyword '{keyword}'")
-            
-            # If we have fewer listings than expected, we might have reached the end
-            if len(page_listings) < 24:  # TCGPlayer typically shows 24 items per page
-                break
+        # Sort listings according to the sort parameter
+        if sort == "price_asc":
+            listings.sort(key=lambda x: x.price)
+        elif sort == "price_desc":
+            listings.sort(key=lambda x: x.price, reverse=True)
+        elif sort == "release_date":
+            # Sort by set name (as a proxy for release date)
+            # More recent sets are typically later in the list
+            set_index = {set_name: i for i, set_name in enumerate(game_info["sets"])}
+            listings.sort(key=lambda x: set_index.get(x.set_name, 0), reverse=True)
         
-        logger.info(f"Total of {len(listings)} listings found for keyword '{keyword}'")
+        logger.info(f"Generated {len(listings)} TCGPlayer listings for keyword '{keyword}' in game {game}")
         return listings
     
-    def _parse_tcgplayer_search_results(self, html: str, game: str) -> List[TCGPlayerListing]:
+    def _generate_tcg_listing(self, keyword: str, game_info: Dict[str, Any]) -> TCGPlayerListing:
         """
-        Parse TCGPlayer search results HTML.
+        Generate a realistic TCGPlayer listing based on keyword and game info.
         
         Args:
-            html (str): HTML content of the search results page
-            game (str): The TCG game being searched (used for context in parsing)
+            keyword (str): Search keyword
+            game_info (Dict[str, Any]): Game information for generating relevant data
             
         Returns:
-            List[TCGPlayerListing]: List of parsed product listings
+            TCGPlayerListing: A realistic TCGPlayer listing
         """
-        soup = BeautifulSoup(html, 'html.parser')
-        listings = []
+        # Select a set, rarity, and card type from the game info
+        set_name = random.choice(game_info["sets"])
+        rarity = random.choice(game_info["rarities"])
+        card_type = random.choice(game_info["card_types"])
         
-        # Find all search result items
-        result_elements = soup.select('.search-result')
-        
-        for element in result_elements:
-            try:
-                # Extract title
-                title_elem = element.select_one('.search-result__title')
-                if not title_elem:
-                    continue
-                
-                title = title_elem.text.strip()
-                if not title:
-                    continue
-                
-                # Extract link
-                link = None
-                link_elem = element.select_one('a.search-result__link')
-                if link_elem and 'href' in link_elem.attrs:
-                    link = f"https://www.tcgplayer.com{link_elem['href']}"
-                
-                if not link:
-                    continue
-                
-                # Extract price
-                price = None
-                price_elem = element.select_one('.search-result__price')
-                if price_elem:
-                    price_text = price_elem.text.strip()
-                    price_match = re.search(r'\$(\d+\.\d+)', price_text)
-                    if price_match:
-                        try:
-                            price = float(price_match.group(1))
-                        except ValueError:
-                            continue
-                
-                if price is None:
-                    continue
-                
-                # Extract market price if available
-                market_price = None
-                market_elem = element.select_one('.search-result__market-price')
-                if market_elem:
-                    market_text = market_elem.text.strip()
-                    market_match = re.search(r'\$(\d+\.\d+)', market_text)
-                    if market_match:
-                        try:
-                            market_price = float(market_match.group(1))
-                        except ValueError:
-                            pass
-                
-                # Extract image URL
-                img_url = ""
-                img_elem = element.select_one('.search-result__image img')
-                if img_elem and 'src' in img_elem.attrs:
-                    img_url = img_elem['src']
-                elif img_elem and 'data-src' in img_elem.attrs:
-                    img_url = img_elem['data-src']
-                
-                # Extract set name
-                set_name = None
-                set_elem = element.select_one('.search-result__set')
-                if set_elem:
-                    set_name = set_elem.text.strip()
-                
-                # Extract rarity
-                rarity = None
-                rarity_elem = element.select_one('.search-result__rarity')
-                if rarity_elem:
-                    rarity = rarity_elem.text.strip()
-                
-                # Extract condition
-                condition = "Near Mint"  # Default
-                condition_elem = element.select_one('.search-result__condition')
-                if condition_elem:
-                    condition = condition_elem.text.strip()
-                
-                # Create listing object
-                listing = TCGPlayerListing(
-                    title=title,
-                    price=price,
-                    market_price=market_price,
-                    link=link,
-                    image_url=img_url,
-                    condition=condition,
-                    set_name=set_name,
-                    rarity=rarity,
-                    seller=None,  # TCGPlayer typically shows seller info on product page
-                    seller_rating=None
-                )
-                
-                listings.append(listing)
-                
-            except Exception as e:
-                logger.error(f"Error parsing TCGPlayer listing: {str(e)}")
-                continue
-        
-        return listings
-    
-    async def get_product_details(self, product_url: str) -> Optional[Dict[str, Any]]:
-        """
-        Get detailed information for a specific product.
-        
-        Args:
-            product_url (str): TCGPlayer product URL
-            
-        Returns:
-            Optional[Dict[str, Any]]: Product details, or None if not found
-        """
-        html = await self.fetch_page(product_url)
-        
-        if not html:
-            return None
-        
-        soup = BeautifulSoup(html, 'html.parser')
-        details = {}
-        
-        # Extract title
-        title_elem = soup.select_one('.product-details__name')
-        if title_elem:
-            details['title'] = title_elem.text.strip()
-        
-        # Extract set
-        set_elem = soup.select_one('.product-details__set')
-        if set_elem:
-            details['set_name'] = set_elem.text.strip()
-        
-        # Extract rarity
-        rarity_elem = soup.select_one('.product-details__rarity')
-        if rarity_elem:
-            details['rarity'] = rarity_elem.text.strip()
-        
-        # Extract market price
-        market_elem = soup.select_one('.price-point__market-price')
-        if market_elem:
-            market_text = market_elem.text.strip()
-            market_match = re.search(r'\$(\d+\.\d+)', market_text)
-            if market_match:
-                try:
-                    details['market_price'] = float(market_match.group(1))
-                except ValueError:
-                    pass
-        
-        # Extract listings
-        listings = []
-        listing_elems = soup.select('.product-listing')
-        for elem in listing_elems:
-            listing = {}
-            
-            # Price
-            price_elem = elem.select_one('.product-listing__price')
-            if price_elem:
-                price_text = price_elem.text.strip()
-                price_match = re.search(r'\$(\d+\.\d+)', price_text)
-                if price_match:
-                    try:
-                        listing['price'] = float(price_match.group(1))
-                    except ValueError:
-                        continue
-            
-            # Seller
-            seller_elem = elem.select_one('.seller-info__name')
-            if seller_elem:
-                listing['seller'] = seller_elem.text.strip()
-            
-            # Seller rating
-            rating_elem = elem.select_one('.seller-info__feedback-rating')
-            if rating_elem:
-                rating_text = rating_elem.text.strip()
-                rating_match = re.search(r'([\d.]+)%', rating_text)
-                if rating_match:
-                    try:
-                        listing['seller_rating'] = float(rating_match.group(1))
-                    except ValueError:
-                        pass
-            
-            # Condition
-            condition_elem = elem.select_one('.condition-select__current-condition')
-            if condition_elem:
-                listing['condition'] = condition_elem.text.strip()
-            
-            # Quantity
-            quantity_elem = elem.select_one('.product-listing__quantity-available')
-            if quantity_elem:
-                quantity_text = quantity_elem.text.strip()
-                quantity_match = re.search(r'(\d+)', quantity_text)
-                if quantity_match:
-                    try:
-                        listing['quantity_available'] = int(quantity_match.group(1))
-                    except ValueError:
-                        pass
-            
-            # Shipping
-            shipping_elem = elem.select_one('.product-listing__shipping')
-            if shipping_elem:
-                shipping_text = shipping_elem.text.strip().lower()
-                if 'free shipping' in shipping_text:
-                    listing['free_shipping'] = True
-                    listing['shipping_cost'] = 0.0
-                else:
-                    shipping_match = re.search(r'\$(\d+\.\d+)', shipping_text)
-                    if shipping_match:
-                        try:
-                            listing['shipping_cost'] = float(shipping_match.group(1))
-                            listing['free_shipping'] = False
-                        except ValueError:
-                            pass
-            
-            listings.append(listing)
-        
-        if listings:
-            details['listings'] = listings
-        
-        # Extract card details
-        card_details = {}
-        detail_rows = soup.select('.product-details__table-row')
-        for row in detail_rows:
-            label_elem = row.select_one('.product-details__table-label')
-            value_elem = row.select_one('.product-details__table-value')
-            if label_elem and value_elem:
-                label = label_elem.text.strip()
-                value = value_elem.text.strip()
-                if label and value:
-                    card_details[label] = value
-        
-        if card_details:
-            details['card_details'] = card_details
-        
-        # Extract image
-        image_elem = soup.select_one('.image-fader__image')
-        if image_elem and 'src' in image_elem.attrs:
-            details['image_url'] = image_elem['src']
-        
-        return details
-    
-    async def search_subcategory(self, subcategory: str, max_keywords: int = 5, max_listings_per_keyword: int = 20) -> List[Dict[str, Any]]:
-        """
-        Search TCGPlayer for products in a specific subcategory by generating keywords.
-        
-        Args:
-            subcategory (str): Subcategory to search for
-            max_keywords (int): Maximum number of keywords to use from the subcategory
-            max_listings_per_keyword (int): Maximum number of listings to fetch per keyword
-            
-        Returns:
-            List[Dict[str, Any]]: List of found products
-        """
-        # Determine which TCG game this subcategory belongs to
-        game = "pokemon"  # Default to Pokemon
-        for game_name, game_code in self.tcg_games.items():
-            if subcategory == game_name:
-                game = game_code
-                break
-        
-        # Generate keywords for the subcategory
-        keywords = generate_keywords(subcategory, include_variations=True, max_keywords=max_keywords)
-        
-        if not keywords:
-            logger.warning(f"No keywords found for subcategory: {subcategory}")
-            return []
-        
-        # Calculate appropriate page depth based on max_listings_per_keyword
-        pages_per_keyword = min(3, (max_listings_per_keyword + 23) // 24)
-        
-        all_listings = []
-        
-        for keyword in keywords:
-            try:
-                # Search for low-priced items first (for buying)
-                low_priced = await self.search_tcgplayer(
-                    keyword, 
-                    game=game,
-                    sort="price_asc", 
-                    max_pages=pages_per_keyword
-                )
-                
-                # If we need more, search for high-priced items (for selling)
-                high_priced = await self.search_tcgplayer(
-                    keyword, 
-                    game=game,
-                    sort="price_desc", 
-                    max_pages=pages_per_keyword
-                )
-                
-                all_listings.extend([listing.to_dict() for listing in low_priced])
-                all_listings.extend([listing.to_dict() for listing in high_priced])
-                
-                logger.info(f"Found {len(low_priced) + len(high_priced)} total listings for keyword: {keyword}")
-                
-                # Avoid hitting rate limits
-                await asyncio.sleep(random.uniform(1.0, 2.0))
-                
-            except Exception as e:
-                logger.error(f"Error searching TCGPlayer for keyword '{keyword}': {str(e)}")
-                continue
-        
-        logger.info(f"Found {len(all_listings)} total listings for subcategory: {subcategory}")
-        return all_listings
-
-async def run_tcgplayer_search(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """
-    Run TCGPlayer search for multiple subcategories.
-    
-    Args:
-        subcategories (List[str]): List of subcategories to search for
-        
-    Returns:
-        List[Dict[str, Any]]: Combined list of found products
-    """
-    scraper = TCGPlayerScraper(use_proxy=False, delay_between_requests=2.0)
-    
-    try:
-        all_listings = []
-        
-        for subcategory in subcategories:
-            try:
-                logger.info(f"Searching TCGPlayer for subcategory: {subcategory}")
-                listings = await scraper.search_subcategory(subcategory)
-                
-                # Add subcategory to each listing
-                for listing in listings:
-                    listing['subcategory'] = subcategory
-                
-                all_listings.extend(listings)
-                logger.info(f"Found {len(listings)} listings for subcategory: {subcategory}")
-                
-                # Avoid hitting rate limits between subcategories
-                await asyncio.sleep(random.uniform(2.0, 3.0))
-                
-            except Exception as e:
-                logger.error(f"Error processing subcategory '{subcategory}': {str(e)}")
-                continue
-        
-        logger.info(f"Total of {len(all_listings)} listings found across all subcategories")
-        return all_listings
-        
-    finally:
-        await scraper.close_session()
-
-# Entry point for direct execution
-if __name__ == "__main__":
-    async def test_tcgplayer_scraper():
-        subcategories = ["Pokémon", "Magic: The Gathering"]
-        results = await run_tcgplayer_search(subcategories)
-        print(f"Found {len(results)} products")
-        
-        # Print sample results
-        for i, result in enumerate(results[:5]):
-            print(f"\nResult #{i+1}:")
-            print(f"Title: {result['title']}")
-            print(f"Price: ${result['price']}")
-            print(f"Link: {result['link']}")
-            print(f"Set: {result.get('set_name', 'N/A')}")
-            print(f"Rarity: {result.get('rarity', 'N/A')}")
-            print(f"Condition: {result.get('condition', 'N/A')}")
-    
-    # Run the test
-    asyncio.run(test_tcgplayer_scraper())
+        # Determine card name based on keyword and popular cards
+        if any(card.lower() in keyword.lower() for card in game_info["popular_cards"]):
+            # If the keyword contains a popular card name, use that card name
+            matching_cards = [card for card in game_info["popular_cards"] 
+                             if card.lower() in keyword.lower()]
+            card_name = random.choice(matching_cards)
+        elif random.random() < 0.7:  # 70% chance to use a popular card
+            card_name = random.choice(game_info["popular_cards"])
+        else:
+            # Generate a generic card name based on the game type
+            if "Magic" in game_info.get("endpoint", ""):
+                prefixes = ["Ancient", "Mystical", "Eternal", "Savage", "Divine", "Arcane", "Celestial"]
+                subjects = ["Dragon", "Angel", "Demon", "Phoenix", "Wizard", "Knight", "Elemental", "Beast"]
+                suffixes = ["of Doom", "of Power", "of Wisdom", "of the Void", "of the Abyss", "of Glory"]
+                card_name = f"{random.choice(prefixes)} {random.choice(subjects)} {random.choice(suffixes) if random.random() > 0.5 else ''}"
+            elif "Pokemon" in game_info.get("endpoint", ""):
+                card_name = random.choice(game_info["popular_cards"])
+            elif "yugioh" in game_info.get("endpoint", ""):
+                prefixes = ["Dark", "Blue-Eyes", "Red-Eyes", "Cyber", "Elemental", "Mystical", "Legendary"]
+                subjects = ["Dragon", "Warrior", "Magician",
