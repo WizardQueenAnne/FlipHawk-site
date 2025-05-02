@@ -198,4 +198,60 @@ class OfferUpScraper:
                     logger.warning(f"OfferUp returned status code {response.status} for listing ID {listing_id}")
                     return {}
                 
-                html_
+                html_content = await response.text()
+                
+                # Parse HTML content for product details
+                return self._parse_product_details(html_content, listing_id)
+        
+        except Exception as e:
+            logger.error(f"Error fetching OfferUp product details for listing ID {listing_id}: {str(e)}")
+            return {}
+    
+    def _parse_product_details(self, html_content: str, listing_id: str) -> Dict:
+        """Parse OfferUp product page HTML to extract detailed information"""
+        details = {
+            "marketplace": "offerup",
+            "listing_id": listing_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Extract product title
+            title_element = soup.select_one('h1[data-test="item-title"]')
+            details["title"] = title_element.text.strip() if title_element else "Unknown Title"
+            
+            # Extract price
+            price_element = soup.select_one('span[data-test="item-price"]')
+            price_str = price_element.text.strip() if price_element else "0"
+            details["price"] = self._extract_price(price_str)
+            
+            # Extract product description
+            description_element = soup.select_one('div[data-test="item-description"]')
+            details["description"] = description_element.text.strip() if description_element else ""
+            
+            # Extract location
+            location_element = soup.select_one('span[data-test="item-location"]')
+            details["location"] = location_element.text.strip() if location_element else ""
+            
+            # Extract seller name
+            seller_element = soup.select_one('p[data-test="seller-name"]')
+            details["seller"] = seller_element.text.strip() if seller_element else ""
+            
+            # Extract main image URL
+            image_element = soup.select_one('img[data-test="image"]')
+            details["image_url"] = image_element.get('src', '') if image_element else ""
+            
+            # Extract condition
+            condition_element = soup.select_one('span[data-test="item-condition"]')
+            details["condition"] = condition_element.text.strip() if condition_element else ""
+            
+            # URL
+            details["url"] = f"https://offerup.com/item/detail/{listing_id}"
+            
+            return details
+        
+        except Exception as e:
+            logger.error(f"Error parsing OfferUp product details for listing ID {listing_id}: {str(e)}")
+            return {}
