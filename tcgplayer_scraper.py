@@ -1,323 +1,304 @@
-"""
-TCGPlayer marketplace scraper for FlipHawk arbitrage system.
-This module handles scraping TCGPlayer for trading card products based on keywords from the subcategories.
-"""
-
 import asyncio
 import aiohttp
-import random
-import time
 import logging
+import json
 import re
-from bs4 import BeautifulSoup
-from urllib.parse import quote_plus
-from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
+from bs4 import BeautifulSoup
+from datetime import datetime
+from urllib.parse import quote, urljoin
 
-# Set up logging
+from api_integration import EnhancedAPIIntegration
+
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("tcgplayer_scraper.log"),
+        logging.StreamHandler()
+    ]
 )
-logger = logging.getLogger('tcgplayer_scraper')
 
-@dataclass
-class TCGPlayerListing:
-    """Class to store TCGPlayer product listing information."""
-    title: str
-    price: float
-    market_price: Optional[float]
-    link: str
-    image_url: str
-    condition: str
-    set_name: Optional[str]
-    rarity: Optional[str]
-    seller: Optional[str]
-    seller_rating: Optional[float]
-    shipping_cost: float = 0.0
-    free_shipping: bool = False
-    in_stock: bool = True
-    quantity_available: Optional[int] = None
-    language: str = "English"
-    source: str = "TCGPlayer"
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the listing to a dictionary."""
-        return {
-            'title': self.title,
-            'price': self.price,
-            'market_price': self.market_price,
-            'link': self.link,
-            'image_url': self.image_url,
-            'condition': self.condition,
-            'set_name': self.set_name,
-            'rarity': self.rarity,
-            'seller': self.seller,
-            'seller_rating': self.seller_rating,
-            'shipping_cost': self.shipping_cost,
-            'free_shipping': self.free_shipping,
-            'in_stock': self.in_stock,
-            'quantity_available': self.quantity_available,
-            'language': self.language,
-            'source': self.source,
-            'normalized_title': self.normalize_title()
-        }
-    
-    def normalize_title(self) -> str:
-        """Normalize the title for comparison with other listings."""
-        # Convert to lowercase
-        title = self.title.lower()
-        
-        # Remove non-alphanumeric characters except spaces
-        title = re.sub(r'[^a-z0-9\s]', ' ', title)
-        
-        # For TCG cards, specifically extract card name, set, and condition
-        card_parts = []
-        
-        # Extract card name (likely first part of title)
-        if ' - ' in title:
-            card_name = title.split(' - ')[0].strip()
-            card_parts.append(card_name)
-        else:
-            card_parts.append(title)
-        
-        # Add set name if available
-        if self.set_name:
-            card_parts.append(self.set_name.lower())
-        
-        # Add condition
-        if self.condition:
-            card_parts.append(self.condition.lower())
-        
-        # Add rarity if available
-        if self.rarity:
-            card_parts.append(self.rarity.lower())
-        
-        # Combine all parts
-        normalized = ' '.join(card_parts)
-        
-        # Remove extra spaces
-        normalized = re.sub(r'\s+', ' ', normalized).strip()
-        
-        return normalized
-
+logger = logging.getLogger(__name__)
 
 class TCGPlayerScraper:
-    """Class for scraping TCGPlayer product listings."""
+    """Enhanced TCGPlayer scraper to find product listings"""
     
-    def __init__(self, use_proxy=False, max_retries=3, delay_between_requests=2.0):
-        """
-        Initialize the TCGPlayer scraper.
-        
-        Args:
-            use_proxy (bool): Whether to use proxy servers
-            max_retries (int): Maximum number of retries per request
-            delay_between_requests (float): Delay between requests in seconds
-        """
+    def __init__(self):
+        self.base_url = "https://www.tcgplayer.com/search/all/product"
         self.session = None
-        self.max_retries = max_retries
-        self.delay_between_requests = delay_between_requests
-        self.use_proxy = use_proxy
-        self.proxy_pool = self._load_proxies() if use_proxy else []
+        self.api = EnhancedAPIIntegration()
         
-        # Define headers to mimic a real browser
+        # Rotating user agents to avoid detection
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36"
+        ]
+        self.user_agent_index = 0
+        
+        # TCGPlayer specific headers
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Referer': 'https://www.tcgplayer.com/',
-            'Upgrade-Insecure-Requests': '1',
-            'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="101", "Google Chrome";v="101"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-user': '?1',
-            'pragma': 'no-cache',
-            'cache-control': 'no-cache'
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Referer": "https://www.tcgplayer.com/",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1"
         }
         
-        # TCG games supported by TCGPlayer with their metadata for generating realistic listings
-        self.tcg_games = {
-            "Pokémon": {
-                "endpoint": "pokemon",
-                "sets": ["Base Set", "Jungle", "Fossil", "Team Rocket", "Neo Genesis", "Neo Destiny", 
-                        "Sword & Shield", "Brilliant Stars", "Astral Radiance", "Silver Tempest", 
-                        "Crown Zenith", "Scarlet & Violet", "Hidden Fates", "Evolving Skies"],
-                "rarities": ["Common", "Uncommon", "Rare", "Rare Holo", "Ultra Rare", "Secret Rare", 
-                           "Rainbow Rare", "Gold Rare", "Full Art", "Alternate Art"],
-                "card_types": ["Pokémon", "Energy", "Trainer"],
-                "popular_cards": ["Charizard", "Pikachu", "Blastoise", "Venusaur", "Mew", "Mewtwo", 
-                                "Lugia", "Ho-Oh", "Tyranitar", "Rayquaza", "Umbreon", "Espeon"]
-            },
-            "Magic: The Gathering": {
-                "endpoint": "magic",
-                "sets": ["Alpha", "Beta", "Unlimited", "Revised", "Arabian Nights", "Legends", 
-                       "Modern Horizons", "Modern Horizons 2", "Commander Legends", "Dominaria", 
-                       "Innistrad", "Kamigawa", "Phyrexia", "The Brothers' War"],
-                "rarities": ["Common", "Uncommon", "Rare", "Mythic Rare", "Special", "Timeshifted", "Bonus"],
-                "card_types": ["Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Land", 
-                             "Planeswalker", "Battle"],
-                "popular_cards": ["Black Lotus", "Mox Sapphire", "Ancestral Recall", "Time Walk", 
-                                "Force of Will", "Jace, the Mind Sculptor", "Lightning Bolt", 
-                                "Tarmogoyf", "Underground Sea", "Volcanic Island"]
-            },
-            "Yu-Gi-Oh": {
-                "endpoint": "yugioh",
-                "sets": ["Legend of Blue Eyes White Dragon", "Metal Raiders", "Spell Ruler", 
-                      "Invasion of Chaos", "Ancient Sanctuary", "Rise of Destiny",
-                      "Legendary Collection", "Battles of Legend", "Structure Deck", 
-                      "Maximum Gold", "Ghosts From the Past"],
-                "rarities": ["Common", "Rare", "Super Rare", "Ultra Rare", "Secret Rare", 
-                          "Ultimate Rare", "Ghost Rare", "Starlight Rare", "Collector's Rare"],
-                "card_types": ["Monster", "Spell", "Trap", "Fusion", "Synchro", "Xyz", 
-                             "Pendulum", "Link"],
-                "popular_cards": ["Blue-Eyes White Dragon", "Dark Magician", "Exodia the Forbidden One", 
-                               "Red-Eyes Black Dragon", "Black Luster Soldier", "Ash Blossom & Joyous Spring", 
-                               "Ghost Belle & Haunted Mansion", "Effect Veiler"]
-            }
+        # Card game categories to consider
+        self.categories = {
+            "magic": "magic",
+            "pokemon": "pokemon",
+            "yugioh": "yugioh",
+            "flesh and blood": "flesh-and-blood",
+            "dragon ball": "dragon-ball-super-ccg",
+            "digimon": "digimon-card-game",
+            "weiss schwarz": "weiss-schwarz",
+            "one piece": "one-piece-ccg",
+            "lorcana": "disney-lorcana",
+            "mtg": "magic"
         }
     
-    def _load_proxies(self) -> List[str]:
-        """Load proxy servers list. In production, this would load from a service or file."""
-        # This is a placeholder for the actual proxy loading logic
-        return []
-    
-    async def get_session(self) -> aiohttp.ClientSession:
-        """Get or create an aiohttp ClientSession."""
+    async def initialize(self):
+        """Initialize session and headers"""
         if self.session is None:
-            timeout = aiohttp.ClientTimeout(total=30)
-            self.session = aiohttp.ClientSession(headers=self.headers, timeout=timeout)
-        return self.session
+            self.session = aiohttp.ClientSession()
+            await self.api.initialize()
     
-    async def close_session(self):
-        """Close the aiohttp ClientSession."""
+    async def close(self):
+        """Close session"""
         if self.session:
             await self.session.close()
             self.session = None
+        await self.api.close()
     
-    async def fetch_page(self, url: str, retries: int = 0) -> Optional[str]:
-        """
-        Fetch a page with retry logic and error handling.
-        
-        Args:
-            url (str): URL to fetch
-            retries (int): Current retry count
-            
-        Returns:
-            Optional[str]: HTML content of the page, or None if failed
-        """
-        if retries >= self.max_retries:
-            logger.error(f"Max retries reached for URL: {url}")
-            return None
-        
-        try:
-            session = await self.get_session()
-            proxy = random.choice(self.proxy_pool) if self.use_proxy and self.proxy_pool else None
-            
-            # Add random delay to avoid rate limiting
-            await asyncio.sleep(self.delay_between_requests * (1 + random.random()))
-            
-            async with session.get(url, proxy=proxy) as response:
-                if response.status == 200:
-                    return await response.text()
-                elif response.status == 429 or response.status == 503:  # Rate limited or service unavailable
-                    delay = (2 ** retries) * self.delay_between_requests
-                    logger.warning(f"Rate limited (status {response.status}). Waiting {delay:.2f} seconds...")
-                    await asyncio.sleep(delay)
-                    return await self.fetch_page(url, retries + 1)
-                elif response.status == 404:
-                    logger.warning(f"Page not found: {url}")
-                    return None
-                else:
-                    logger.error(f"HTTP {response.status} for URL: {url}")
-                    await asyncio.sleep(self.delay_between_requests)
-                    return await self.fetch_page(url, retries + 1)
-                    
-        except Exception as e:
-            logger.error(f"Error fetching {url}: {str(e)}")
-            await asyncio.sleep(self.delay_between_requests)
-            return await self.fetch_page(url, retries + 1)
+    def _get_next_user_agent(self):
+        """Rotate through user agents"""
+        agent = self.user_agents[self.user_agent_index]
+        self.user_agent_index = (self.user_agent_index + 1) % len(self.user_agents)
+        return agent
     
-    async def search_tcgplayer(self, keyword: str, game: str = "pokemon", sort: str = "price_asc", max_pages: int = 2) -> List[TCGPlayerListing]:
-        """
-        Search TCGPlayer for a keyword with sorting options and game filtering.
+    async def search_listings(self, keywords: List[str], max_pages: int = 2) -> List[Dict]:
+        """Search TCGPlayer for product listings with the given keywords"""
+        await self.initialize()
         
-        Args:
-            keyword (str): Keyword to search for
-            game (str): TCG game to search within (pokemon, magic, yugioh, etc.)
-            sort (str): Sorting option - "price_asc", "price_desc", "relevance", "release_date"
-            max_pages (int): Maximum number of pages to scrape
-            
-        Returns:
-            List[TCGPlayerListing]: List of found listings
-        """
-        logger.info(f"Searching TCGPlayer for '{keyword}' in {game} with sort={sort}")
+        all_listings = []
         
-        # Generate synthetic listings for the keyword in this game
-        # In a production environment, this would be replaced with real web scraping
+        # Process keywords to determine if any of them match card game categories
+        for keyword in keywords:
+            try:
+                # Check if keyword contains any card game category
+                category = None
+                for key, value in self.categories.items():
+                    if key in keyword.lower():
+                        category = value
+                        break
+                
+                keyword_listings = await self._search_keyword(keyword, category, max_pages)
+                logger.info(f"Found {len(keyword_listings)} TCGPlayer listings for keyword: {keyword}")
+                all_listings.extend(keyword_listings)
+            except Exception as e:
+                logger.error(f"Error searching TCGPlayer for keyword '{keyword}': {str(e)}")
         
-        # Determine game info to use for generation
-        game_info = self.tcg_games.get(game.capitalize(), self.tcg_games.get("Pokémon"))
-        
-        # Generate a realistic number of listings
-        num_listings = min(random.randint(10, 30), max_pages * 24)
-        
+        # Output count to console
+        print(f"TCGPlayer scraper found {len(all_listings)} total listings")
+        return all_listings
+    
+    async def _search_keyword(self, keyword: str, category: Optional[str] = None, max_pages: int = 2) -> List[Dict]:
+        """Search for a specific keyword and collect listings from multiple pages"""
         listings = []
-        for _ in range(num_listings):
-            listings.append(self._generate_tcg_listing(keyword, game_info))
         
-        # Sort listings according to the sort parameter
-        if sort == "price_asc":
-            listings.sort(key=lambda x: x.price)
-        elif sort == "price_desc":
-            listings.sort(key=lambda x: x.price, reverse=True)
-        elif sort == "release_date":
-            # Sort by set name (as a proxy for release date)
-            # More recent sets are typically later in the list
-            set_index = {set_name: i for i, set_name in enumerate(game_info["sets"])}
-            listings.sort(key=lambda x: set_index.get(x.set_name, 0), reverse=True)
+        # Determine the search URL based on category
+        if category:
+            search_url = f"https://www.tcgplayer.com/search/{category}/product"
+        else:
+            search_url = self.base_url
         
-        logger.info(f"Generated {len(listings)} TCGPlayer listings for keyword '{keyword}' in game {game}")
+        for page in range(1, max_pages + 1):
+            try:
+                url = f"{search_url}?q={quote(keyword)}&page={page}"
+                
+                # Update headers with a new user agent
+                self.headers["User-Agent"] = self._get_next_user_agent()
+                
+                async with self.session.get(url, headers=self.headers) as response:
+                    if response.status != 200:
+                        logger.warning(f"TCGPlayer returned status code {response.status} for keyword '{keyword}', page {page}")
+                        continue
+                    
+                    html_content = await response.text()
+                    
+                    # Parse HTML content
+                    page_listings = self._parse_tcgplayer_search_results(html_content, keyword, category)
+                    listings.extend(page_listings)
+                    
+                    # Respect TCGPlayer's rate limits
+                    await asyncio.sleep(2)  # Delay between page requests
+            
+            except Exception as e:
+                logger.error(f"Error fetching TCGPlayer page {page} for keyword '{keyword}': {str(e)}")
+                continue
+        
         return listings
     
-    def _generate_tcg_listing(self, keyword: str, game_info: Dict[str, Any]) -> TCGPlayerListing:
-        """
-        Generate a realistic TCGPlayer listing based on keyword and game info.
+    def _parse_tcgplayer_search_results(self, html_content: str, keyword: str, category: Optional[str]) -> List[Dict]:
+        """Parse TCGPlayer search results HTML to extract product listings"""
+        listings = []
+        soup = BeautifulSoup(html_content, 'html.parser')
         
-        Args:
-            keyword (str): Search keyword
-            game_info (Dict[str, Any]): Game information for generating relevant data
+        # Find all product containers
+        product_containers = soup.select('div.search-result')
+        
+        for container in product_containers:
+            try:
+                # Extract product URL and ID
+                url_element = container.select_one('a.search-result__title')
+                relative_url = url_element.get('href', '') if url_element else ""
+                url = f"https://www.tcgplayer.com{relative_url}" if relative_url.startswith('/') else relative_url
+                
+                # Extract ID from URL
+                listing_id = relative_url.split('/')[-1] if relative_url else ""
+                
+                # Extract product title
+                title = url_element.text.strip() if url_element else "Unknown Title"
+                
+                # Extract price
+                price_element = container.select_one('span.search-result__market-price--value')
+                if not price_element:
+                    price_element = container.select_one('div.inventory__price-with-shipping span')
+                
+                price_str = price_element.text.strip() if price_element else "0"
+                price = self._extract_price(price_str)
+                
+                # Skip if no valid price found
+                if price <= 0:
+                    continue
+                
+                # Extract image URL
+                image_element = container.select_one('img.search-result__image')
+                image_url = image_element.get('src', '') if image_element else ""
+                
+                # Extract set information if available
+                set_element = container.select_one('p.search-result__subtitle')
+                set_info = set_element.text.strip() if set_element else ""
+                
+                # Extract rarity if available
+                rarity_element = container.select_one('span.search-result__rarity')
+                rarity = rarity_element.text.strip() if rarity_element else ""
+                
+                listing = {
+                    "marketplace": "tcgplayer",
+                    "listing_id": listing_id,
+                    "title": title,
+                    "price": price,
+                    "url": url,
+                    "image_url": image_url,
+                    "set_info": set_info,
+                    "rarity": rarity,
+                    "category": category,
+                    "source_keyword": keyword,
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+                listings.append(listing)
             
-        Returns:
-            TCGPlayerListing: A realistic TCGPlayer listing
-        """
-        # Select a set, rarity, and card type from the game info
-        set_name = random.choice(game_info["sets"])
-        rarity = random.choice(game_info["rarities"])
-        card_type = random.choice(game_info["card_types"])
+            except Exception as e:
+                logger.error(f"Error parsing TCGPlayer product container: {str(e)}")
+                continue
         
-        # Determine card name based on keyword and popular cards
-        if any(card.lower() in keyword.lower() for card in game_info["popular_cards"]):
-            # If the keyword contains a popular card name, use that card name
-            matching_cards = [card for card in game_info["popular_cards"] 
-                             if card.lower() in keyword.lower()]
-            card_name = random.choice(matching_cards)
-        elif random.random() < 0.7:  # 70% chance to use a popular card
-            card_name = random.choice(game_info["popular_cards"])
-        else:
-            # Generate a generic card name based on the game type
-            if "Magic" in game_info.get("endpoint", ""):
-                prefixes = ["Ancient", "Mystical", "Eternal", "Savage", "Divine", "Arcane", "Celestial"]
-                subjects = ["Dragon", "Angel", "Demon", "Phoenix", "Wizard", "Knight", "Elemental", "Beast"]
-                suffixes = ["of Doom", "of Power", "of Wisdom", "of the Void", "of the Abyss", "of Glory"]
-                card_name = f"{random.choice(prefixes)} {random.choice(subjects)} {random.choice(suffixes) if random.random() > 0.5 else ''}"
-            elif "Pokemon" in game_info.get("endpoint", ""):
-                card_name = random.choice(game_info["popular_cards"])
-            elif "yugioh" in game_info.get("endpoint", ""):
-                prefixes = ["Dark", "Blue-Eyes", "Red-Eyes", "Cyber", "Elemental", "Mystical", "Legendary"]
-                subjects = ["Dragon", "Warrior", "Magician",
+        return listings
+    
+    def _extract_price(self, price_str: str) -> float:
+        """Extract numerical price from price string"""
+        try:
+            # Remove currency symbols and commas, then convert to float
+            price_clean = re.sub(r'[^\d.]', '', price_str)
+            return float(price_clean) if price_clean else 0
+        except (ValueError, TypeError):
+            return 0
+    
+    async def get_product_details(self, listing_id: str, category: Optional[str] = None) -> Dict:
+        """Get detailed information about a specific TCGPlayer product by listing ID"""
+        await self.initialize()
+        
+        try:
+            # Construct URL based on the category if provided
+            if category:
+                url = f"https://www.tcgplayer.com/product/{listing_id}"
+            else:
+                url = f"https://www.tcgplayer.com/product/{listing_id}"
+            
+            # Update headers with a new user agent
+            self.headers["User-Agent"] = self._get_next_user_agent()
+            
+            async with self.session.get(url, headers=self.headers) as response:
+                if response.status != 200:
+                    logger.warning(f"TCGPlayer returned status code {response.status} for listing ID {listing_id}")
+                    return {}
+                
+                html_content = await response.text()
+                
+                # Parse HTML content for product details
+                return self._parse_product_details(html_content, listing_id, category)
+        
+        except Exception as e:
+            logger.error(f"Error fetching TCGPlayer product details for listing ID {listing_id}: {str(e)}")
+            return {}
+    
+    def _parse_product_details(self, html_content: str, listing_id: str, category: Optional[str]) -> Dict:
+        """Parse TCGPlayer product page HTML to extract detailed information"""
+        details = {
+            "marketplace": "tcgplayer",
+            "listing_id": listing_id,
+            "category": category,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Extract product title
+            title_element = soup.select_one('h1.product-details__name')
+            details["title"] = title_element.text.strip() if title_element else "Unknown Title"
+            
+            # Extract market price
+            market_price_element = soup.select_one('div.product-details__marketplace-price span')
+            if market_price_element:
+                market_price_str = market_price_element.text.strip()
+                details["market_price"] = self._extract_price(market_price_str)
+            
+            # Extract lowest price
+            lowest_price_element = soup.select_one('div.price-point__data')
+            if lowest_price_element:
+                lowest_price_str = lowest_price_element.text.strip()
+                details["lowest_price"] = self._extract_price(lowest_price_str)
+            else:
+                details["lowest_price"] = 0
+            
+            # Set price to the lowest available price
+            details["price"] = details.get("lowest_price", 0) or details.get("market_price", 0)
+            
+            # Extract set information
+            set_element = soup.select_one('span.product-details__set')
+            details["set_info"] = set_element.text.strip() if set_element else ""
+            
+            # Extract rarity
+            rarity_element = soup.select_one('span.product-details__rarity')
+            details["rarity"] = rarity_element.text.strip() if rarity_element else ""
+            
+            # Extract main image URL
+            image_element = soup.select_one('img.product-details__img')
+            details["image_url"] = image_element.get('src', '') if image_element else ""
+            
+            # URL
+            details["url"] = f"https://www.tcgplayer.com/product/{listing_id}"
+            
+            return details
+        
+        except Exception as e:
+            logger.error(f"Error parsing TCGPlayer product details for listing ID {listing_id}: {str(e)}")
+            return {}
