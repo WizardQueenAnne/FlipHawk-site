@@ -11,7 +11,7 @@ from facebook_scraper import FacebookScraper
 from etsy_scraper import EtsyScraper
 from mercari_scraper import MercariScraper
 from offerup_scraper import OfferUpScraper
-from comprehensive_keywords import KEYWORDS
+from comprehensive_keywords import COMPREHENSIVE_KEYWORDS  # Fixed import
 
 # Configure logging
 logging.basicConfig(
@@ -45,7 +45,12 @@ class ScraperManager:
     async def run_all_scrapers(self, keywords=None):
         """Run all scrapers with provided keywords or default comprehensive keywords"""
         if keywords is None:
-            keywords = KEYWORDS
+            keywords = []
+            # Extract keywords from all categories in COMPREHENSIVE_KEYWORDS
+            for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+                for subcat, keyword_list in subcats.items():
+                    # Take first 5 keywords from each subcategory
+                    keywords.extend(keyword_list[:5])
         
         logger.info(f"Starting scraper run with {len(keywords)} keywords")
         tasks = []
