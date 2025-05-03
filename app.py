@@ -13,7 +13,7 @@ try:
     from pydantic import BaseModel
     
     # Import the scraper manager
-    from scraper_manager import ScraperManager
+    from scraper_manager import scraper_manager
     from comprehensive_keywords import COMPREHENSIVE_KEYWORDS  # Fixed import
     
     # Configure logging
