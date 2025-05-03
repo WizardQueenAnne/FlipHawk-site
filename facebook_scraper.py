@@ -14,7 +14,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus, urlencode
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from comprehensive_keywords import generate_keywords
+from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
+from functools import wraps
+from json import JSONDecodeError
 
 # Set up logging
 logging.basicConfig(
@@ -22,6 +24,44 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('facebook_scraper')
+
+class RetryConfig:
+    """Configuration for retry mechanism."""
+    MAX_RETRIES = 3
+    BASE_DELAY = 1.0
+    MAX_DELAY = 60.0
+    EXPONENTIAL_BASE = 2.0
+    JITTER = 0.1
+
+def exponential_backoff_with_jitter(attempt: int) -> float:
+    """Calculate delay with exponential backoff and jitter."""
+    delay = min(
+        RetryConfig.BASE_DELAY * (RetryConfig.EXPONENTIAL_BASE ** attempt),
+        RetryConfig.MAX_DELAY
+    )
+    jitter = delay * RetryConfig.JITTER * (2 * random.random() - 1)
+    return delay + jitter
+
+def retry_with_backoff(max_retries: int = RetryConfig.MAX_RETRIES):
+    """Decorator for implementing retry with exponential backoff."""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return await func(*args, **kwargs)
+                except (aiohttp.ClientError, asyncio.TimeoutError, JSONDecodeError) as e:
+                    if attempt == max_retries - 1:
+                        logger.error(f"All {max_retries} attempts failed for {func.__name__}: {str(e)}")
+                        raise
+                    
+                    delay = exponential_backoff_with_jitter(attempt)
+                    logger.warning(f"Attempt {attempt + 1} failed in {func.__name__}. Retrying in {delay:.2f}s. Error: {str(e)}")
+                    await asyncio.sleep(delay)
+            
+            return None
+        return wrapper
+    return decorator
 
 @dataclass
 class FacebookListing:
@@ -40,6 +80,7 @@ class FacebookListing:
     local_pickup: bool = True
     category: Optional[str] = None
     source: str = "Facebook Marketplace"
+    subcategory: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the listing to a dictionary."""
@@ -58,6 +99,7 @@ class FacebookListing:
             'local_pickup': self.local_pickup,
             'category': self.category,
             'source': self.source,
+            'subcategory': self.subcategory,
             'normalized_title': self.normalize_title()
         }
     
@@ -84,7 +126,7 @@ class FacebookListing:
         # Remove duplicate models
         models = list(set(models))
         
-        # If models found, prioritize them in the normalized title
+        # If models found, prioritize them
         if models:
             title = ' '.join(models) + ' ' + title
         
@@ -99,7 +141,7 @@ class FacebookListing:
 
 
 class FacebookScraper:
-    """Class for scraping Facebook Marketplace product listings."""
+    """Enhanced Facebook Marketplace scraper with complete functionality."""
     
     def __init__(self, use_proxy=False, max_retries=3, delay_between_requests=2.0):
         """
@@ -152,7 +194,17 @@ class FacebookScraper:
         """Get or create an aiohttp ClientSession."""
         if self.session is None:
             timeout = aiohttp.ClientTimeout(total=30)
-            self.session = aiohttp.ClientSession(headers=self.headers, timeout=timeout)
+            tcp_connector = aiohttp.TCPConnector(
+                limit=10,
+                ttl_dns_cache=300,
+                enable_cleanup_closed=True
+            )
+            
+            self.session = aiohttp.ClientSession(
+                headers=self.headers,
+                timeout=timeout,
+                connector=tcp_connector
+            )
         return self.session
 
     async def close_session(self):
@@ -161,48 +213,42 @@ class FacebookScraper:
             await self.session.close()
             self.session = None
 
-    async def fetch_page(self, url: str, retries: int = 0) -> Optional[str]:
+    @retry_with_backoff()
+    async def fetch_page(self, url: str) -> Optional[str]:
         """
         Fetch a page with retry logic and error handling.
         
         Args:
             url (str): URL to fetch
-            retries (int): Current retry count
             
         Returns:
             Optional[str]: HTML content of the page, or None if failed
         """
-        if retries >= self.max_retries:
-            logger.error(f"Max retries reached for URL: {url}")
-            return None
+        session = await self.get_session()
+        proxy = random.choice(self.proxy_pool) if self.use_proxy and self.proxy_pool else None
+        
+        # Add random delay to avoid rate limiting
+        await asyncio.sleep(self.delay_between_requests * (1 + random.random()))
         
         try:
-            session = await self.get_session()
-            proxy = random.choice(self.proxy_pool) if self.use_proxy and self.proxy_pool else None
-            
-            # Add random delay to avoid rate limiting
-            await asyncio.sleep(self.delay_between_requests * (1 + random.random()))
-            
             async with session.get(url, proxy=proxy) as response:
                 if response.status == 200:
                     return await response.text()
                 elif response.status == 429 or response.status == 403:  # Rate limited or blocked
-                    delay = (2 ** retries) * self.delay_between_requests
-                    logger.warning(f"Rate limited (status {response.status}). Waiting {delay:.2f} seconds...")
-                    await asyncio.sleep(delay)
-                    return await self.fetch_page(url, retries + 1)
+                    logger.warning(f"Rate limited (status {response.status})")
+                    await asyncio.sleep(self.delay_between_requests * 2)
+                    raise aiohttp.ClientError("Rate limited")
                 elif response.status == 404:
                     logger.warning(f"Page not found: {url}")
                     return None
                 else:
                     logger.error(f"HTTP {response.status} for URL: {url}")
                     await asyncio.sleep(self.delay_between_requests)
-                    return await self.fetch_page(url, retries + 1)
+                    raise aiohttp.ClientError(f"HTTP {response.status}")
                     
         except Exception as e:
             logger.error(f"Error fetching {url}: {str(e)}")
-            await asyncio.sleep(self.delay_between_requests)
-            return await self.fetch_page(url, retries + 1)
+            raise
 
     async def search_facebook_marketplace(self, keyword: str, sort: str = "price_low_to_high", max_pages: int = 2) -> List[FacebookListing]:
         """
@@ -261,21 +307,23 @@ class FacebookScraper:
         models = []
         
         # Tech products
-        if any(kw in keyword.lower() for kw in ["tech", "electronics", "headphone", "keyboard", "laptop", "computer"]):
+        if any(kw in keyword.lower() for kw in ["tech", "electronics", "headphone", "keyboard", "laptop", "computer", "graphics card", "cpu", "monitor"]):
             category = "Electronics"
             brands = ["Sony", "Apple", "Samsung", "Logitech", "Corsair", "Dell", "HP", "Razer", "Bose", "JBL"]
             if "headphone" in keyword.lower():
                 models = ["WH-1000XM4", "AirPods Pro", "QuietComfort 35", "G Pro X", "Kraken", "QC45"]
             elif "keyboard" in keyword.lower():
                 models = ["K70", "G915", "Huntsman", "BlackWidow", "K95", "G Pro X", "K65"]
+            elif "graphics card" in keyword.lower():
+                models = ["RTX 3080", "RTX 3070", "RTX 3060", "RX 6800 XT", "RTX 4090", "RTX 2060"]
             else:
                 models = ["Pro", "Ultra", "Elite", "Gaming", "Premium", "Wireless", "Bluetooth"]
         
         # Clothing or sneakers
-        elif any(kw in keyword.lower() for kw in ["jordan", "nike", "adidas", "clothing", "shoes", "sneaker"]):
+        elif any(kw in keyword.lower() for kw in ["jordan", "nike", "adidas", "clothing", "shoes", "sneaker", "air force", "dunk"]):
             category = "Clothing & Shoes"
             brands = ["Nike", "Jordan", "Adidas", "Puma", "New Balance", "Vans", "Converse"]
-            if "jordan" in keyword.lower():
+            if "jordan" in keyword.lower() or "jordans" in keyword.lower():
                 models = ["1", "3", "4", "5", "11", "12", "13", "Retro"]
             elif "nike" in keyword.lower() and "dunk" in keyword.lower():
                 models = ["Dunk Low", "Dunk High", "SB Dunk", "Panda", "University Blue", "Syracuse"]
@@ -283,7 +331,7 @@ class FacebookScraper:
                 models = ["Air Force 1", "Yeezy", "Ultra Boost", "350", "550", "574", "Old Skool"]
         
         # Collectibles
-        elif any(kw in keyword.lower() for kw in ["card", "pokemon", "magic", "yugioh", "funko", "collectible"]):
+        elif any(kw in keyword.lower() for kw in ["card", "pokemon", "magic", "yugioh", "funko", "collectible", "vinyl", "lego"]):
             category = "Collectibles"
             condition_options = ["New", "Like New", "Mint", "Near Mint", "Excellent", "Good", "Played"]
             if "pokemon" in keyword.lower():
@@ -298,6 +346,23 @@ class FacebookScraper:
             else:
                 brands = ["Collectible", "Limited Edition", "Rare", "Vintage"]
                 models = ["Series 1", "Series 2", "First Edition", "Exclusive", "Promo"]
+        
+        # Gaming
+        elif any(kw in keyword.lower() for kw in ["console", "playstation", "xbox", "nintendo", "gameboy", "ps5", "ps4", "switch"]):
+            category = "Gaming"
+            brands = ["PlayStation", "Xbox", "Nintendo", "Microsoft", "Sony"]
+            if "playstation" in keyword.lower() or "ps5" in keyword.lower() or "ps4" in keyword.lower():
+                models = ["PlayStation 5", "PS5", "PlayStation 4", "PS4", "Pro", "Slim", "Digital Edition"]
+            elif "xbox" in keyword.lower():
+                models = ["Xbox Series X", "Xbox Series S", "Xbox One", "Elite Controller", "Game Pass"]
+            elif "nintendo" in keyword.lower() or "switch" in keyword.lower():
+                models = ["Nintendo Switch", "Switch OLED", "Switch Lite", "Nintendo DS", "3DS", "Pro Controller"]
+        
+        # Vintage items
+        elif any(kw in keyword.lower() for kw in ["vintage", "antique", "classic", "retro", "old"]):
+            category = "Antiques"
+            brands = ["Vintage", "Antique", "Classic", "Original", "Collectible"]
+            models = ["1920s", "1930s", "1940s", "1950s", "1960s", "1970s", "1980s", "1990s"]
         
         # Default generic values if no specific category
         if not brands:
@@ -319,6 +384,8 @@ class FacebookScraper:
             "Electronics": (50, 800),
             "Clothing & Shoes": (30, 300),
             "Collectibles": (10, 500),
+            "Gaming": (100, 600),
+            "Antiques": (50, 1000),
             "General": (20, 200)
         }
         
@@ -431,48 +498,14 @@ class FacebookScraper:
                     max_pages=pages_per_keyword
                 )
                 
+                # Add subcategory to listings
+                for listing in low_priced + recent_listings:
+                    listing.subcategory = subcategory
+                
                 all_listings.extend([listing.to_dict() for listing in low_priced])
                 all_listings.extend([listing.to_dict() for listing in recent_listings])
                 
                 logger.info(f"Found {len(low_priced) + len(recent_listings)} total listings for keyword: {keyword}")
-                
-                # Avoid hitting rate limits
-                await asyncio.sleep(random.uniform(1.0, 2.0))
-                
-            except Exception as e:
-                logger.error(f"Error searching Facebook for keyword '{keyword}': {str(e)}")
-                continue
-        
-        logger.info(f"Found {len(all_listings)} total listings for subcategory: {subcategory}")
-        return all_listings
-
-async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """
-    Run Facebook Marketplace search for multiple subcategories.
-    
-    Args:
-        subcategories (List[str]): List of subcategories to search for
-        
-    Returns:
-        List[Dict[str, Any]]: Combined list of found products
-    """
-    scraper = FacebookScraper(use_proxy=False, delay_between_requests=2.0)
-    
-    try:
-        all_listings = []
-        
-        for subcategory in subcategories:
-            try:
-                logger.info(f"Searching Facebook Marketplace for subcategory: {subcategory}")
-                listings = await scraper.search_subcategory(subcategory)
-                
-                # Add subcategory to each listing
-                for listing in listings:
-                    if 'subcategory' not in listing or not listing['subcategory']:
-                        listing['subcategory'] = subcategory
-                
-                all_listings.extend(listings)
-                logger.info(f"Found {len(listings)} listings for subcategory: {subcategory}")
                 
                 # Avoid hitting rate limits between subcategories
                 await asyncio.sleep(random.uniform(2.0, 3.0))
@@ -503,6 +536,86 @@ if __name__ == "__main__":
             if result.get('location'):
                 print(f"Location: {result['location']}")
             print(f"Condition: {result['condition']}")
+            print(f"Subcategory: {result.get('subcategory', 'N/A')}")
     
     # Run the test
-    asyncio.run(test_facebook_scraper())
+    asyncio.run(test_facebook_scraper()) limits
+                await asyncio.sleep(random.uniform(1.0, 2.0))
+                
+            except Exception as e:
+                logger.error(f"Error searching Facebook for keyword '{keyword}': {str(e)}")
+                continue
+        
+        logger.info(f"Found {len(all_listings)} total listings for subcategory: {subcategory}")
+        return all_listings
+    
+    async def search_all_keywords(self, subcategory: str) -> List[Dict[str, Any]]:
+        """Search ALL keywords from COMPREHENSIVE_KEYWORDS for a specific subcategory."""
+        all_listings = []
+        
+        # Get all keywords for this subcategory directly from COMPREHENSIVE_KEYWORDS
+        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+            if subcategory in subcats:
+                all_keywords = subcats[subcategory]
+                logger.info(f"Found {len(all_keywords)} keywords for {subcategory}")
+                
+                # Search with all keywords
+                for i, keyword in enumerate(all_keywords):
+                    try:
+                        logger.info(f"Searching with keyword {i+1}/{len(all_keywords)}: {keyword}")
+                        
+                        # Search for low-priced items
+                        low_priced = await self.search_facebook_marketplace(
+                            keyword,
+                            sort="price_low_to_high",
+                            max_pages=2
+                        )
+                        
+                        # Add subcategory to listings
+                        for listing in low_priced:
+                            listing.subcategory = subcategory
+                        
+                        all_listings.extend([listing.to_dict() for listing in low_priced])
+                        
+                        # Rate limiting
+                        if i < len(all_keywords) - 1:
+                            await asyncio.sleep(random.uniform(2.0, 3.0))
+                        
+                    except Exception as e:
+                        logger.error(f"Error searching Facebook for keyword '{keyword}': {str(e)}")
+                        continue
+                
+                break
+        
+        logger.info(f"Found total of {len(all_listings)} listings for {subcategory}")
+        return all_listings
+
+async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
+    """
+    Run Facebook Marketplace search for multiple subcategories.
+    
+    Args:
+        subcategories (List[str]): List of subcategories to search for
+        
+    Returns:
+        List[Dict[str, Any]]: Combined list of found products
+    """
+    scraper = FacebookScraper(use_proxy=False, delay_between_requests=2.0)
+    
+    try:
+        all_listings = []
+        
+        for subcategory in subcategories:
+            try:
+                logger.info(f"Searching Facebook Marketplace for subcategory: {subcategory}")
+                listings = await scraper.search_subcategory(subcategory)
+                
+                # Add subcategory to each listing
+                for listing in listings:
+                    if 'subcategory' not in listing or not listing['subcategory']:
+                        listing['subcategory'] = subcategory
+                
+                all_listings.extend(listings)
+                logger.info(f"Found {len(listings)} listings for subcategory: {subcategory}")
+                
+                # Avoid hitting rate
