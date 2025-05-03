@@ -11,7 +11,7 @@ from urllib.parse import quote, urljoin, quote_plus
 from functools import wraps
 from json import JSONDecodeError
 
-from api_integration import EnhancedAPIIntegration
+from api_integration import api_integration
 from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
 
 # Configure logging
