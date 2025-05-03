@@ -3,12 +3,16 @@ import aiohttp
 import logging
 import json
 import re
+import random
 from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
 from datetime import datetime
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, urljoin, quote_plus
+from functools import wraps
+from json import JSONDecodeError
 
 from api_integration import EnhancedAPIIntegration
+from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
 
 # Configure logging
 logging.basicConfig(
@@ -22,236 +26,42 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-class OfferUpScraper:
-    """Enhanced OfferUp scraper to find product listings"""
-    
-    def __init__(self):
-        self.base_url = "https://offerup.com/search"
-        self.session = None
-        self.api = EnhancedAPIIntegration()
-        
-        # Rotating user agents to avoid detection
-        self.user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36"
-        ]
-        self.user_agent_index = 0
-        
-        # OfferUp specific headers
-        self.headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Referer": "https://offerup.com/",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1"
-        }
-    
-    async def initialize(self):
-        """Initialize session and headers"""
-        if self.session is None:
-            self.session = aiohttp.ClientSession()
-            await self.api.initialize()
-    
-    async def close(self):
-        """Close session"""
-        if self.session:
-            await self.session.close()
-            self.session = None
-        await self.api.close()
-    
-    def _get_next_user_agent(self):
-        """Rotate through user agents"""
-        agent = self.user_agents[self.user_agent_index]
-        self.user_agent_index = (self.user_agent_index + 1) % len(self.user_agents)
-        return agent
-    
-    async def search_listings(self, keywords: List[str], max_pages: int = 2) -> List[Dict]:
-        """Search OfferUp for product listings with the given keywords"""
-        await self.initialize()
-        
-        all_listings = []
-        for keyword in keywords:
-            try:
-                keyword_listings = await self._search_keyword(keyword, max_pages)
-                logger.info(f"Found {len(keyword_listings)} OfferUp listings for keyword: {keyword}")
-                all_listings.extend(keyword_listings)
-            except Exception as e:
-                logger.error(f"Error searching OfferUp for keyword '{keyword}': {str(e)}")
-        
-        # Output count to console
-        print(f"OfferUp scraper found {len(all_listings)} total listings")
-        return all_listings
-    
-    async def _search_keyword(self, keyword: str, max_pages: int) -> List[Dict]:
-        """Search for a specific keyword and collect listings from multiple pages"""
-        listings = []
-        
-        for page in range(1, max_pages + 1):
-            try:
-                url = f"{self.base_url}?q={quote(keyword)}&page={page}"
-                
-                # Update headers with a new user agent
-                self.headers["User-Agent"] = self._get_next_user_agent()
-                
-                async with self.session.get(url, headers=self.headers) as response:
-                    if response.status != 200:
-                        logger.warning(f"OfferUp returned status code {response.status} for keyword '{keyword}', page {page}")
-                        continue
+class RetryConfig:
+    """Configuration for retry mechanism."""
+    MAX_RETRIES = 3
+    BASE_DELAY = 1.0
+    MAX_DELAY = 60.0
+    EXPONENTIAL_BASE = 2.0
+    JITTER = 0.1
+
+def exponential_backoff_with_jitter(attempt: int) -> float:
+    """Calculate delay with exponential backoff and jitter."""
+    delay = min(
+        RetryConfig.BASE_DELAY * (RetryConfig.EXPONENTIAL_BASE ** attempt),
+        RetryConfig.MAX_DELAY
+    )
+    jitter = delay * RetryConfig.JITTER * (2 * random.random() - 1)
+    return delay + jitter
+
+def retry_with_backoff(max_retries: int = RetryConfig.MAX_RETRIES):
+    """Decorator for implementing retry with exponential backoff."""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return await func(*args, **kwargs)
+                except (aiohttp.ClientError, asyncio.TimeoutError, JSONDecodeError) as e:
+                    if attempt == max_retries - 1:
+                        logger.error(f"All {max_retries} attempts failed for {func.__name__}: {str(e)}")
+                        raise
                     
-                    html_content = await response.text()
-                    
-                    # Parse HTML content
-                    page_listings = self._parse_offerup_search_results(html_content, keyword)
-                    listings.extend(page_listings)
-                    
-                    # Respect OfferUp's rate limits
-                    await asyncio.sleep(2)  # Delay between page requests
+                    delay = exponential_backoff_with_jitter(attempt)
+                    logger.warning(f"Attempt {attempt + 1} failed in {func.__name__}. Retrying in {delay:.2f}s. Error: {str(e)}")
+                    await asyncio.sleep(delay)
             
-            except Exception as e:
-                logger.error(f"Error fetching OfferUp page {page} for keyword '{keyword}': {str(e)}")
-                continue
-        
-        return listings
-    
-    def _parse_offerup_search_results(self, html_content: str, keyword: str) -> List[Dict]:
-        """Parse OfferUp search results HTML to extract product listings"""
-        listings = []
-        soup = BeautifulSoup(html_content, 'html.parser')
-        
-        # Find all product containers
-        product_containers = soup.select('a[data-test="item-card"]')
-        
-        for container in product_containers:
-            try:
-                # Extract listing ID from the URL
-                url = container.get('href', '')
-                listing_id = url.split('/')[-1] if url else ""
-                
-                # Extract product title
-                title_element = container.select_one('p[data-test="item-title"]')
-                title = title_element.text.strip() if title_element else "Unknown Title"
-                
-                # Extract price
-                price_element = container.select_one('span[data-test="price"]')
-                price_str = price_element.text.strip() if price_element else "0"
-                price = self._extract_price(price_str)
-                
-                # Skip if no valid price found
-                if price <= 0:
-                    continue
-                
-                # Extract image URL
-                image_element = container.select_one('img')
-                image_url = image_element.get('src', '') if image_element else ""
-                
-                # Get location if available
-                location_element = container.select_one('p[data-test="item-location"]')
-                location = location_element.text.strip() if location_element else ""
-                
-                # Complete URL
-                full_url = f"https://offerup.com{url}" if url.startswith('/') else url
-                
-                listing = {
-                    "marketplace": "offerup",
-                    "listing_id": listing_id,
-                    "title": title,
-                    "price": price,
-                    "url": full_url,
-                    "image_url": image_url,
-                    "location": location,
-                    "source_keyword": keyword,
-                    "timestamp": datetime.now().isoformat()
-                }
-                
-                listings.append(listing)
-            
-            except Exception as e:
-                logger.error(f"Error parsing OfferUp product container: {str(e)}")
-                continue
-        
-        return listings
-    
-    def _extract_price(self, price_str: str) -> float:
-        """Extract numerical price from price string"""
-        try:
-            # Remove currency symbols and commas, then convert to float
-            price_clean = re.sub(r'[^\d.]', '', price_str)
-            return float(price_clean) if price_clean else 0
-        except (ValueError, TypeError):
-            return 0
-    
-    async def get_product_details(self, listing_id: str) -> Dict:
-        """Get detailed information about a specific OfferUp product by listing ID"""
-        await self.initialize()
-        
-        try:
-            url = f"https://offerup.com/item/detail/{listing_id}"
-            
-            # Update headers with a new user agent
-            self.headers["User-Agent"] = self._get_next_user_agent()
-            
-            async with self.session.get(url, headers=self.headers) as response:
-                if response.status != 200:
-                    logger.warning(f"OfferUp returned status code {response.status} for listing ID {listing_id}")
-                    return {}
-                
-                html_content = await response.text()
-                
-                # Parse HTML content for product details
-                return self._parse_product_details(html_content, listing_id)
-        
-        except Exception as e:
-            logger.error(f"Error fetching OfferUp product details for listing ID {listing_id}: {str(e)}")
-            return {}
-    
-    def _parse_product_details(self, html_content: str, listing_id: str) -> Dict:
-        """Parse OfferUp product page HTML to extract detailed information"""
-        details = {
-            "marketplace": "offerup",
-            "listing_id": listing_id,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        try:
-            soup = BeautifulSoup(html_content, 'html.parser')
-            
-            # Extract product title
-            title_element = soup.select_one('h1[data-test="item-title"]')
-            details["title"] = title_element.text.strip() if title_element else "Unknown Title"
-            
-            # Extract price
-            price_element = soup.select_one('span[data-test="item-price"]')
-            price_str = price_element.text.strip() if price_element else "0"
-            details["price"] = self._extract_price(price_str)
-            
-            # Extract product description
-            description_element = soup.select_one('div[data-test="item-description"]')
-            details["description"] = description_element.text.strip() if description_element else ""
-            
-            # Extract location
-            location_element = soup.select_one('span[data-test="item-location"]')
-            details["location"] = location_element.text.strip() if location_element else ""
-            
-            # Extract seller name
-            seller_element = soup.select_one('p[data-test="seller-name"]')
-            details["seller"] = seller_element.text.strip() if seller_element else ""
-            
-            # Extract main image URL
-            image_element = soup.select_one('img[data-test="image"]')
-            details["image_url"] = image_element.get('src', '') if image_element else ""
-            
-            # Extract condition
-            condition_element = soup.select_one('span[data-test="item-condition"]')
-            details["condition"] = condition_element.text.strip() if condition_element else ""
-            
-            # URL
-            details["url"] = f"https://offerup.com/item/detail/{listing_id}"
-            
-            return details
-        
-        except Exception as e:
-            logger.error(f"Error parsing OfferUp product details for listing ID {listing_id}: {str(e)}")
-            return {}
+            return None
+        return wrapper
+    return decorator
+
+class OfferUpScr
