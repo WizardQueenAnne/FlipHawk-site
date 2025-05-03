@@ -3,14 +3,14 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Any
 
-from ebay_scraper import EbayScraper
-from amazon_scraper import AmazonScraper
-from tcgplayer_scraper import TCGPlayerScraper
-from walmart_scraper import WalmartScraper
-from facebook_scraper import FacebookScraper
-from etsy_scraper import EtsyScraper
-from mercari_scraper import MercariScraper
-from offerup_scraper import OfferUpScraper
+from ebay_scraper import ebay_scraper
+from amazon_scraper import amazon_scraper
+from tcgplayer_scraper import tcgplayer_scraper
+from walmart_scraper import walmart_scraper
+from facebook_scraper import facebook_scraper
+from etsy_scraper import etsy_scraper
+from mercari_scraper import mercari_scraper
+from offerup_scraper import offerup_scraper
 from comprehensive_keywords import COMPREHENSIVE_KEYWORDS  # Fixed import
 
 # Configure logging
