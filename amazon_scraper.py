@@ -17,6 +17,7 @@ from typing import List, Dict, Any, Optional, Set, Tuple
 from datetime import datetime
 from functools import wraps
 from json import JSONDecodeError
+from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
 
 # Set up logging
 logging.basicConfig(
@@ -83,6 +84,7 @@ class AmazonListing:
     price_history: Dict[str, float] = None
     source: str = "Amazon"
     free_shipping: bool = False
+    subcategory: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the listing to a dictionary."""
@@ -104,6 +106,7 @@ class AmazonListing:
             'price_history': self.price_history,
             'source': self.source,
             'free_shipping': self.free_shipping,
+            'subcategory': self.subcategory,
             'normalized_title': self.normalize_title()
         }
     
@@ -683,8 +686,8 @@ class AmazonScraper:
     async def search_subcategory(self, subcategory: str, max_keywords: int = 5, 
                                 max_listings_per_keyword: int = 20, marketplace: str = 'US') -> List[Dict[str, Any]]:
         """Search Amazon for products in a specific subcategory by generating keywords."""
-        from comprehensive_keywords import generate_keywords
         
+        # Generate keywords for the subcategory
         keywords = generate_keywords(subcategory, include_variations=True, max_keywords=max_keywords)
         
         if not keywords:
@@ -710,3 +713,125 @@ class AmazonScraper:
                     keyword,
                     marketplace=marketplace,
                     sort="date-desc-rank",
+                    max_pages=pages_per_keyword
+                )
+                
+                # Add subcategory to each listing
+                for listing in low_priced + recent_listings:
+                    listing.subcategory = subcategory
+                
+                all_listings.extend([listing.to_dict() for listing in low_priced])
+                all_listings.extend([listing.to_dict() for listing in recent_listings])
+                
+                logger.info(f"Found {len(low_priced) + len(recent_listings)} total listings for keyword: {keyword}")
+                
+                # Avoid hitting rate limits
+                await asyncio.sleep(random.uniform(1.0, 2.0))
+                
+            except Exception as e:
+                logger.error(f"Error searching Amazon for keyword '{keyword}': {str(e)}")
+                continue
+        
+        logger.info(f"Found {len(all_listings)} total listings for subcategory: {subcategory}")
+        return all_listings
+    
+    async def search_all_keywords(self, subcategory: str) -> List[Dict[str, Any]]:
+        """Search ALL keywords from COMPREHENSIVE_KEYWORDS for a specific subcategory."""
+        all_listings = []
+        
+        # Get all keywords for this subcategory directly from COMPREHENSIVE_KEYWORDS
+        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+            if subcategory in subcats:
+                all_keywords = subcats[subcategory]
+                logger.info(f"Found {len(all_keywords)} keywords for {subcategory}")
+                
+                # Search with all keywords
+                for i, keyword in enumerate(all_keywords):
+                    try:
+                        logger.info(f"Searching with keyword {i+1}/{len(all_keywords)}: {keyword}")
+                        
+                        # Search for low-priced items
+                        low_priced = await self.search_amazon(
+                            keyword,
+                            sort="price-asc-rank",
+                            max_pages=2
+                        )
+                        
+                        # Add subcategory to each listing
+                        for listing in low_priced:
+                            listing.subcategory = subcategory
+                        
+                        all_listings.extend([listing.to_dict() for listing in low_priced])
+                        
+                        # Rate limiting
+                        if i < len(all_keywords) - 1:
+                            await asyncio.sleep(random.uniform(2.0, 3.0))
+                        
+                    except Exception as e:
+                        logger.error(f"Error searching Amazon for keyword '{keyword}': {str(e)}")
+                        continue
+                
+                break
+        
+        logger.info(f"Found total of {len(all_listings)} listings for {subcategory}")
+        return all_listings
+
+
+async def run_amazon_search(subcategories: List[str]) -> List[Dict[str, Any]]:
+    """
+    Run Amazon search for multiple subcategories.
+    
+    Args:
+        subcategories (List[str]): List of subcategories to search for
+        
+    Returns:
+        List[Dict[str, Any]]: Combined list of found products
+    """
+    scraper = AmazonScraper(use_proxy=False, delay_between_requests=1.5)
+    
+    try:
+        all_listings = []
+        
+        for subcategory in subcategories:
+            try:
+                logger.info(f"Searching Amazon for subcategory: {subcategory}")
+                listings = await scraper.search_subcategory(subcategory)
+                
+                # Add subcategory to each listing if not already present
+                for listing in listings:
+                    if 'subcategory' not in listing or not listing['subcategory']:
+                        listing['subcategory'] = subcategory
+                
+                all_listings.extend(listings)
+                logger.info(f"Found {len(listings)} listings for subcategory: {subcategory}")
+                
+                # Avoid hitting rate limits between subcategories
+                await asyncio.sleep(random.uniform(3.0, 5.0))
+                
+            except Exception as e:
+                logger.error(f"Error processing subcategory '{subcategory}': {str(e)}")
+                continue
+        
+        logger.info(f"Total of {len(all_listings)} listings found across all subcategories")
+        return all_listings
+        
+    finally:
+        await scraper.close()
+
+# Entry point for direct execution
+if __name__ == "__main__":
+    async def test_amazon_scraper():
+        subcategories = ["Headphones", "Keyboards"]
+        results = await run_amazon_search(subcategories)
+        print(f"Found {len(results)} products")
+        
+        # Print sample results
+        for i, result in enumerate(results[:5]):
+            print(f"\nResult #{i+1}:")
+            print(f"Title: {result['title']}")
+            print(f"Price: ${result['price']}")
+            print(f"Link: {result['link']}")
+            print(f"Subcategory: {result.get('subcategory', 'N/A')}")
+    
+    # Run the test
+    asyncio.run(test_amazon_scraper())
