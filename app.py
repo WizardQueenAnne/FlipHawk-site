@@ -159,9 +159,12 @@ except ImportError:
     scraper_manager = ScraperManager()
     
     @app.route("/")
-    def root():
-        """Root endpoint - health check"""
-        return jsonify({"status": "ok", "message": "Marketplace Arbitrage API is running"})
+def index():
+    # Instead of returning JSON:
+    # return jsonify({"status": "ok", "message": "Marketplace Arbitrage API is running"})
+    
+    # Return a rendered HTML template:
+    return render_template("index.html")
     
     @app.route("/search", methods=["POST"])
     def search():
