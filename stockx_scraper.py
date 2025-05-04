@@ -286,13 +286,6 @@ class StockXScraper:
             if category and cat_name.lower() == category.lower():
                 category_info = info
                 break
-            elif not category and any(kw.lower() in keyword.lower() for kw in info["brands"] +
-# Determine which category info to use for generating listings
-        category_info = None
-        for cat_name, info in self.stockx_categories.items():
-            if category and cat_name.lower() == category.lower():
-                category_info = info
-                break
             elif not category and any(kw.lower() in keyword.lower() for kw in info["brands"] + info["models"]):
                 category_info = info
                 break
