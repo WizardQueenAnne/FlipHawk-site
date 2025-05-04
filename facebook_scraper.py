@@ -590,6 +590,7 @@ if __name__ == "__main__":
         logger.info(f"Found total of {len(all_listings)} listings for {subcategory}")
         return all_listings
 
+# facebook_scraper.py (partial fix for the broken function)
 async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
     """
     Run Facebook Marketplace search for multiple subcategories.
@@ -618,4 +619,15 @@ async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
                 all_listings.extend(listings)
                 logger.info(f"Found {len(listings)} listings for subcategory: {subcategory}")
                 
-                # Avoid hitting rate
+                # Avoid hitting rate limits between subcategories
+                await asyncio.sleep(random.uniform(3.0, 5.0))
+                
+            except Exception as e:
+                logger.error(f"Error processing subcategory '{subcategory}': {str(e)}")
+                continue
+        
+        logger.info(f"Total of {len(all_listings)} listings found across all subcategories")
+        return all_listings
+        
+    finally:
+        await scraper.close_session()
