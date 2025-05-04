@@ -388,3 +388,6 @@ async def main():
 if __name__ == "__main__":
     import re  # Add missing import for regex
     asyncio.run(main())
+
+# Create a singleton instance for import
+scraper_manager = ScraperManager()
