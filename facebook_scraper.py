@@ -126,10 +126,10 @@ class FacebookListing:
         # Remove duplicate models
         models = list(set(models))
         
-        # If models found, prioritize them
+        # If models found, prioritize them in the normalized title
         if models:
             title = ' '.join(models) + ' ' + title
-        
+            
         # Add condition
         if self.condition and self.condition.lower() not in title:
             title += ' ' + self.condition.lower()
@@ -508,38 +508,6 @@ class FacebookScraper:
                 logger.info(f"Found {len(low_priced) + len(recent_listings)} total listings for keyword: {keyword}")
                 
                 # Avoid hitting rate limits between subcategories
-                await asyncio.sleep(random.uniform(2.0, 3.0))
-                
-            except Exception as e:
-                logger.error(f"Error processing subcategory '{subcategory}': {str(e)}")
-                continue
-        
-        logger.info(f"Total of {len(all_listings)} listings found across all subcategories")
-        return all_listings
-        
-    finally:
-        await scraper.close_session()
-
-# Entry point for direct execution
-if __name__ == "__main__":
-    async def test_facebook_scraper():
-        subcategories = ["Headphones", "Mechanical Keyboards"]
-        results = await run_facebook_search(subcategories)
-        print(f"Found {len(results)} products")
-        
-        # Print sample results
-        for i, result in enumerate(results[:5]):
-            print(f"\nResult #{i+1}:")
-            print(f"Title: {result['title']}")
-            print(f"Price: ${result['price']}")
-            print(f"Link: {result['link']}")
-            if result.get('location'):
-                print(f"Location: {result['location']}")
-            print(f"Condition: {result['condition']}")
-            print(f"Subcategory: {result.get('subcategory', 'N/A')}")
-    
-    # Run the test
-    asyncio.run(test_facebook_scraper()) limits
                 await asyncio.sleep(random.uniform(1.0, 2.0))
                 
             except Exception as e:
@@ -571,7 +539,7 @@ if __name__ == "__main__":
                             max_pages=2
                         )
                         
-                        # Add subcategory to listings
+                        # Add subcategory to each listing
                         for listing in low_priced:
                             listing.subcategory = subcategory
                         
@@ -590,7 +558,6 @@ if __name__ == "__main__":
         logger.info(f"Found total of {len(all_listings)} listings for {subcategory}")
         return all_listings
 
-# facebook_scraper.py (partial fix for the broken function)
 async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
     """
     Run Facebook Marketplace search for multiple subcategories.
@@ -611,7 +578,7 @@ async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
                 logger.info(f"Searching Facebook Marketplace for subcategory: {subcategory}")
                 listings = await scraper.search_subcategory(subcategory)
                 
-                # Add subcategory to each listing
+                # Add subcategory to each listing if not already present
                 for listing in listings:
                     if 'subcategory' not in listing or not listing['subcategory']:
                         listing['subcategory'] = subcategory
@@ -631,3 +598,24 @@ async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
         
     finally:
         await scraper.close_session()
+
+# Entry point for direct execution
+if __name__ == "__main__":
+    async def test_facebook_scraper():
+        subcategories = ["Headphones", "Mechanical Keyboards"]
+        results = await run_facebook_search(subcategories)
+        print(f"Found {len(results)} products")
+        
+        # Print sample results
+        for i, result in enumerate(results[:5]):
+            print(f"\nResult #{i+1}:")
+            print(f"Title: {result['title']}")
+            print(f"Price: ${result['price']}")
+            print(f"Link: {result['link']}")
+            if result.get('location'):
+                print(f"Location: {result['location']}")
+            print(f"Condition: {result['condition']}")
+            print(f"Subcategory: {result.get('subcategory', 'N/A')}")
+    
+    # Run the test
+    asyncio.run(test_facebook_scraper())
