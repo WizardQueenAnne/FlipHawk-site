@@ -159,7 +159,7 @@ except ImportError:
     scraper_manager = ScraperManager()
     
     @app.route("/")
-def index():
+    def index():
     # Instead of returning JSON:
     # return jsonify({"status": "ok", "message": "Marketplace Arbitrage API is running"})
     
