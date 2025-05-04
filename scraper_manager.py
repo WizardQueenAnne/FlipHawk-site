@@ -4,15 +4,15 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 # Import the modules that contain the scraper functions
-from amazon_scraper import run_amazon_search
-from ebay_scraper import run_ebay_search
-from tcgplayer_scraper import run_tcgplayer_search
-from walmart_scraper import run_walmart_search
-from facebook_scraper import run_facebook_search
-from etsy_scraper import run_etsy_search
-from mercari_scraper import run_mercari_search
-from offerup_scraper import run_offerup_search
-from stockx_scraper import run_stockx_search
+from amazon_scraper import AmazonScraper
+from ebay_scraper import EbayScraper
+from tcgplayer_scraper import TCGPlayerScraper
+from walmart_scraper import WalmartScraper
+from facebook_scraper import FacebookScraper
+from etsy_scraper import EtsyScraper
+from mercari_scraper import MercariScraper
+from offerup_scraper import OfferupScraper
+from stockx_scraper import StockXScraper
 from comprehensive_keywords import COMPREHENSIVE_KEYWORDS, generate_keywords
 
 # Configure logging
