@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlipHawk - Scan for Opportunities</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <style>
+        .scan-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .category-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .category {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .category h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .subcategories {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .subcategory-item {
+            display: flex;
+            align-items: center;
+        }
+        .subcategory-item input {
+            margin-right: 10px;
+        }
+        .scan-actions {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        .results-container {
+            margin-top: 40px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(209, 107, 52, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .opportunities {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .opportunity-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .opportunity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .card-header {
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .card-header h3 {
+            margin: 0;
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-content {
+            padding: 15px;
+        }
+        .product-comparison {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .buy-info, .sell-info {
+            flex: 1;
+        }
+        .marketplace {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+        .price {
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--secondary-color);
+        }
+        .profit-details {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .profit {
+            color: #2E7D32;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .profit-percentage {
+            color: #2E7D32;
+        }
+        .card-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+        .condition-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .condition-new {
+            background-color: #e8f5e9;
+            color: #2E7D32;
+        }
+        .condition-used {
+            background-color: #fff8e1;
+            color: #F57F17;
+        }
+        .confidence-meter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .confidence-bar {
+            flex: 1;
+            height: 6px;
+            background-color: #eee;
+            border-radius: 3px;
+        }
+        .confidence-fill {
+            height: 100%;
+            border-radius: 3px;
+            background-color: var(--primary-color);
+        }
+        .confidence-text {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            display: none;
+        }
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="logo-container">
+                <img src="/static/mini-logo.png" alt="FlipHawk Logo" class="logo">
+                <h1>FlipHawk</h1>
+            </div>
+            <button class="mobile-nav-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/scan" class="active">New Scan</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/login" class="login-btn">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="scan-container">
+            <h2>Scan for Arbitrage Opportunities</h2>
+            <p>Select categories and subcategories to scan for profitable flipping opportunities.</p>
+            
+            <div class="error-message" id="errorMessage"></div>
+            
+            <div class="category-selector" id="categorySelector">
+                <div class="category">
+                    <h3>Tech</h3>
+                    <div class="subcategories">
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="tech-headphones" value="Headphones" class="subcategory-checkbox">
+                            <label for="tech-headphones">Headphones</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="tech-keyboards" value="Keyboards" class="subcategory-checkbox">
+                            <label for="tech-keyboards">Keyboards</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="tech-gpus" value="Graphics Cards" class="subcategory-checkbox">
+                            <label for="tech-gpus">Graphics Cards</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="tech-monitors" value="Monitors" class="subcategory-checkbox">
+                            <label for="tech-monitors">Monitors</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="tech-vintage" value="Vintage Tech" class="subcategory-checkbox">
+                            <label for="tech-vintage">Vintage Tech</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="category">
+                    <h3>Collectibles</h3>
+                    <div class="subcategories">
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="collectibles-pokemon" value="Pokémon" class="subcategory-checkbox">
+                            <label for="collectibles-pokemon">Pokémon</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="collectibles-magic" value="Magic: The Gathering" class="subcategory-checkbox">
+                            <label for="collectibles-magic">Magic: The Gathering</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="collectibles-funko" value="Funko Pops" class="subcategory-checkbox">
+                            <label for="collectibles-funko">Funko Pops</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="collectibles-cards" value="Sports Cards" class="subcategory-checkbox">
+                            <label for="collectibles-cards">Sports Cards</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="category">
+                    <h3>Vintage Clothing</h3>
+                    <div class="subcategories">
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="clothing-jordans" value="Jordans" class="subcategory-checkbox">
+                            <label for="clothing-jordans">Jordans</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="clothing-dunks" value="Nike Dunks" class="subcategory-checkbox">
+                            <label for="clothing-dunks">Nike Dunks</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="clothing-tees" value="Vintage Tees" class="subcategory-checkbox">
+                            <label for="clothing-tees">Vintage Tees</label>
+                        </div>
+                        <div class="subcategory-item">
+                            <input type="checkbox" id="clothing-carhartt" value="Carhartt" class="subcategory-checkbox">
+                            <label for="clothing-carhartt">Carhartt</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="scan-actions">
+                <button id="scanButton" class="btn btn-primary">Start Scanning</button>
+            </div>
+            
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>Scanning marketplaces for arbitrage opportunities...</p>
+                <p>This may take a few moments</p>
+            </div>
+            
+            <div class="no-results" id="noResultsMessage">
+                <h3>No opportunities found</h3>
+                <p>Try selecting different categories or expanding your search criteria.</p>
+            </div>
+            
+            <div class="results-container" id="resultsContainer">
+                <h3>Arbitrage Opportunities</h3>
+                <div class="opportunities" id="opportunitiesGrid"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 FlipHawk. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile navigation toggle
+            const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            
+            if (mobileNavToggle) {
+                mobileNavToggle.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    mainNav.classList.toggle('active');
+                });
+            }
+            
+            // Elements
+            const scanButton = document.getElementById('scanButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const opportunitiesGrid = document.getElementById('opportunitiesGrid');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Initially hide results
+            resultsContainer.style.display = 'none';
+            
+            // Handle scan button click
+            scanButton.addEventListener('click', function() {
+                // Get selected subcategories
+                const selectedSubcategories = Array.from(document.querySelectorAll('.subcategory-checkbox:checked'))
+                    .map(checkbox => checkbox.value);
+                
+                // Validate selection
+                if (selectedSubcategories.length === 0) {
+                    errorMessage.textContent = 'Please select at least one subcategory to scan.';
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+                
+                // Clear previous results
+                opportunitiesGrid.innerHTML = '';
+                errorMessage.style.display = 'none';
+                noResultsMessage.style.display = 'none';
+                resultsContainer.style.display = 'none';
+                
+                // Show loading indicator
+                loadingIndicator.style.display = 'block';
+                
+                // Disable scan button
+                scanButton.disabled = true;
+                scanButton.textContent = 'Scanning...';
+                
+                // Prepare API request
+                const requestData = {
+                    subcategories: selectedSubcategories
+                };
+                
+                // Call API
+                fetch('/api/v1/arbitrage/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    loadingIndicator.style.display = 'none';
+                    
+                    // Check if we have results
+                    if (data.length === 0) {
+                        noResultsMessage.style.display = 'block';
+                    } else {
+                        // Render results
+                        renderOpportunities(data);
+                        resultsContainer.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    // Hide loading indicator
+                    loadingIndicator.style.display = 'none';
+                    
+                    // Show error message
+                    errorMessage.textContent = 'Error connecting to scanning service. Please try again later.';
+                    errorMessage.style.display = 'block';
+                    
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    // Re-enable scan button
+                    scanButton.disabled = false;
+                    scanButton.textContent = 'Start Scanning';
+                });
+            });
+            
+            // Function to render opportunities
+            function renderOpportunities(opportunities) {
+                opportunities.forEach(opp => {
+                    const card = document.createElement('div');
+                    card.className = 'opportunity-card';
+                    
+                    // Determine condition classes
+                    const buyConditionClass = getConditionClass(opp.buyCondition);
+                    const sellConditionClass = getConditionClass(opp.sellCondition);
+                    
+                    // Create card HTML
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <h3>${opp.buyTitle}</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="product-comparison">
+                                <div class="buy-info">
+                                    <div class="marketplace">Buy on ${opp.buyMarketplace}</div>
+                                    <div class="price">${opp.buyPrice.toFixed(2)}</div>
+                                    <span class="condition-badge ${buyConditionClass}">${opp.buyCondition}</span>
+                                </div>
+                                <div class="sell-info">
+                                    <div class="marketplace">Sell on ${opp.sellMarketplace}</div>
+                                    <div class="price">${opp.sellPrice.toFixed(2)}</div>
+                                    <span class="condition-badge ${sellConditionClass}">${opp.sellCondition}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="profit-details">
+                                <div class="profit">Profit: ${opp.profit.toFixed(2)}</div>
+                                <div class="profit-percentage">ROI: ${opp.profitPercentage.toFixed(2)}%</div>
+                                <div class="fees">
+                                    Fees: ${opp.fees.marketplace.toFixed(2)} • Shipping: ${opp.fees.shipping.toFixed(2)}
+                                </div>
+                            </div>
+                            
+                            <div class="confidence-meter">
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: ${opp.confidence}%"></div>
+                                </div>
+                                <div class="confidence-text">${opp.confidence}% match</div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="${opp.buyLink}" target="_blank" class="btn btn-outline">View Buy</a>
+                            <a href="${opp.sellLink}" target="_blank" class="btn btn-secondary">View Sell</a>
+                        </div>
+                    `;
+                    
+                    opportunitiesGrid.appendChild(card);
+                });
+            }
+            
+            // Helper function to get condition class
+            function getConditionClass(condition) {
+                if (!condition) return '';
+                
+                condition = condition.toLowerCase();
+                if (condition.includes('new') || condition === 'mint' || condition === 'sealed') {
+                    return 'condition-new';
+                } else {
+                    return 'condition-used';
+                }
+            }
+        });
+    </script>
+</body>
+</html>-content">
+                <div class="footer-logo">
+                    <img src="/static/mini-logo.png" alt="FlipHawk Logo" class="logo">
+                    <h3>FlipHawk</h3>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="/about">About Us</a></li>
+                            <li><a href="/contact">Contact</a></li>
+                            <li><a href="/blog">Blog</a></li>
+                            <li><a href="/careers">Careers</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="/features">Features</a></li>
+                            <li><a href="/pricing">Pricing</a></li>
+                            <li><a href="/faq">FAQ</a></li>
+                            <li><a href="/api-docs">API</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="/terms">Terms</a></li>
+                            <li><a href="/privacy">Privacy</a></li>
+                            <li><a href="/security">Security</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer
