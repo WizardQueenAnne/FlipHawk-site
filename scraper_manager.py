@@ -89,52 +89,101 @@ class ScraperManager:
     async def _dummy_search(self, subcategories: List[str]) -> List[Dict[str, Any]]:
         """
         Dummy search function for testing when no real scrapers are available.
-        Generates fake product listings based on subcategories.
+        Generates fake product listings based on subcategories and keywords from comprehensive_keywords.py.
         """
-        # Wait a bit to simulate real search
-        await asyncio.sleep(2)
-        
-        all_listings = []
-        brands = {
-            "Headphones": ["Sony", "Bose", "Apple", "Sennheiser", "JBL"],
-            "Keyboards": ["Logitech", "Corsair", "Razer", "HyperX", "Keychron"],
-            "Graphics Cards": ["NVIDIA", "AMD", "ASUS", "MSI", "EVGA"],
-            "Monitors": ["LG", "Samsung", "Dell", "ASUS", "ViewSonic"],
-            "Vintage Tech": ["Sony", "Nintendo", "Apple", "IBM", "Commodore"],
-            "Default": ["Brand A", "Brand B", "Brand C", "Brand D", "Brand E"]
-        }
-        
-        conditions = ["New", "Like New", "Very Good", "Good", "Acceptable"]
-        
-        for subcategory in subcategories:
-            # Get relevant brands for this subcategory
-            subcategory_brands = brands.get(subcategory, brands["Default"])
+        try:
+            from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
+            # Wait a bit to simulate real search
+            await asyncio.sleep(1)
             
-            # Generate 10-20 listings for this subcategory
-            num_listings = random.randint(10, 20)
+            all_listings = []
             
-            for i in range(num_listings):
-                brand = random.choice(subcategory_brands)
-                condition = random.choice(conditions)
-                price = round(random.uniform(20, 500), 2)
+            # Generate some default brands in case we don't find the subcategory
+            default_brands = ["Brand A", "Brand B", "Brand C", "Brand D", "Brand E"]
+            conditions = ["New", "Like New", "Very Good", "Good", "Acceptable"]
+            
+            for subcategory in subcategories:
+                logger.info(f"Searching dummy marketplace for subcategory: {subcategory}")
                 
-                listing = {
-                    "title": f"{brand} {subcategory} Model {random.randint(100, 999)}",
-                    "price": price,
-                    "link": f"https://example.com/product/{i}",
-                    "image_url": f"https://example.com/images/{i}.jpg",
-                    "condition": condition,
-                    "seller_rating": random.randint(80, 100),
-                    "free_shipping": random.choice([True, False]),
-                    "source": "dummy",
-                    "subcategory": subcategory,
-                    "listing_id": f"dummy-{i}",
-                    "timestamp": datetime.now().isoformat()
-                }
+                # Find the category that contains this subcategory
+                subcategory_keywords = []
+                parent_category = None
                 
-                all_listings.append(listing)
-        
-        return all_listings
+                for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+                    if subcategory in subcats:
+                        subcategory_keywords = subcats[subcategory][:10]  # Get up to 10 keywords
+                        parent_category = category
+                        break
+                
+                # If no keywords found, use the subcategory name as a keyword
+                if not subcategory_keywords:
+                    subcategory_keywords = [subcategory]
+                
+                # Get some relevant brands for this subcategory if available
+                subcategory_brands = default_brands
+                if subcategory == "Headphones":
+                    subcategory_brands = ["Sony", "Bose", "Apple", "Sennheiser", "JBL"]
+                elif subcategory == "Keyboards":
+                    subcategory_brands = ["Logitech", "Corsair", "Razer", "HyperX", "Keychron"]
+                elif subcategory == "Graphics Cards":
+                    subcategory_brands = ["NVIDIA", "AMD", "ASUS", "MSI", "EVGA"]
+                elif subcategory == "Monitors":
+                    subcategory_brands = ["LG", "Samsung", "Dell", "ASUS", "ViewSonic"]
+                elif subcategory == "Vintage Tech":
+                    subcategory_brands = ["Sony", "Nintendo", "Apple", "IBM", "Commodore"]
+                elif subcategory == "Jordans":
+                    subcategory_brands = ["Nike", "Jordan", "Air Jordan"]
+                elif subcategory == "Nike Dunks":
+                    subcategory_brands = ["Nike", "SB", "Dunk"]
+                elif subcategory == "Pokémon":
+                    subcategory_brands = ["Pokémon", "Nintendo", "Game Freak"]
+                
+                # Generate listings based on keywords
+                for keyword in subcategory_keywords:
+                    # Generate 1-3 listings per keyword
+                    num_listings = random.randint(1, 3)
+                    
+                    for i in range(num_listings):
+                        brand = random.choice(subcategory_brands)
+                        condition = random.choice(conditions)
+                        base_price = random.uniform(20, 500)
+                        
+                        # Adjust price based on condition
+                        condition_factors = {
+                            "New": 1.0,
+                            "Like New": 0.9,
+                            "Very Good": 0.8,
+                            "Good": 0.7,
+                            "Acceptable": 0.6
+                        }
+                        price = round(base_price * condition_factors.get(condition, 1.0), 2)
+                        
+                        listing = {
+                            "title": f"{brand} {keyword.capitalize()} {random.randint(100, 999)}",
+                            "price": price,
+                            "link": f"https://example.com/product/{keyword.replace(' ', '-')}-{i}",
+                            "image_url": f"https://example.com/images/{keyword.replace(' ', '-')}-{i}.jpg",
+                            "condition": condition,
+                            "seller_rating": random.randint(80, 100),
+                            "free_shipping": random.choice([True, False]),
+                            "source": "dummy",
+                            "subcategory": subcategory,
+                            "category": parent_category,
+                            "listing_id": f"dummy-{subcategory}-{i}",
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        
+                        all_listings.append(listing)
+                
+                logger.info(f"Generated {len(all_listings)} dummy listings for subcategory: {subcategory}")
+            
+            return all_listings
+            
+        except Exception as e:
+            logger.error(f"Error in dummy search: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return []
     
     async def run_all_scrapers(self, subcategories: List[str]) -> bool:
         """
@@ -147,6 +196,9 @@ class ScraperManager:
             bool: True if scan was successful, False otherwise
         """
         try:
+            # Log the subcategories we're searching
+            logger.info(f"Running scrapers for subcategories: {', '.join(subcategories)}")
+            
             # Clear previous results
             for marketplace in self.raw_listings:
                 self.raw_listings[marketplace] = []
@@ -170,6 +222,8 @@ class ScraperManager:
             
         except Exception as e:
             logger.error(f"Error running scrapers: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return False
     
     async def _run_scraper(self, marketplace: str, scraper_func, subcategories: List[str]):
