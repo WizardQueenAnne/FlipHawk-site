@@ -1,152 +1,118 @@
 # FlipHawk - Marketplace Arbitrage System
 
-FlipHawk is an advanced AI-powered marketplace arbitrage system that helps users find profitable product flipping opportunities across multiple online marketplaces like eBay, Amazon, Etsy, and Facebook Marketplace.
+This guide explains how to properly connect the FlipHawk backend scraper system with the frontend user interface.
 
-## 🌟 Features
+## System Overview
 
-### Core Functionality
-- **Advanced AI Matching**: Uses NLP and machine learning to identify identical products across different listings
-- **Real-time Scanning**: Fast, concurrent scanning of multiple marketplaces
-- **Smart Filtering**: Advanced filters for profit, confidence, and product conditions
-- **Comprehensive Analytics**: Detailed profit calculations including taxes, fees, and shipping
+FlipHawk is an arbitrage scanner application that searches multiple marketplaces for profitable resale opportunities. The system has the following components:
 
-### User Experience
-- **User Authentication**: Secure login/signup with JWT tokens
-- **Subscription Tiers**: Free, Pro, and Business tiers with different features
-- **Advanced Filters**: Filter by profit margin, condition, location, and more
-- **Risk Assessment**: Detailed risk analysis for each opportunity
-- **Historical Price Trends**: View price history and trends for items
-- **Category Heatmaps**: Visualize best performing categories
-- **Saved Opportunities**: Save and track promising deals
-- **Analytics Dashboard**: View performance metrics and statistics
+1. **Frontend UI** - HTML/CSS/JavaScript interface for user interactions
+2. **FastAPI Backend** - API endpoints that process requests and respond with data
+3. **Marketplace Scrapers** - Python modules that search marketplaces (Amazon, eBay, Facebook, etc.)
+4. **Arbitrage Scanner** - Core logic that analyzes listings to find profitable opportunities
 
-### Technical Features
-- **Rate Limiting**: Intelligent API rate limiting to prevent blocking
-- **Caching System**: Redis-backed caching for improved performance
-- **Error Handling**: Comprehensive error tracking with Sentry integration
-- **Security**: CSRF protection, secure headers, and input validation
-- **Performance Monitoring**: Prometheus metrics and custom performance tracking
+## Integration Changes
 
-## 🚀 Getting Started
+The following files have been modified or created to properly connect the frontend with the backend:
 
-### Prerequisites
-- Python 3.11+
-- PostgreSQL
-- Redis
-- Node.js (for frontend development)
+1. **app.py** - Updated with proper API routes that connect to the marketplace scanner
+2. **marketplace_bridge.py** - New bridge module that connects API endpoints with scanner functionality
+3. **script.js** - Updated frontend JavaScript to properly communicate with the backend
+4. **integration_test.py** - Testing script to verify the integration works correctly
 
-### Installation
+## Setup Instructions
 
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/fliphawk.git
-cd fliphawk
-```
+### 1. Install Dependencies
 
-2. Set up a virtual environment
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+Ensure all required Python packages are installed:
 
-3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Create necessary directories
+### 2. Configure Environment
+
+Create a `.env` file in the root directory with any necessary configurations:
+
+```
+PORT=8000
+DEBUG=True
+MARKETPLACE_API_TIMEOUT=30
+```
+
+### 3. File Updates
+
+Ensure your project structure has the following updated files:
+
+```
+FlipHawk/
+├── app.py                # Updated FastAPI application
+├── marketplace_bridge.py # New bridge module
+├── marketplace_scanner.py # Existing scanner module
+├── amazon_scraper.py     # Existing scraper
+├── ebay_scraper.py       # Existing scraper
+├── facebook_scraper.py   # Existing scraper
+├── static/
+│   ├── js/
+│   │   └── script.js     # Updated script
+│   └── css/
+│       └── styles.css
+├── index.html            # Main frontend page
+├── scan.html             # Scan page
+└── requirements.txt      # Dependencies
+```
+
+## Running The Application
+
+1. Start the backend server:
+
 ```bash
-mkdir -p static/css static/js templates
+uvicorn app:app --reload --port 8000
 ```
 
-5. Set up environment variables (create a .env file)
-```
-FLASK_ENV=development
-FLASK_APP=app.py
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=postgresql://user:password@localhost:5432/fliphawk
-REDIS_URL=redis://localhost:6379/0
-```
+2. Access the application:
+   - Open your browser and go to `http://localhost:8000`
+   - Navigate to the scan page at `http://localhost:8000/scan`
 
-6. Initialize the database
+3. Using the application:
+   - Select a category and subcategories
+   - Click "Begin Resale Search"
+   - The system will search multiple marketplaces and return arbitrage opportunities
+
+## Testing the Integration
+
+Run the integration test script to verify the connection between frontend and backend:
+
 ```bash
-flask db init
-flask db migrate
-flask db upgrade
+python integration_test.py
 ```
 
-7. Run the application
-```bash
-python app.py
-```
+The test script will check:
+1. API health endpoint
+2. Scan functionality
+3. Progress tracking
 
-## 🌐 Deployment
+## Troubleshooting
 
-### Deploying to Render
+If you encounter "Error connecting to scanning service" issues:
 
-1. Create a render.yaml file (already included in this repository)
-2. Connect your GitHub repository to Render
-3. Deploy using the "Blueprint" option and select the render.yaml file
+1. **API Connectivity:**
+   - Check that the FastAPI server is running
+   - Verify the correct port is being used
 
-### Docker Deployment
+2. **Scanner Errors:**
+   - Check console logs for detailed error messages
+   - Verify marketplace scrapers are functioning correctly
 
-1. Build the Docker image
-```bash
-docker-compose build
-```
+3. **Data Format Issues:**
+   - Ensure the data format returned by the scanner matches what the frontend expects
+   - Check the structure of opportunity objects in the console
 
-2. Run the Docker containers
-```bash
-docker-compose up -d
-```
+4. **Timeout Issues:**
+   - If scans take too long, adjust the timeout settings in the `marketplace_bridge.py` file
 
-## 📁 Project Structure
+## Additional Notes
 
-```
-fliphawk/
-├── app.py                  # Main application entry point
-├── amazon_scraper.py       # Amazon marketplace scraper
-├── ebay_scraper.py         # eBay marketplace scraper
-├── etsy_scraper.py         # Etsy marketplace scraper
-├── facebook_scraper.py     # Facebook Marketplace scraper
-├── api_integration.py      # API integration utilities
-├── arbitrage_api.py        # Arbitrage API endpoints
-├── arbitrage_coordinator.py # Coordinates arbitrage scanning
-├── auth.py                 # Authentication functionality
-├── comprehensive_keywords.py # Keyword management
-├── filters.py              # Filtering functionality
-├── analytics.py            # Analytics functionality
-├── static/                 # Static files
-│   ├── css/                # CSS files
-│   ├── js/                 # JavaScript files
-│   └── images/             # Image assets
-├── templates/              # HTML templates
-├── .env                    # Environment variables
-├── requirements.txt        # Python dependencies
-├── Dockerfile              # Docker configuration
-├── docker-compose.yml      # Docker Compose configuration
-└── render.yaml             # Render deployment configuration
-```
-
-## 🧑‍💻 Development
-
-### Running Tests
-```bash
-pytest
-```
-
-### Code Style
-We use flake8 for code linting and black for code formatting:
-```bash
-flake8 .
-black .
-```
-
-## 📜 License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📞 Contact
-For questions or support, please contact support@fliphawk.org
+- The demonstration uses simulated data when certain marketplace connections are unavailable
+- For a full deployment, ensure all API keys are properly configured for each marketplace
+- Consider adding rate limiting and error handling for production environments
