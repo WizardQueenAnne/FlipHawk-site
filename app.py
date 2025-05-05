@@ -198,6 +198,16 @@ async def get_opportunities():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "ok",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "scrapers": list(scraper_manager.scrapers.keys())
+    }
+
 @app.get("/scan", response_class=HTMLResponse)
 async def scan_page(request: Request):
     """Scan page for finding arbitrage opportunities"""
