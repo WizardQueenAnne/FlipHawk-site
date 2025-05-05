@@ -198,15 +198,90 @@ async def get_opportunities():
         "timestamp": datetime.now().isoformat()
     }
 
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "ok",
-        "version": "1.0.0",
-        "timestamp": datetime.now().isoformat(),
-        "scrapers": list(scraper_manager.scrapers.keys())
-    }
+@app.get("/scan", response_class=HTMLResponse)
+async def scan_page(request: Request):
+    """Scan page for finding arbitrage opportunities"""
+    # Look for scan.html in templates directory
+    if os.path.exists("templates/scan.html"):
+        with open("templates/scan.html", "r") as f:
+            return HTMLResponse(content=f.read())
+    
+    # Fallback to a simple HTML message
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>FlipHawk - Scan</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    background-color: #F9E8C7;
+                    color: #2D1E0F;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                }
+                h1 {
+                    color: #D16B34;
+                }
+                .btn {
+                    display: inline-block;
+                    background-color: #D16B34;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>FlipHawk - Scan</h1>
+                <p>The scan page is not available yet.</p>
+                <a href="/" class="btn">Back to Home</a>
+            </div>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+@app.post("/api/v1/arbitrage/scan")
+async def arbitrage_scan(subcategories: Dict[str, List[str]]):
+    """
+    API endpoint to scan for arbitrage opportunities.
+    """
+    try:
+        # Extract subcategories from request
+        subcategory_list = subcategories.get('subcategories', [])
+        
+        if not subcategory_list:
+            return {"error": "No subcategories provided"}
+        
+        # Initialize scraper manager if needed
+        if not hasattr(app, 'scraper_manager'):
+            from scraper_manager import ScraperManager
+            app.scraper_manager = ScraperManager()
+        
+        # Run the scan
+        await app.scraper_manager.run_all_scrapers(subcategory_list)
+        
+        # Find arbitrage opportunities
+        app.scraper_manager.find_arbitrage_opportunities()
+        
+        # Return the opportunities
+        return app.scraper_manager.arbitrage_opportunities
+    
+    except Exception as e:
+        logger.error(f"Error during arbitrage scan: {str(e)}")
+        return {"error": str(e)}
 
 # Support for static files with direct paths
 @app.get("/favicon.ico", include_in_schema=False)
