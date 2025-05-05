@@ -1,0 +1,49 @@
+services:
+  # Web service
+  - type: web
+    name: fliphawk
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 8000
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: true
+      - key: DATABASE_URL
+        # Use Render PostgreSQL internal connection for production
+        # Or set to a specific value in Render dashboard
+        fromDatabase:
+          name: fliphawk-db
+          property: connectionString
+      - key: REDIS_URL
+        # Use Render Redis internal connection for production
+        # Or set to a specific value in Render dashboard
+        fromService:
+          type: redis
+          name: fliphawk-redis
+          property: connectionString
+      - key: SECRET_KEY
+        # Generate a secure secret key for production
+        generateValue: true
+    autoDeploy: true
+    
+  # Redis service
+  - type: redis
+    name: fliphawk-redis
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+    plan: free
+
+databases:
+  - name: fliphawk-db
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
