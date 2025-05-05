@@ -1,42 +1,44 @@
+"""
+FlipHawk - Marketplace Arbitrage Application
+Main application entry point
+"""
+
 import asyncio
 import json
 import logging
 from typing import Dict, List, Any
 from datetime import datetime
+import os
+from pathlib import Path
 
-from flask import render_template
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ]
+)
 
-# Support for both Flask and FastAPI
+logger = logging.getLogger(__name__)
+
+# Choose framework based on imports available
 try:
-    # FastAPI implementation
-    from fastapi import FastAPI, HTTPException
-    # ...
-except ImportError:
-    # Fall back to Flask implementation
-    from flask import Flask, request, jsonify
-    # ...
-
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # FastAPI implementation with proper HTML template serving
+    from fastapi import FastAPI, HTTPException, Request
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import JSONResponse, HTMLResponse
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.templating import Jinja2Templates
+    from pydantic import BaseModel
     
-    # Import the scraper manager
+    # Import required modules
     from scraper_manager import ScraperManager
-    from comprehensive_keywords import COMPREHENSIVE_KEYWORDS  # Fixed import
-    
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler("app.log"),
-            logging.StreamHandler()
-        ]
-    )
-    
-    logger = logging.getLogger(__name__)
-    
-    app = FastAPI(title="Marketplace Arbitrage API")
+    from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
+
+    # Initialize the app
+    app = FastAPI(title="FlipHawk - Marketplace Arbitrage")
     
     # Enable CORS for all origins
     app.add_middleware(
@@ -46,6 +48,20 @@ async def index(request: Request):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    
+    # Setup static files
+    static_dir = Path("static")
+    if not static_dir.exists():
+        static_dir.mkdir(exist_ok=True)
+    
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    
+    # Setup templates
+    templates_dir = Path("templates")
+    if not templates_dir.exists():
+        templates_dir.mkdir(exist_ok=True)
+    
+    templates = Jinja2Templates(directory="templates")
     
     # Initialize scraper manager
     scraper_manager = ScraperManager()
@@ -61,12 +77,17 @@ async def index(request: Request):
         arbitrage_opportunities: List[Dict]
         meta: Dict[str, Any]
     
-    @app.get("/")
-    async def root():
-        """Root endpoint - health check"""
+    @app.get("/", response_class=HTMLResponse)
+    async def root(request: Request):
+        """Root endpoint - renders the main HTML template"""
+        return templates.TemplateResponse("index.html", {"request": request})
+    
+    @app.get("/api", response_class=JSONResponse)
+    async def api_root():
+        """API root endpoint - health check"""
         return {"status": "ok", "message": "Marketplace Arbitrage API is running"}
     
-    @app.post("/search", response_model=SearchResponse)
+    @app.post("/api/search", response_model=SearchResponse)
     async def search(request: SearchRequest):
         """Search for listings across marketplaces and find arbitrage opportunities"""
         try:
@@ -104,12 +125,12 @@ async def index(request: Request):
             logger.error(f"Error during search: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
     
-    @app.get("/marketplaces")
+    @app.get("/api/marketplaces")
     async def get_marketplaces():
         """Get all available marketplaces"""
         return {"marketplaces": list(scraper_manager.scrapers.keys())}
     
-    @app.get("/keywords")
+    @app.get("/api/keywords")
     async def get_keywords():
         """Get all available keywords"""
         # Extract all keywords from COMPREHENSIVE_KEYWORDS
@@ -119,7 +140,7 @@ async def index(request: Request):
                 all_keywords.extend(keyword_list)
         return {"keywords": all_keywords}
     
-    @app.get("/opportunities")
+    @app.get("/api/opportunities")
     async def get_opportunities():
         """Get the latest arbitrage opportunities"""
         opportunities = scraper_manager.arbitrage_opportunities
@@ -129,7 +150,7 @@ async def index(request: Request):
             "timestamp": datetime.now().isoformat()
         }
     
-    @app.get("/health")
+    @app.get("/api/health")
     async def health_check():
         """Health check endpoint"""
         return {
@@ -141,36 +162,42 @@ async def index(request: Request):
 
 except ImportError:
     # Fall back to Flask implementation if FastAPI is not installed
-    from flask import Flask, request, jsonify
+    from flask import Flask, request, jsonify, render_template, send_from_directory
     from flask_cors import CORS
+    import asyncio
     
     # Import the scraper manager
     from scraper_manager import ScraperManager
-    from comprehensive_keywords import COMPREHENSIVE_KEYWORDS  # Fixed import
+    from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
     
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler("app.log"),
-            logging.StreamHandler()
-        ]
-    )
+    # Create static and templates directories if they don't exist
+    static_dir = Path("static")
+    if not static_dir.exists():
+        static_dir.mkdir(exist_ok=True)
+        
+    templates_dir = Path("templates")
+    if not templates_dir.exists():
+        templates_dir.mkdir(exist_ok=True)
     
-    logger = logging.getLogger(__name__)
-    
-    app = Flask(__name__)
+    app = Flask(__name__, 
+                static_folder="static",
+                template_folder="templates")
     CORS(app)
     
     # Initialize scraper manager
     scraper_manager = ScraperManager()
     
     @app.route("/")
-    def index():
+    def root():
+        """Root endpoint - renders the main HTML template"""
         return render_template("index.html")
     
-    @app.route("/search", methods=["POST"])
+    @app.route("/api")
+    def api_root():
+        """API root endpoint - health check"""
+        return jsonify({"status": "ok", "message": "Marketplace Arbitrage API is running"})
+    
+    @app.route("/api/search", methods=["POST"])
     def search():
         """Search for listings across marketplaces and find arbitrage opportunities"""
         try:
@@ -219,12 +246,12 @@ except ImportError:
             logger.error(f"Error during search: {str(e)}")
             return jsonify({"error": str(e)}), 500
     
-    @app.route("/marketplaces")
+    @app.route("/api/marketplaces")
     def get_marketplaces():
         """Get all available marketplaces"""
         return jsonify({"marketplaces": list(scraper_manager.scrapers.keys())})
     
-    @app.route("/keywords")
+    @app.route("/api/keywords")
     def get_keywords():
         """Get all available keywords"""
         # Extract all keywords from COMPREHENSIVE_KEYWORDS
@@ -234,7 +261,7 @@ except ImportError:
                 all_keywords.extend(keyword_list)
         return jsonify({"keywords": all_keywords})
     
-    @app.route("/opportunities")
+    @app.route("/api/opportunities")
     def get_opportunities():
         """Get the latest arbitrage opportunities"""
         opportunities = scraper_manager.arbitrage_opportunities
@@ -244,7 +271,7 @@ except ImportError:
             "timestamp": datetime.now().isoformat()
         })
     
-    @app.route("/health")
+    @app.route("/api/health")
     def health_check():
         """Health check endpoint"""
         return jsonify({
@@ -258,7 +285,8 @@ if __name__ == "__main__":
     try:
         # Try to start with FastAPI (using Uvicorn)
         import uvicorn
-        uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+        uvicorn.run("app:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), reload=True)
     except ImportError:
         # Fall back to Flask
-        app.run(host="0.0.0.0", port=8000, debug=True)
+        port = int(os.environ.get("PORT", 8000))
+        app.run(host="0.0.0.0", port=port, debug=True)
