@@ -379,12 +379,15 @@
                 };
                 
                 // Call API
-                fetch('/api/v1/arbitrage/scan', {
+                fetch('/api/search', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(requestData)
+                    body: JSON.stringify({
+                        "keywords": [],  // Leave empty to use keywords from comprehensive_keywords.py
+                        "max_results": 100
+                    })
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -396,12 +399,15 @@
                     // Hide loading indicator
                     loadingIndicator.style.display = 'none';
                     
+                    // Get the arbitrage opportunities from the response
+                    const opportunities = data.arbitrage_opportunities || [];
+                    
                     // Check if we have results
-                    if (data.length === 0) {
+                    if (opportunities.length === 0) {
                         noResultsMessage.style.display = 'block';
                     } else {
                         // Render results
-                        renderOpportunities(data);
+                        renderOpportunities(opportunities);
                         resultsContainer.style.display = 'block';
                     }
                 })
@@ -409,11 +415,13 @@
                     // Hide loading indicator
                     loadingIndicator.style.display = 'none';
                     
-                    // Show error message
-                    errorMessage.textContent = 'Error connecting to scanning service. Please try again later.';
-                    errorMessage.style.display = 'block';
-                    
+                    // Log the error for debugging
                     console.error('Error:', error);
+                    
+                    // Show detailed error message
+                    errorMessage.textContent = 'Error connecting to scanning service: ' + error.message + 
+                                             '. Please check the console for more details or try again later.';
+                    errorMessage.style.display = 'block';
                 })
                 .finally(() => {
                     // Re-enable scan button
