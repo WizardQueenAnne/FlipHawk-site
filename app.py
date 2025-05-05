@@ -9,11 +9,12 @@ from flask import render_template
 # Support for both Flask and FastAPI
 try:
     # FastAPI implementation
-    from fastapi.templating import Jinja2Templates
-    from fastapi.responses import HTMLResponse
-    from fastapi import Request
-
-templates = Jinja2Templates(directory="templates")
+    from fastapi import FastAPI, HTTPException
+    # ...
+except ImportError:
+    # Fall back to Flask implementation
+    from flask import Flask, request, jsonify
+    # ...
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
