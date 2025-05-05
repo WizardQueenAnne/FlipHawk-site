@@ -30,8 +30,8 @@ from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-# Import the marketplace scanner directly
-from marketplace_scanner import run_arbitrage_scan
+# Import the marketplace bridge module for scanner integration
+from marketplace_bridge import process_marketplace_scan, scan_manager
 
 # Initialize the app
 app = FastAPI(title="FlipHawk - Marketplace Arbitrage")
@@ -184,60 +184,18 @@ async def scan_marketplaces(request: ScanRequest):
         if not request.subcategories:
             raise HTTPException(status_code=400, detail="At least one subcategory is required")
         
-        # Generate a scan ID
-        scan_id = f"{int(datetime.now().timestamp())}"
+        # Process the scan through the marketplace bridge
+        result = process_marketplace_scan(
+            category=request.category,
+            subcategories=request.subcategories,
+            max_results=request.max_results or 100
+        )
         
-        # Register scan
-        active_scans[scan_id] = {
-            'status': 'processing',
-            'progress': 0,
-            'category': request.category,
-            'subcategories': request.subcategories,
-            'start_time': datetime.now().isoformat()
-        }
+        # Check for errors
+        if "error" in result and not result.get("arbitrage_opportunities"):
+            raise HTTPException(status_code=500, detail=result["error"])
         
-        try:
-            # Execute the actual marketplace scan using the marketplace_scanner module
-            opportunities = run_arbitrage_scan(request.subcategories)
-            
-            # Update scan status
-            active_scans[scan_id]['status'] = 'completed'
-            active_scans[scan_id]['progress'] = 100
-            active_scans[scan_id]['completion_time'] = datetime.now().isoformat()
-            
-            # Save results
-            scan_results[scan_id] = opportunities
-            
-            # Format for response
-            result = {
-                "arbitrage_opportunities": opportunities,
-                "meta": {
-                    "scan_id": scan_id,
-                    "timestamp": datetime.now().isoformat(),
-                    "subcategories": request.subcategories,
-                    "category": request.category,
-                    "total_opportunities": len(opportunities),
-                    "status": "completed",
-                    "progress": 100
-                }
-            }
-            
-            # Limit results if requested
-            if request.max_results:
-                result["arbitrage_opportunities"] = result["arbitrage_opportunities"][:request.max_results]
-            
-            return result
-        
-        except Exception as e:
-            logger.error(f"Error during scan execution: {str(e)}")
-            import traceback
-            logger.error(traceback.format_exc())
-            
-            # Update scan status
-            active_scans[scan_id]['status'] = 'failed'
-            active_scans[scan_id]['error'] = str(e)
-            
-            raise HTTPException(status_code=500, detail=f"An error occurred during the scan: {str(e)}")
+        return result
     
     except Exception as e:
         logger.error(f"Error during scan: {str(e)}")
@@ -248,10 +206,10 @@ async def scan_marketplaces(request: ScanRequest):
 @app.get("/api/progress/{scan_id}")
 async def get_scan_progress(scan_id: str):
     """Get the progress of a scan"""
-    if scan_id not in active_scans:
-        raise HTTPException(status_code=404, detail=f"Scan with ID {scan_id} not found")
+    scan_info = scan_manager.get_scan_info(scan_id)
     
-    scan_info = active_scans[scan_id]
+    if not scan_info:
+        raise HTTPException(status_code=404, detail=f"Scan with ID {scan_id} not found")
     
     return {
         "scan_id": scan_id,
