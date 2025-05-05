@@ -135,43 +135,65 @@ async def api_root():
     """API root endpoint - health check"""
     return {"status": "ok", "message": "Marketplace Arbitrage API is running"}
 
-@app.post("/api/search", response_model=SearchResponse)
-async def search(request: SearchRequest):
+@app.post("/api/search")
+async def search(request: Request):
     """Search for listings across marketplaces and find arbitrage opportunities"""
     try:
+        # Parse the request body
+        body = await request.json()
+        
         # Use provided keywords or default to comprehensive keywords
-        keywords = request.keywords or []
-        if not keywords:
-            # Extract keywords from all categories in COMPREHENSIVE_KEYWORDS
-            for category, subcats in COMPREHENSIVE_KEYWORDS.items():
-                for subcat, keyword_list in subcats.items():
-                    # Take first 5 keywords from each subcategory
-                    keywords.extend(keyword_list[:5])
+        keywords = body.get("keywords", [])
+        max_results = body.get("max_results", 100)
+        marketplaces = body.get("marketplaces", None)
+        
+        # Get subcategories from the request (new parameter)
+        subcategories = body.get("subcategories", [])
+        
+        # Initialize scraper manager if not already done
+        if not hasattr(app, 'scraper_manager'):
+            from scraper_manager import ScraperManager
+            app.scraper_manager = ScraperManager()
         
         # Filter marketplaces if specified
-        if request.marketplaces:
-            scraper_manager.scrapers = {k: v for k, v in scraper_manager.scrapers.items() if k in request.marketplaces}
+        if marketplaces:
+            app.scraper_manager.scrapers = {k: v for k, v in app.scraper_manager.scrapers.items() if k in marketplaces}
         
-        # Run scrapers with the keywords
-        await scraper_manager.run_all_scrapers(keywords)
+        # If subcategories are provided, run scrapers with them
+        if subcategories:
+            await app.scraper_manager.run_all_scrapers(subcategories)
+        # Otherwise use keywords
+        elif keywords:
+            # This is assuming your scraper_manager can handle keywords directly
+            # You might need to modify this part based on your actual implementation
+            await app.scraper_manager.run_all_scrapers(keywords)
+        else:
+            # If no keywords or subcategories, use default subcategories
+            default_subcategories = ["Headphones", "Keyboards", "Graphics Cards"]
+            await app.scraper_manager.run_all_scrapers(default_subcategories)
         
         # Find arbitrage opportunities
-        scraper_manager.find_arbitrage_opportunities()
+        app.scraper_manager.find_arbitrage_opportunities()
         
         # Get results formatted for frontend
-        results = scraper_manager.get_results_for_frontend()
+        results = app.scraper_manager.get_results_for_frontend()
         
         # Limit results if requested
-        if request.max_results and request.max_results > 0:
-            results["arbitrage_opportunities"] = results["arbitrage_opportunities"][:request.max_results]
+        if max_results > 0:
+            results["arbitrage_opportunities"] = results["arbitrage_opportunities"][:max_results]
             for marketplace in results["raw_listings"]:
-                results["raw_listings"][marketplace] = results["raw_listings"][marketplace][:request.max_results]
+                results["raw_listings"][marketplace] = results["raw_listings"][marketplace][:max_results]
         
         return results
     
     except Exception as e:
         logger.error(f"Error during search: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "detail": "An error occurred during the search process"}
+        )
 
 @app.get("/api/marketplaces")
 async def get_marketplaces():
