@@ -187,4 +187,14 @@ def process_marketplace_scan(category: str, subcategories: List[str],
         return results
         
     except Exception as e:
-        logger.error(f"Error processing marketplace scan: {str(e)
+        logger.error(f"Error processing marketplace scan: {str(e)}")
+        
+        # Return error response
+        return {
+            "error": str(e),
+            "meta": {
+                "status": "failed",
+                "timestamp": datetime.now().isoformat()
+            },
+            "arbitrage_opportunities": []
+        }
