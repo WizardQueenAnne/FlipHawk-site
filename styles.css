@@ -539,15 +539,41 @@ img {
 
 /* ===== Responsive Design ===== */
 @media (max-width: 768px) {
+    .mobile-nav-toggle {
+        display: block;
+    }
+    
     .main-header .container {
-        flex-direction: column;
-        gap: var(--spacing-md);
+        flex-wrap: wrap;
+    }
+    
+    .main-nav {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 70%;
+        height: 100vh;
+        background-color: white;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s ease;
+        padding: 80px 20px 40px;
+        z-index: 1000;
+    }
+    
+    .main-nav.active {
+        right: 0;
     }
     
     .main-nav ul {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: var(--spacing-sm);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+    
+    .main-nav a {
+        display: block;
+        width: 100%;
+        padding: var(--spacing-sm);
     }
     
     .hero h2 {
