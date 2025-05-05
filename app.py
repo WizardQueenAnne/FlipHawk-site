@@ -4,13 +4,20 @@ import logging
 from typing import Dict, List, Any
 from datetime import datetime
 
+from flask import render_template
+
 # Support for both Flask and FastAPI
 try:
     # FastAPI implementation
-    from fastapi import FastAPI, HTTPException
-    from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import JSONResponse
-    from pydantic import BaseModel
+    from fastapi.templating import Jinja2Templates
+    from fastapi.responses import HTMLResponse
+    from fastapi import Request
+
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
     
     # Import the scraper manager
     from scraper_manager import ScraperManager
@@ -160,11 +167,7 @@ except ImportError:
     
     @app.route("/")
     def index():
-    # Instead of returning JSON:
-    # return jsonify({"status": "ok", "message": "Marketplace Arbitrage API is running"})
-    
-    # Return a rendered HTML template:
-    return render_template("index.html")
+        return render_template("index.html")
     
     @app.route("/search", methods=["POST"])
     def search():
