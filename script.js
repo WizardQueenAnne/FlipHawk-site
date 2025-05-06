@@ -1,54 +1,21 @@
-// Updated scan function to communicate properly with the backend
+// Updated scan function to properly handle real scanning with polling
 function scanWithProgressUpdates(requestData) {
-    // Simulate a multi-step scanning process for UI feedback
-    const totalSteps = 100;
-    let currentStep = 0;
+    // Set scan in progress flag
+    scanInProgress = true;
+    scanAborted = false;
     
-    // Messages for different scanning stages
-    const stageMessages = [
-        { step: 0, message: 'Initializing marketplaces scanners...' },
-        { step: 5, message: 'Connecting to Amazon...' },
-        { step: 10, message: 'Connecting to eBay...' },
-        { step: 15, message: 'Connecting to Facebook Marketplace...' },
-        { step: 20, message: 'Connecting to other marketplaces...' },
-        { step: 25, message: `Scanning for ${selectedSubcategories.join(', ')}...` },
-        { step: 60, message: 'Finding matching products across platforms...' },
-        { step: 80, message: 'Calculating potential profits...' },
-        { step: 90, message: 'Preparing results...' },
-        { step: 95, message: 'Finalizing scan...' }
-    ];
+    // Show loading indicators
+    loadingSpinner.style.display = 'block';
+    progressContainer.style.display = 'block';
+    scanStatus.style.display = 'block';
+    scanStatus.textContent = 'Initializing scan...';
+    progressBar.style.width = '0%';
     
-    // Set up a progress interval to provide UI feedback
-    scanProgressInterval = setInterval(() => {
-        if (scanAborted) {
-            clearInterval(scanProgressInterval);
-            scanProgressInterval = null;
-            return;
-        }
-        
-        // Increment progress
-        currentStep += Math.floor(Math.random() * 3) + 1;
-        const progress = Math.min(currentStep, 95); // Cap at 95% until we get results
-        
-        // Update progress bar
-        progressBar.style.width = `${progress}%`;
-        
-        // Update message based on current step
-        for (let i = stageMessages.length - 1; i >= 0; i--) {
-            if (progress >= stageMessages[i].step) {
-                scanStatus.textContent = stageMessages[i].message;
-                break;
-            }
-        }
-        
-        // Stop at 95% and wait for API response
-        if (progress >= 95) {
-            clearInterval(scanProgressInterval);
-            scanProgressInterval = null;
-        }
-    }, 300);
+    // Update search button to be an abort button
+    searchButton.textContent = 'Cancel Scan';
+    searchButton.classList.add('loading');
     
-    // Make the actual API call to the backend
+    // Make the API call to initiate the scan
     fetch('/api/v1/scan', {
         method: 'POST',
         headers: {
@@ -58,38 +25,153 @@ function scanWithProgressUpdates(requestData) {
         body: JSON.stringify(requestData)
     })
     .then(response => {
-        // Clear progress interval if it's still running
-        if (scanProgressInterval) {
-            clearInterval(scanProgressInterval);
-            scanProgressInterval = null;
-        }
-        
-        // Complete the progress bar
-        progressBar.style.width = '100%';
-        
         if (!response.ok) {
             throw new Error(`Failed to connect to scanning service: ${response.status} ${response.statusText}`);
         }
         
         return response.json();
     })
-    .then(data => {
-        // Process and display results
-        setTimeout(() => {
-            // Use the arbitrage_opportunities array from the API response
-            const opportunities = data.arbitrage_opportunities || [];
-            displayResults(opportunities);
+    .then(initialData => {
+        // Get the scan ID from the response
+        const scanId = initialData.meta.scan_id;
+        
+        if (!scanId) {
+            throw new Error('No scan ID returned from server');
+        }
+        
+        // Set up an interval to poll for progress
+        let pollCount = 0;
+        const maxPolls = 60; // Maximum number of polls (30 seconds * 60 = 30 minutes max)
+        
+        const pollInterval = setInterval(() => {
+            if (scanAborted) {
+                clearInterval(pollInterval);
+                
+                // Reset scan state
+                scanInProgress = false;
+                searchButton.textContent = 'Begin Resale Search';
+                searchButton.classList.remove('loading');
+                
+                // Hide loading indicators
+                loadingSpinner.style.display = 'none';
+                progressContainer.style.display = 'none';
+                scanStatus.style.display = 'none';
+                
+                return;
+            }
             
-            // Reset scan state
-            scanInProgress = false;
-            searchButton.textContent = 'Begin Resale Search';
-            searchButton.classList.remove('loading');
+            // Increment poll count
+            pollCount++;
             
-            // Hide loading indicators
-            loadingSpinner.style.display = 'none';
-            progressContainer.style.display = 'none';
-            scanStatus.style.display = 'none';
-        }, 500);
+            // If maximum polls reached, give up
+            if (pollCount > maxPolls) {
+                clearInterval(pollInterval);
+                
+                // Show error message
+                scanStatus.textContent = 'Scan taking too long. Please try again later.';
+                scanStatus.style.color = 'var(--primary-color)';
+                
+                // Reset scan state after a delay
+                setTimeout(() => {
+                    scanInProgress = false;
+                    searchButton.textContent = 'Begin Resale Search';
+                    searchButton.classList.remove('loading');
+                    
+                    // Hide loading indicators
+                    loadingSpinner.style.display = 'none';
+                    progressContainer.style.display = 'none';
+                    scanStatus.style.display = 'none';
+                    scanStatus.style.color = 'var(--text-color)';
+                }, 5000);
+                
+                return;
+            }
+            
+            // Poll for progress
+            fetch(`/api/progress/${scanId}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + (localStorage.getItem('token') || 'guest-token')
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to get scan progress: ${response.status} ${response.statusText}`);
+                }
+                
+                return response.json();
+            })
+            .then(progressData => {
+                // Update progress bar
+                const progress = progressData.progress || 0;
+                progressBar.style.width = `${progress}%`;
+                
+                // Update status message
+                const status = progressData.status || 'processing';
+                
+                updateStatusMessage(status, progress);
+                
+                // If scan is complete, get the results
+                if (progress >= 100 && (status === 'completed' || status === 'completed_no_results' || status === 'failed')) {
+                    clearInterval(pollInterval);
+                    
+                    // Fetch the final results
+                    fetch(`/api/v1/scan/${scanId}`, {
+                        headers: {
+                            'Authorization': 'Bearer ' + (localStorage.getItem('token') || 'guest-token')
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to get scan results: ${response.status} ${response.statusText}`);
+                        }
+                        
+                        return response.json();
+                    })
+                    .then(resultsData => {
+                        // Process and display results
+                        setTimeout(() => {
+                            // Use the arbitrage_opportunities array from the API response
+                            const opportunities = resultsData.arbitrage_opportunities || [];
+                            displayResults(opportunities);
+                            
+                            // Reset scan state
+                            scanInProgress = false;
+                            searchButton.textContent = 'Begin Resale Search';
+                            searchButton.classList.remove('loading');
+                            
+                            // Hide loading indicators
+                            loadingSpinner.style.display = 'none';
+                            progressContainer.style.display = 'none';
+                            scanStatus.style.display = 'none';
+                        }, 500);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching results:', error);
+                        
+                        scanStatus.textContent = 'Error retrieving scan results. Please try again later.';
+                        scanStatus.style.color = 'var(--primary-color)';
+                        
+                        // Reset scan state after a delay
+                        setTimeout(() => {
+                            scanInProgress = false;
+                            searchButton.textContent = 'Begin Resale Search';
+                            searchButton.classList.remove('loading');
+                            
+                            // Hide loading indicators
+                            loadingSpinner.style.display = 'none';
+                            progressContainer.style.display = 'none';
+                            scanStatus.style.display = 'none';
+                            scanStatus.style.color = 'var(--text-color)';
+                        }, 5000);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error checking progress:', error);
+                
+                // Don't stop polling on error, try again next time
+            });
+        }, 3000); // Poll every 3 seconds
     })
     .catch(error => {
         console.error('Scan error:', error);
@@ -115,7 +197,54 @@ function scanWithProgressUpdates(requestData) {
     });
 }
 
-// Updated display results function to handle the format returned by the backend
+// Function to update status message based on scan status
+function updateStatusMessage(status, progress) {
+    let message = '';
+    
+    switch (status) {
+        case 'initializing':
+            message = 'Initializing scan...';
+            break;
+        case 'processing':
+            message = 'Processing scan...';
+            break;
+        case 'searching marketplaces':
+            if (progress < 30) {
+                message = 'Connecting to Amazon marketplace...';
+            } else if (progress < 50) {
+                message = 'Connecting to eBay marketplace...';
+            } else if (progress < 70) {
+                message = 'Scanning Facebook Marketplace...';
+            } else {
+                message = 'Searching multiple marketplaces...';
+            }
+            break;
+        case 'analyzing results':
+            message = 'Analyzing potential arbitrage opportunities...';
+            break;
+        case 'finding matches':
+            message = 'Finding matching products across marketplaces...';
+            break;
+        case 'calculating profit':
+            message = 'Calculating profit margins and risk...';
+            break;
+        case 'completed':
+            message = 'Scan completed successfully!';
+            break;
+        case 'completed_no_results':
+            message = 'Scan completed, but no opportunities found.';
+            break;
+        case 'failed':
+            message = 'Scan failed. Please try again later.';
+            break;
+        default:
+            message = `Scanning for ${selectedSubcategories.join(', ')}...`;
+    }
+    
+    scanStatus.textContent = message;
+}
+
+// Updated display results function to handle the actual data format from the backend
 function displayResults(results) {
     // Clear previous results
     resultsContainer.innerHTML = '';
@@ -165,17 +294,19 @@ function displayResults(results) {
         }
         
         // Prepare the display values - handle both possible response formats
-        const title = result.title || result.buyTitle || '';
+        const title = result.buyTitle || result.title || '';
         const buyPrice = result.buyPrice || result.price || 0;
         const sellPrice = result.sellPrice || result.sell_price || 0;
-        const profit = result.netProfit || result.profit || (sellPrice - buyPrice);
-        const profitPercentage = result.netProfitPercentage || result.profitPercentage || (profit * 100 / buyPrice);
+        const profit = result.profit || (sellPrice - buyPrice);
+        const profitPercentage = result.profitPercentage || (profit * 100 / buyPrice);
         const buyLink = result.buyLink || result.buy_link || '#';
         const sellLink = result.sellLink || result.sell_link || '#';
         const buyMarketplace = result.buyMarketplace || result.buy_marketplace || 'Unknown';
         const sellMarketplace = result.sellMarketplace || result.sell_marketplace || 'Unknown';
         const subcategory = result.subcategory || selectedSubcategories[0];
-        const confidence = result.confidence || result.similarity || 85;
+        const confidence = result.confidence || result.similarity_score || 85;
+        const buyCondition = result.buyCondition || 'New';
+        const sellCondition = result.sellCondition || 'New';
         
         // Handle fee data
         let marketplaceFee = 0;
@@ -195,10 +326,24 @@ function displayResults(results) {
             <div class="result-details">
                 <div class="profit-badge">$${profit.toFixed(2)} profit</div>
                 <h3>${title}</h3>
-                <p>Buy for: $${buyPrice.toFixed(2)} from ${buyMarketplace} | Sell for: $${sellPrice.toFixed(2)} on ${sellMarketplace}</p>
-                <p>ROI: ${profitPercentage.toFixed(1)}% | Similarity Confidence: ${confidence}%</p>
-                <p>Category: ${selectedCategory} > ${subcategory}</p>
-                <p>Marketplace Fee: $${marketplaceFee.toFixed(2)} | Shipping: $${shippingFee.toFixed(2)}</p>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div>
+                        <strong>Buy on ${buyMarketplace}</strong><br>
+                        Price: $${buyPrice.toFixed(2)}<br>
+                        Condition: ${buyCondition}
+                    </div>
+                    <div>
+                        <strong>Sell on ${sellMarketplace}</strong><br>
+                        Price: $${sellPrice.toFixed(2)}<br>
+                        Condition: ${sellCondition}
+                    </div>
+                </div>
+                <div style="background-color: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                    <strong>Profit: $${profit.toFixed(2)}</strong> (ROI: ${profitPercentage.toFixed(1)}%)<br>
+                    Marketplace Fee: $${marketplaceFee.toFixed(2)} | Shipping: $${shippingFee.toFixed(2)}<br>
+                    Match Confidence: ${confidence}%
+                </div>
+                <div style="font-size: 0.9em; color: #666;">Category: ${selectedCategory} > ${subcategory}</div>
                 <div style="margin-top: 15px; display: flex; gap: 10px;">
                     <a href="${buyLink}" target="_blank" style="
                         background: var(--primary-color);
@@ -215,7 +360,7 @@ function displayResults(results) {
                         border-radius: 8px;
                         text-decoration: none;
                         font-weight: 600;
-                    ">View Listing</a>
+                    ">Sell Here</a>
                 </div>
             </div>
         `;
@@ -227,7 +372,7 @@ function displayResults(results) {
     resultsHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Updated start scan function to use the new scan function
+// Updated start scan function to use the updated scanning function
 function startScan() {
     // Check if category and subcategories are selected
     if (!selectedCategory || selectedSubcategories.length === 0) {
@@ -235,21 +380,8 @@ function startScan() {
         return;
     }
     
-    // Set scan in progress flag
-    scanInProgress = true;
-    scanAborted = false;
-    
-    // Clear previous results and show loading indicators
+    // Clear previous results
     resultsContainer.innerHTML = '';
-    loadingSpinner.style.display = 'block';
-    progressContainer.style.display = 'block';
-    scanStatus.style.display = 'block';
-    scanStatus.textContent = 'Initializing scan...';
-    progressBar.style.width = '0%';
-    
-    // Update search button to be an abort button
-    searchButton.textContent = 'Cancel Scan';
-    searchButton.classList.add('loading');
     
     // Create the API request data
     const requestData = {
@@ -258,6 +390,6 @@ function startScan() {
         max_results: 100
     };
     
-    // Call the updated scan function
+    // Call the updated scan function with real data
     scanWithProgressUpdates(requestData);
 }
