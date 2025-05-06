@@ -10,17 +10,8 @@ import random
 import numpy as np
 from typing import List, Dict, Any, Tuple
 from difflib import SequenceMatcher
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
-# Import scrapers
-from amazon_scraper import run_amazon_search
-from ebay_scraper import run_ebay_search
-from walmart_scraper import run_walmart_search
-from stockx_scraper import run_stockx_search
-from facebook_scraper import run_facebook_search
-from tcgplayer_scraper import run_tcgplayer_search
-from comprehensive_keywords import COMPREHENSIVE_KEYWORDS, generate_keywords
+import re
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(
@@ -34,11 +25,6 @@ class ArbitrageAnalyzer:
     
     def __init__(self):
         """Initialize the arbitrage analyzer."""
-        self.vectorizer = TfidfVectorizer(
-            stop_words='english',
-            ngram_range=(1, 3),
-            max_features=5000
-        )
         self.model_patterns = [
             r'(?:model|part|sku|item|ref)?\s*(?:#|number|no\.?)?\s*([a-z0-9]{4,})',
             r'[a-z]+\d+[a-z]*\d*',
@@ -47,7 +33,7 @@ class ArbitrageAnalyzer:
     
     def calculate_similarity(self, title1: str, title2: str) -> float:
         """
-        Calculate similarity using multiple methods with better scoring for exact matches.
+        Calculate similarity between two titles using multiple techniques.
         
         Args:
             title1 (str): First title
@@ -56,44 +42,96 @@ class ArbitrageAnalyzer:
         Returns:
             float: Similarity score between 0 and 1
         """
-        # Basic sequence matching
-        sequence_sim = SequenceMatcher(None, title1, title2).ratio()
+        # Clean and normalize titles
+        title1 = self._normalize_title(title1)
+        title2 = self._normalize_title(title2)
         
-        # TF-IDF cosine similarity
-        try:
-            tfidf_matrix = self.vectorizer.fit_transform([title1, title2])
-            cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        except:
-            cosine_sim = 0.0
+        # Direct substring matching
+        if title1 in title2 or title2 in title1:
+            # Adjust score based on length difference
+            length_ratio = min(len(title1), len(title2)) / max(len(title1), len(title2))
+            # Higher score for more similar lengths
+            return 0.8 + (0.2 * length_ratio)
         
-        # Check for exact substring matches
+        # Extract model numbers and identifiers
+        models1 = self._extract_model_numbers(title1)
+        models2 = self._extract_model_numbers(title2)
+        
+        # If both have model numbers and they share at least one
+        common_models = set(models1).intersection(set(models2))
+        if common_models and models1 and models2:
+            return 0.95  # Very high confidence for matching model numbers
+        
+        # Calculate word overlap
         words1 = set(title1.split())
         words2 = set(title2.split())
-        word_overlap = len(words1.intersection(words2)) / len(words1.union(words2)) if words1 and words2 else 0
         
-        # If titles are very similar or have significant overlap, boost the score
-        if sequence_sim > 0.8 or word_overlap > 0.7:
-            sequence_sim = min(1.0, sequence_sim * 1.2)
-            word_overlap = min(1.0, word_overlap * 1.2)
+        # Check if key words match (excluding common words)
+        common_words = words1.intersection(words2)
+        common_words_count = len(common_words)
+        total_words = len(words1.union(words2))
         
-        # Weighted combination with improved scoring
-        weights = {
-            'sequence': 0.3,
-            'cosine': 0.4,
-            'word_overlap': 0.3
-        }
+        if total_words == 0:
+            return 0
         
-        final_similarity = (
-            weights['sequence'] * sequence_sim +
-            weights['cosine'] * cosine_sim +
-            weights['word_overlap'] * word_overlap
-        )
+        # Jaccard similarity for words
+        word_similarity = common_words_count / total_words
         
-        # Boost exact matches
-        if sequence_sim > 0.95:
-            final_similarity = min(1.0, final_similarity * 1.1)
+        # Sequence matcher for character-by-character comparison
+        sequence_similarity = SequenceMatcher(None, title1, title2).ratio()
         
-        return final_similarity
+        # Combined similarity score (weighted)
+        combined_similarity = (word_similarity * 0.7) + (sequence_similarity * 0.3)
+        
+        return combined_similarity
+    
+    def _normalize_title(self, title: str) -> str:
+        """
+        Normalize a title by removing common prefixes, suffixes, and noise.
+        
+        Args:
+            title (str): The title to normalize
+            
+        Returns:
+            str: Normalized title
+        """
+        # Convert to lowercase
+        title = title.lower()
+        
+        # Remove common prefixes and suffixes
+        prefixes = ['new', 'brand new', 'authentic', 'genuine', 'original', 'official', 'sealed']
+        for prefix in prefixes:
+            if title.startswith(prefix):
+                title = title[len(prefix):].strip()
+        
+        suffixes = ['in stock', 'free shipping', 'fast shipping', 'brand new', 'with warranty', 'with guarantee']
+        for suffix in suffixes:
+            if title.endswith(suffix):
+                title = title[:-len(suffix)].strip()
+        
+        # Remove special characters and extra spaces
+        title = re.sub(r'[^\w\s]', ' ', title)
+        title = re.sub(r'\s+', ' ', title).strip()
+        
+        return title
+    
+    def _extract_model_numbers(self, title: str) -> List[str]:
+        """
+        Extract possible model numbers from a title.
+        
+        Args:
+            title (str): The title to extract from
+            
+        Returns:
+            List[str]: Extracted model numbers
+        """
+        models = []
+        for pattern in self.model_patterns:
+            matches = re.findall(pattern, title)
+            models.extend(matches)
+        
+        # Remove duplicates
+        return list(set(models))
     
     def find_opportunities(self, listings: List[Dict[str, Any]], min_profit: float = 10.0, min_profit_percent: float = 20.0) -> List[Dict[str, Any]]:
         """
@@ -112,7 +150,7 @@ class ArbitrageAnalyzer:
         # Group listings by source (marketplace)
         listings_by_source = {}
         for listing in listings:
-            source = listing.get('source')
+            source = listing.get('source', 'unknown')
             if source not in listings_by_source:
                 listings_by_source[source] = []
             listings_by_source[source].append(listing)
@@ -138,60 +176,78 @@ class ArbitrageAnalyzer:
             logger.info(f"Comparing {len(buy_listings)} buy listings from {source_buy} with {len(sell_listings)} sell listings from {source_sell}")
             
             for buy_listing in buy_listings:
+                buy_title = buy_listing.get('title', '')
+                buy_price = buy_listing.get('price', 0)
+                
+                if not buy_title or buy_price <= 0:
+                    continue
+                
                 for sell_listing in sell_listings:
-                    # Calculate similarity between listings
-                    buy_title = buy_listing.get('normalized_title', '')
-                    sell_title = sell_listing.get('normalized_title', '')
+                    sell_title = sell_listing.get('title', '')
+                    sell_price = sell_listing.get('price', 0)
                     
-                    if not buy_title or not sell_title:
+                    if not sell_title or sell_price <= 0:
                         continue
                     
+                    # Skip if sell price is not higher than buy price
+                    if sell_price <= buy_price:
+                        continue
+                    
+                    # Calculate similarity between listings
                     similarity = self.calculate_similarity(buy_title, sell_title)
                     
                     # Only consider listings that are similar enough
                     if similarity >= 0.7:
                         # Calculate profit metrics
-                        buy_price = buy_listing.get('price', 0)
-                        sell_price = sell_listing.get('price', 0)
-                        
-                        # Add shipping costs if available
-                        buy_shipping = buy_listing.get('shipping_cost', 0)
-                        if not buy_listing.get('free_shipping', False):
-                            buy_price += buy_shipping
-                        
                         profit = sell_price - buy_price
                         profit_percentage = (profit / buy_price) * 100 if buy_price > 0 else 0
                         
                         # Check profit thresholds
                         if profit >= min_profit and profit_percentage >= min_profit_percent:
-                            # Calculate confidence score based on similarity
-                            confidence = self._calculate_confidence(buy_listing, sell_listing, similarity, profit_percentage)
+                            # Calculate additional metrics
+                            marketplace_fee = self._calculate_marketplace_fee(source_sell, sell_price)
+                            shipping_cost = self._estimate_shipping_cost(buy_listing.get('subcategory', ''), buy_price)
                             
-                            # Only include opportunities with reasonable confidence
-                            if confidence >= 60:
-                                opportunity = {
-                                    'title': buy_listing.get('title'),
-                                    'buyTitle': buy_listing.get('title'),
-                                    'sellTitle': sell_listing.get('title'),
-                                    'buyPrice': buy_price,
-                                    'sellPrice': sell_price,
-                                    'buyMarketplace': source_buy,
-                                    'sellMarketplace': source_sell,
-                                    'buyLink': buy_listing.get('link'),
-                                    'sellLink': sell_listing.get('link'),
-                                    'profit': profit,
-                                    'profitPercentage': profit_percentage,
-                                    'confidence': round(confidence),
-                                    'similarity': similarity,
-                                    'buyCondition': buy_listing.get('condition', 'New'),
-                                    'sellCondition': sell_listing.get('condition', 'New'),
-                                    'buyShipping': buy_shipping,
-                                    'image_url': buy_listing.get('image_url') or sell_listing.get('image_url'),
-                                    'subcategory': buy_listing.get('subcategory'),
-                                    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
-                                }
+                            # Calculate adjusted profit
+                            adjusted_profit = profit - marketplace_fee - shipping_cost
+                            
+                            # Skip if not profitable after fees
+                            if adjusted_profit <= 0:
+                                continue
+                            
+                            # Calculate confidence score based on similarity
+                            confidence = int(similarity * 100)
+                            
+                            # Create opportunity object
+                            opportunity = {
+                                'buyTitle': buy_listing.get('title', ''),
+                                'buyPrice': buy_price,
+                                'buyLink': buy_listing.get('link', ''),
+                                'buyMarketplace': source_buy,
+                                'buyImage': buy_listing.get('image_url', ''),
+                                'buyCondition': buy_listing.get('condition', 'New'),
                                 
-                                opportunities.append(opportunity)
+                                'sellTitle': sell_listing.get('title', ''),
+                                'sellPrice': sell_price,
+                                'sellLink': sell_listing.get('link', ''),
+                                'sellMarketplace': source_sell,
+                                'sellImage': sell_listing.get('image_url', ''),
+                                'sellCondition': sell_listing.get('condition', 'New'),
+                                
+                                'profit': adjusted_profit,
+                                'profitPercentage': (adjusted_profit / buy_price) * 100,
+                                'fees': {
+                                    'marketplace': marketplace_fee,
+                                    'shipping': shipping_cost
+                                },
+                                
+                                'similarity': similarity * 100,
+                                'confidence': confidence,
+                                'subcategory': buy_listing.get('subcategory', ''),
+                                'timestamp': datetime.now().isoformat()
+                            }
+                            
+                            opportunities.append(opportunity)
         
         # Sort opportunities by profit
         opportunities.sort(key=lambda x: x['profit'], reverse=True)
@@ -199,379 +255,146 @@ class ArbitrageAnalyzer:
         logger.info(f"Found {len(opportunities)} arbitrage opportunities")
         return opportunities
     
-    def _calculate_confidence(self, buy_listing: Dict[str, Any], sell_listing: Dict[str, Any], similarity: float, profit_percentage: float) -> float:
+    def _calculate_marketplace_fee(self, marketplace: str, price: float) -> float:
         """
-        Calculate confidence score for the arbitrage opportunity.
+        Calculate marketplace fees for selling.
         
         Args:
-            buy_listing (Dict[str, Any]): Listing to buy from
-            sell_listing (Dict[str, Any]): Listing to sell on
-            similarity (float): Title similarity score
-            profit_percentage (float): Profit percentage
+            marketplace (str): Marketplace name
+            price (float): Selling price
             
         Returns:
-            float: Confidence score between 0 and 100
+            float: Estimated marketplace fee
         """
-        # Base confidence from similarity - boost if high similarity
-        if similarity >= 0.9:
-            base_confidence = 95  # Very high confidence for nearly identical matches
-        elif similarity >= 0.8:
-            base_confidence = 85
-        else:
-            base_confidence = similarity * 100
+        # Default fee rate
+        fee_percentage = 0.1  # 10%
         
-        # Condition penalty - less severe for very high similarity
-        condition_penalty = 0
-        buy_condition = buy_listing.get('condition', 'New').lower()
-        sell_condition = sell_listing.get('condition', 'New').lower()
+        # Adjust based on marketplace
+        if marketplace.lower() == 'amazon':
+            fee_percentage = 0.15  # 15%
+        elif marketplace.lower() == 'ebay':
+            fee_percentage = 0.13  # 13%
+        elif marketplace.lower() == 'etsy':
+            fee_percentage = 0.08  # 8%
+        elif marketplace.lower() == 'facebook':
+            fee_percentage = 0.05  # 5%
+        elif marketplace.lower() == 'mercari':
+            fee_percentage = 0.10  # 10%
         
-        if buy_condition != sell_condition:
-            if similarity >= 0.9:
-                condition_penalty = 5  # Minor penalty for high similarity matches
-            else:
-                condition_penalty = 10
+        return price * fee_percentage
+    
+    def _estimate_shipping_cost(self, subcategory: str, price: float) -> float:
+        """
+        Estimate shipping cost based on subcategory and price.
         
-        # Bonus for high profit percentage
-        profit_bonus = min(5, profit_percentage / 10)
+        Args:
+            subcategory (str): Item subcategory
+            price (float): Item price
+            
+        Returns:
+            float: Estimated shipping cost
+        """
+        # Default shipping
+        base_shipping = 5.99
         
-        # Calculate final confidence
-        confidence = base_confidence - condition_penalty + profit_bonus
+        # Adjust based on subcategory
+        if subcategory == 'Headphones':
+            base_shipping = 7.99
+        elif subcategory == 'Keyboards':
+            base_shipping = 12.99
+        elif subcategory == 'Graphics Cards':
+            base_shipping = 14.99
+        elif subcategory == 'Monitors':
+            base_shipping = 24.99
+        elif subcategory == 'Vintage Tech':
+            base_shipping = 9.99
+        elif subcategory == 'Jordans' or subcategory == 'Nike Dunks':
+            base_shipping = 9.99
+        elif subcategory in ['Pokémon', 'Magic: The Gathering', 'Yu-Gi-Oh']:
+            base_shipping = 4.99
         
-        # Ensure confidence reflects true matches better
-        if similarity >= 0.9 and confidence < 90:
-            confidence = 90  # Minimum 90% confidence for very similar items
+        # Add insurance for expensive items
+        insurance = 0.0
+        if price > 100:
+            insurance = 3.99
+        elif price > 500:
+            insurance = 8.99
         
-        return max(0, min(100, confidence))
+        return base_shipping + insurance
 
-def get_all_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
+# Function to run a complete arbitrage scan
+def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
     """
-    Get all keywords for the specified subcategories.
+    Run a complete arbitrage scan for the given subcategories.
     
     Args:
-        subcategories (List[str]): List of subcategories to get keywords for
+        subcategories (List[str]): List of subcategories to scan
         
     Returns:
-        List[str]: Combined list of keywords for all subcategories
+        List[Dict[str, Any]]: List of arbitrage opportunities
     """
-    all_keywords = []
-    
-    # Loop through all categories and subcategories in COMPREHENSIVE_KEYWORDS
-    for category, subcats in COMPREHENSIVE_KEYWORDS.items():
-        for subcat in subcats:
-            # Check if this subcategory is in our list
-            if subcat in subcategories:
-                # Add all keywords for this subcategory
-                subcat_keywords = generate_keywords(subcat, include_variations=True, max_keywords=20)
-                all_keywords.extend(subcat_keywords)
-    
-    # Remove duplicates while preserving order
-    unique_keywords = []
-    for keyword in all_keywords:
-        if keyword not in unique_keywords:
-            unique_keywords.append(keyword)
-    
-    logger.info(f"Generated {len(unique_keywords)} keywords for subcategories: {subcategories}")
-    return unique_keywords
-
-async def scan_marketplaces(subcategories: List[str]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    """
-    Scan multiple marketplaces for the given subcategories.
-    
-    Args:
-        subcategories (List[str]): List of subcategories to search for
-        
-    Returns:
-        Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]: (All listings, Arbitrage opportunities)
-    """
-    logger.info(f"Starting marketplace scan for subcategories: {subcategories}")
+    logger.info(f"Starting arbitrage scan for subcategories: {subcategories}")
     
     try:
-        # Create tasks for all marketplaces
-        amazon_task = asyncio.create_task(run_amazon_search(subcategories))
-        ebay_task = asyncio.create_task(run_ebay_search(subcategories))
+        # Create an event loop for the async operations
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         
-        # Include other marketplaces based on subcategory
-        marketplace_tasks = [amazon_task, ebay_task]
+        # Import available scrapers
+        scrapers = []
         
-        # Always include Walmart for better comparison
-        walmart_task = asyncio.create_task(run_walmart_search(subcategories))
-        marketplace_tasks.append(walmart_task)
+        try:
+            from amazon_scraper import run_amazon_search
+            scrapers.append(("amazon", run_amazon_search))
+        except ImportError:
+            logger.warning("Amazon scraper not available")
         
-        # Determine if we should include specialized marketplaces
-        include_stockx = any(subcat in ["Jordans", "Nike Dunks", "Vintage Tees", "Sneakers", "Consoles"] 
-                            for subcat in subcategories)
+        try:
+            from ebay_scraper import run_ebay_search
+            scrapers.append(("ebay", run_ebay_search))
+        except ImportError:
+            logger.warning("eBay scraper not available")
         
-        include_facebook = True  # Include Facebook Marketplace for all searches to improve results
+        try:
+            from facebook_scraper import run_facebook_search
+            scrapers.append(("facebook", run_facebook_search))
+        except ImportError:
+            logger.warning("Facebook scraper not available")
         
-        tcg_subcategories = ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Sports Cards", "Collectibles"]
-        include_tcgplayer = any(subcat in tcg_subcategories for subcat in subcategories)
-        
-        # Add specialized marketplace tasks if needed
-        if include_stockx:
-            stockx_task = asyncio.create_task(run_stockx_search(subcategories))
-            marketplace_tasks.append(stockx_task)
-        
-        if include_facebook:
-            facebook_task = asyncio.create_task(run_facebook_search(subcategories))
-            marketplace_tasks.append(facebook_task)
-            
-        if include_tcgplayer:
-            tcgplayer_task = asyncio.create_task(run_tcgplayer_search(subcategories))
-            marketplace_tasks.append(tcgplayer_task)
-        
-        # Wait for all active tasks to complete
-        results = await asyncio.gather(*marketplace_tasks)
-        
-        # Combine all listings
+        # Run all available scrapers
+        start_time = time.time()
         all_listings = []
-        for result in results:
-            if result:  # Verify that result is not None or empty
-                all_listings.extend(result)
         
-        logger.info(f"Total listings found: {len(all_listings)}")
+        tasks = []
+        for name, scraper_func in scrapers:
+            logger.info(f"Adding {name} scraper to tasks")
+            task = asyncio.ensure_future(scraper_func(subcategories))
+            tasks.append(task)
+        
+        # Run all scrapers concurrently
+        results = loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+        
+        # Process results and combine listings
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Error from scraper {scrapers[i][0]}: {str(result)}")
+            elif result:
+                name = scrapers[i][0]
+                logger.info(f"Got {len(result)} listings from {name}")
+                all_listings.extend(result)
         
         # Find arbitrage opportunities
         analyzer = ArbitrageAnalyzer()
         opportunities = analyzer.find_opportunities(all_listings)
         
-        return all_listings, opportunities
+        # Return results
+        elapsed_time = time.time() - start_time
+        logger.info(f"Arbitrage scan completed in {elapsed_time:.2f} seconds, found {len(opportunities)} opportunities")
         
+        return opportunities
+    
     except Exception as e:
-        logger.error(f"Error during marketplace scan: {str(e)}")
-        return [], []
-
-def calculate_profit_metrics(opportunity: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Calculate additional profit metrics for an opportunity.
-    
-    Args:
-        opportunity (Dict[str, Any]): Arbitrage opportunity
-        
-    Returns:
-        Dict[str, Any]: Updated opportunity with additional metrics
-    """
-    # Copy the opportunity to avoid modifying the original
-    updated = opportunity.copy()
-    
-    # Calculate tax (approximate as 8% of buy price)
-    buy_price = updated.get('buyPrice', 0)
-    sell_price = updated.get('sellPrice', 0)
-    
-    estimated_tax = buy_price * 0.08
-    updated['estimatedTax'] = round(estimated_tax, 2)
-    
-    # Calculate shipping (if not already included)
-    buy_shipping = updated.get('buyShipping', 0)
-    
-    # Calculate platform fees (approximate)
-    sell_marketplace = updated.get('sellMarketplace', '').lower()
-    
-    if 'ebay' in sell_marketplace:
-        # eBay fee: 10-15% of sell price including shipping
-        sell_fee = sell_price * 0.125  # 12.5% average
-        updated['platformFee'] = round(sell_fee, 2)
-        
-        # PayPal fee (2.9% + $0.30)
-        payment_fee = sell_price * 0.029 + 0.30
-        updated['paymentFee'] = round(payment_fee, 2)
-    
-    elif 'amazon' in sell_marketplace:
-        # Amazon fee: 15% of sell price + variable closing fee
-        sell_fee = sell_price * 0.15 + 1.80  # $1.80 variable closing fee
-        updated['platformFee'] = round(sell_fee, 2)
-        updated['paymentFee'] = 0  # Included in platform fee
-    
-    elif 'walmart' in sell_marketplace:
-        # Walmart fee: 15% of sell price
-        sell_fee = sell_price * 0.15
-        updated['platformFee'] = round(sell_fee, 2)
-        updated['paymentFee'] = 0  # Included in platform fee
-    
-    elif 'facebook' in sell_marketplace:
-        # Facebook fee: 5% of sell price
-        sell_fee = sell_price * 0.05
-        updated['platformFee'] = round(sell_fee, 2)
-        updated['paymentFee'] = 0  # Included in platform fee
-    
-    elif 'stockx' in sell_marketplace:
-        # StockX fee: 9.5% + payment processing (3%)
-        sell_fee = sell_price * 0.095
-        updated['platformFee'] = round(sell_fee, 2)
-        payment_fee = sell_price * 0.03
-        updated['paymentFee'] = round(payment_fee, 2)
-    
-    else:
-        # Default fees if marketplace is unknown
-        sell_fee = sell_price * 0.10
-        updated['platformFee'] = round(sell_fee, 2)
-        payment_fee = sell_price * 0.029 + 0.30
-        updated['paymentFee'] = round(payment_fee, 2)
-    
-    # Calculate total cost
-    total_cost = buy_price + estimated_tax + buy_shipping
-    updated['totalCost'] = round(total_cost, 2)
-    
-    # Calculate total fees
-    platform_fee = updated.get('platformFee', 0)
-    payment_fee = updated.get('paymentFee', 0)
-    total_fees = platform_fee + payment_fee
-    updated['totalFees'] = round(total_fees, 2)
-    
-    # Calculate net profit
-    net_profit = sell_price - total_cost - total_fees
-    updated['netProfit'] = round(net_profit, 2)
-    
-    # Calculate net profit percentage (ROI)
-    net_profit_percentage = (net_profit / total_cost) * 100 if total_cost > 0 else 0
-    updated['netProfitPercentage'] = round(net_profit_percentage, 2)
-    
-    # Add velocity score and estimated sell days
-    velocity_score = calculate_velocity_score(updated)
-    estimated_sell_days = estimate_sell_days(updated, velocity_score)
-    
-    updated['velocityScore'] = velocity_score
-    updated['estimatedSellDays'] = estimated_sell_days
-    
-    return updated
-
-def calculate_velocity_score(opportunity: Dict[str, Any]) -> int:
-    """
-    Calculate how quickly an item is likely to sell (0-100).
-    
-    Args:
-        opportunity (Dict[str, Any]): Arbitrage opportunity
-        
-    Returns:
-        int: Velocity score from 0 to 100
-    """
-    score = 50  # Base score
-    
-    # Adjust based on profit percentage and confidence
-    profit_percentage = opportunity.get('profitPercentage', 0)
-    confidence = opportunity.get('confidence', 0)
-    
-    # Adjust based on profit - higher profit is typically slower to sell
-    if profit_percentage > 100:
-        score -= 15
-    elif profit_percentage > 70:
-        score -= 10
-    elif profit_percentage > 40:
-        score -= 5
-    elif profit_percentage < 20:
-        score += 10  # Lower margins tend to sell faster
-    
-    # Adjust based on confidence
-    if confidence > 90:
-        score += 15
-    elif confidence > 80:
-        score += 10
-    elif confidence < 70:
-        score -= 10
-    
-    # Adjust based on marketplace - some platforms sell faster
-    sell_marketplace = opportunity.get('sellMarketplace', '').lower()
-    if 'amazon' in sell_marketplace:
-        score += 15  # Amazon typically sells fastest
-    elif 'ebay' in sell_marketplace:
-        score += 10
-    elif 'walmart' in sell_marketplace:
-        score += 5
-    elif 'facebook' in sell_marketplace:
-        score -= 5  # Facebook Marketplace can be slower
-    
-    # Adjust based on category
-    subcategory = opportunity.get('subcategory', '').lower()
-    fast_categories = ["headphones", "graphics cards", "consoles", "jordans", "nike dunks", "pokémon"]
-    medium_categories = ["keyboards", "monitors", "ssds", "laptop", "action figures"]
-    slow_categories = ["vintage", "antique", "collectible", "rare"]
-    
-    if any(fast in subcategory for fast in fast_categories):
-        score += 15
-    elif any(medium in subcategory for medium in medium_categories):
-        score += 5
-    elif any(slow in subcategory for slow in slow_categories):
-        score -= 10
-    
-    # Cap score between 0 and 100
-    return min(100, max(0, score))
-
-def estimate_sell_days(opportunity: Dict[str, Any], velocity_score: int) -> int:
-    """
-    Estimate how many days until the item sells.
-    
-    Args:
-        opportunity (Dict[str, Any]): Arbitrage opportunity
-        velocity_score (int): The calculated velocity score
-        
-    Returns:
-        int: Estimated number of days to sell
-    """
-    # Convert velocity score to estimated days
-    # Higher velocity score = fewer days to sell
-    if velocity_score > 90:
-        return 1  # Almost immediate sale
-    elif velocity_score > 80:
-        return 2
-    elif velocity_score > 70:
-        return 3
-    elif velocity_score > 60:
-        return 5
-    elif velocity_score > 50:
-        return 7
-    elif velocity_score > 40:
-        return 10
-    elif velocity_score > 30:
-        return 14
-    elif velocity_score > 20:
-        return 21
-    else:
-        return 30  # Slow moving item
-
-def run_arbitrage_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """
-    Run a complete arbitrage scan across all marketplaces.
-    
-    Args:
-        subcategories (List[str]): List of subcategories to search for
-        
-    Returns:
-        List[Dict[str, Any]]: List of processed arbitrage opportunities
-    """
-    try:
-        logger.info(f"Starting arbitrage scan for subcategories: {subcategories}")
-        
-        # Create new event loop for the async operations
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        try:
-            start_time = time.time()
-            
-            # Scan marketplaces
-            all_listings, opportunities = loop.run_until_complete(scan_marketplaces(subcategories))
-            
-            # Process opportunities
-            processed_results = []
-            
-            for opportunity in opportunities:
-                # Calculate additional profit metrics
-                processed = calculate_profit_metrics(opportunity)
-                processed_results.append(processed)
-            
-            end_time = time.time()
-            scan_duration = end_time - start_time
-            
-            logger.info(f"Scan completed in {scan_duration:.2f} seconds")
-            logger.info(f"Found {len(processed_results)} arbitrage opportunities")
-            
-            return processed_results
-            
-        except Exception as e:
-            logger.error(f"Error running arbitrage scan: {str(e)}")
-            return []
-        finally:
-            loop.close()
-            
-    except Exception as e:
-        logger.error(f"Unexpected error in arbitrage scan: {str(e)}")
+        logger.error(f"Error running arbitrage scan: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return []
