@@ -1,4 +1,4 @@
-// Create a new file: static/js/scan.js
+// FlipHawk Scan Frontend Script
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
     const categoryCards = document.querySelectorAll('.category-card');
@@ -18,105 +18,71 @@ document.addEventListener('DOMContentLoaded', function() {
     let scanInProgress = false;
     let scanAborted = false;
     
-    // Initialize event listeners
-    initializeEvents();
-    
-    function initializeEvents() {
-        // Category selection
-        categoryCards.forEach(card => {
-            card.addEventListener('click', function() {
-                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                selectedCategory = this.dataset.category;
-                showSubcategories(selectedCategory);
-            });
+    // Category selection
+    categoryCards.forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            selectedCategory = this.dataset.category;
+            showSubcategories(selectedCategory);
         });
+    });
+    
+    // Search button
+    searchButton.addEventListener('click', function() {
+        if (scanInProgress) {
+            // Abort scan if in progress
+            scanAborted = true;
+            searchButton.textContent = 'Cancelling...';
+            return;
+        }
         
-        // Search button
-        searchButton.addEventListener('click', function() {
-            if (scanInProgress) {
-                // Abort scan if in progress
-                scanAborted = true;
-                searchButton.textContent = 'Cancelling...';
-                return;
-            }
-            
-            startScan();
-        });
-    }
+        startScan();
+    });
     
+    // Function to show subcategories
     function showSubcategories(category) {
         // Clear previous subcategories
         subcategoryGrid.innerHTML = '';
         
-        // Get subcategories for selected category
-        fetch('/api/v1/categories/subcategories', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ category })
-        })
-        .then(response => response.json())
-        .then(data => {
-            const subcategories = data.subcategories || [];
-            
-            subcategories.forEach(subcategory => {
-                const chip = document.createElement('div');
-                chip.className = 'subcategory-chip';
-                chip.textContent = subcategory;
-                chip.dataset.subcategory = subcategory;
-                
-                chip.addEventListener('click', function() {
-                    toggleSubcategory(chip, subcategory);
-                });
-                
-                subcategoryGrid.appendChild(chip);
-            });
-            
-            subcategoryPanel.style.display = 'block';
-            selectedSubcategories = [];
-            updateSelectedCount();
-            updateSearchButton();
-            
-            // Scroll to subcategories
-            subcategoryPanel.scrollIntoView({ behavior: 'smooth' });
-        })
-        .catch(error => {
-            console.error('Error fetching subcategories:', error);
-            
-            // Fallback to hardcoded subcategories for the demo
-            const subcats = {
-                "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
-                "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
-                "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
-            };
-            
-            const fallbackSubcats = subcats[category] || [];
-            
-            fallbackSubcats.forEach(subcategory => {
-                const chip = document.createElement('div');
-                chip.className = 'subcategory-chip';
-                chip.textContent = subcategory;
-                chip.dataset.subcategory = subcategory;
-                
-                chip.addEventListener('click', function() {
-                    toggleSubcategory(chip, subcategory);
-                });
-                
-                subcategoryGrid.appendChild(chip);
-            });
-            
-            subcategoryPanel.style.display = 'block';
-            selectedSubcategories = [];
-            updateSelectedCount();
-            updateSearchButton();
-            
-            // Scroll to subcategories
-            subcategoryPanel.scrollIntoView({ behavior: 'smooth' });
+        // Subcategories data based on comprehensive_keywords.py
+        const subcategories = getSubcategories(category);
+        
+        subcategories.forEach(subcategory => {
+            const chip = document.createElement('div');
+            chip.className = 'subcategory-chip';
+            chip.textContent = subcategory;
+            chip.addEventListener('click', () => toggleSubcategory(chip, subcategory));
+            subcategoryGrid.appendChild(chip);
         });
+        
+        subcategoryPanel.style.display = 'block';
+        selectedSubcategories = [];
+        updateSelectedCount();
+        updateSearchButton();
+        
+        // Scroll to subcategories
+        subcategoryPanel.scrollIntoView({ behavior: 'smooth' });
     }
     
+    // Get subcategories data based on category
+    function getSubcategories(category) {
+        // This is a simplified version of the comprehensive_keywords.py data
+        const subcategoriesData = {
+            "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
+            "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
+            "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
+            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps"],
+            "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
+            "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
+            "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
+            "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
+        };
+        
+        return subcategoriesData[category] || [];
+    }
+    
+    // Function to toggle subcategory selection
     function toggleSubcategory(chip, subcategory) {
         if (chip.classList.contains('selected')) {
             chip.classList.remove('selected');
@@ -130,10 +96,12 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSearchButton();
     }
     
+    // Update selected count display
     function updateSelectedCount() {
         selectedCount.textContent = `${selectedSubcategories.length} subcategories selected`;
     }
     
+    // Update search button state based on selections
     function updateSearchButton() {
         if (selectedSubcategories.length > 0) {
             searchButton.classList.add('active');
@@ -144,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Function to start the scan process
     function startScan() {
         // Check if category and subcategories are selected
         if (!selectedCategory || selectedSubcategories.length === 0) {
@@ -165,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         scanWithProgressUpdates(requestData);
     }
     
+    // Function to perform the scan with progress updates
     function scanWithProgressUpdates(requestData) {
         // Set scan in progress flag
         scanInProgress = true;
@@ -354,6 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Function to update status message based on scan status
     function updateStatusMessage(status, progress) {
         let message = '';
         
@@ -400,6 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
         scanStatus.textContent = message;
     }
     
+    // Function to display results
     function displayResults(opportunities) {
         // Clear previous results
         resultsContainer.innerHTML = '';
@@ -459,21 +431,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="product-comparison">
                         <div class="buy-info">
                             <div class="marketplace">Buy on ${opportunity.buyMarketplace || 'Amazon'}</div>
-                            <div class="price">$${(opportunity.buyPrice || 0).toFixed(2)}</div>
+                            <div class="price">${(opportunity.buyPrice || 0).toFixed(2)}</div>
                             <span class="condition-badge condition-${(opportunity.buyCondition || 'New').toLowerCase().replace(' ', '-')}">${opportunity.buyCondition || 'New'}</span>
                         </div>
                         <div class="sell-info">
                             <div class="marketplace">Sell on ${opportunity.sellMarketplace || 'eBay'}</div>
-                            <div class="price">$${(opportunity.sellPrice || 0).toFixed(2)}</div>
+                            <div class="price">${(opportunity.sellPrice || 0).toFixed(2)}</div>
                             <span class="condition-badge condition-${(opportunity.sellCondition || 'New').toLowerCase().replace(' ', '-')}">${opportunity.sellCondition || 'New'}</span>
                         </div>
                     </div>
                     
                     <div class="profit-details">
-                        <div class="profit">Profit: $${(opportunity.profit || 0).toFixed(2)}</div>
+                        <div class="profit">Profit: ${(opportunity.profit || 0).toFixed(2)}</div>
                         <div class="profit-percentage">ROI: ${(opportunity.profitPercentage || 0).toFixed(2)}%</div>
                         <div class="fees">
-                            Fees: $${((opportunity.fees && opportunity.fees.marketplace) || 0).toFixed(2)} • Shipping: $${((opportunity.fees && opportunity.fees.shipping) || 0).toFixed(2)}
+                            Fees: ${((opportunity.fees && opportunity.fees.marketplace) || 0).toFixed(2)} • Shipping: ${((opportunity.fees && opportunity.fees.shipping) || 0).toFixed(2)}
                         </div>
                     </div>
                     
@@ -499,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsHeader.scrollIntoView({ behavior: 'smooth' });
     }
     
+    // Function to show toast notification
     function showToast(message, type = 'error') {
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
