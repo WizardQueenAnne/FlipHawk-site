@@ -14,7 +14,6 @@ import threading
 from marketplace_scanner import run_arbitrage_scan, ArbitrageAnalyzer
 from amazon_scraper import run_amazon_search
 from ebay_scraper import run_ebay_search
-from facebook_scraper import run_facebook_search
 from comprehensive_keywords import COMPREHENSIVE_KEYWORDS, generate_keywords
 
 # Set up logging
@@ -90,7 +89,7 @@ class ScanManager:
                 # Check if this subcategory is in our list
                 if subcat in subcategories:
                     # Add keywords for this subcategory
-                    subcat_keywords = generate_keywords(subcat, include_variations=True, max_keywords=10)
+                    subcat_keywords = subcats[subcat][:20]  # Get up to 20 keywords
                     all_keywords.extend(subcat_keywords)
         
         # Remove duplicates while preserving order
@@ -100,7 +99,7 @@ class ScanManager:
                 unique_keywords.append(keyword)
         
         logger.info(f"Generated {len(unique_keywords)} keywords for subcategories: {subcategories}")
-        return unique_keywords[:20]  # Limit to 20 keywords for performance
+        return unique_keywords[:30]  # Limit to 30 keywords for performance
     
     def run_scanning_thread(self, scan_id: str, category: str, subcategories: List[str], max_results: int):
         """
@@ -116,7 +115,7 @@ class ScanManager:
             logger.info(f"Starting scanning thread for scan {scan_id}")
             
             # Update scan status
-            self.update_scan_progress(scan_id, 10, 'processing')
+            self.update_scan_progress(scan_id, 10, 'initializing')
             
             # Get all keywords for the selected subcategories
             keywords = self.get_keywords_for_subcategories(subcategories)
@@ -129,8 +128,8 @@ class ScanManager:
             asyncio.set_event_loop(loop)
             
             try:
-                # Run the arbitrage scan
-                opportunities = loop.run_until_complete(self._execute_scan(subcategories, keywords))
+                # Run the actual arbitrage scan with real scrapers
+                opportunities = loop.run_until_complete(self._execute_scan(subcategories))
                 
                 # Update scan status
                 self.update_scan_progress(scan_id, 90, 'processing results')
@@ -176,28 +175,34 @@ class ScanManager:
             self.active_scans[scan_id]['error'] = str(e)
             self.scan_results[scan_id] = []
     
-    async def _execute_scan(self, subcategories: List[str], keywords: List[str]) -> List[Dict[str, Any]]:
+    async def _execute_scan(self, subcategories: List[str]) -> List[Dict[str, Any]]:
         """
         Execute the actual marketplace scan using scrapers.
         
         Args:
             subcategories (List[str]): List of subcategories to scan
-            keywords (List[str]): List of keywords to search for
             
         Returns:
             List[Dict[str, Any]]: List of arbitrage opportunities
         """
         try:
             logger.info(f"Executing marketplace scan for subcategories: {subcategories}")
-            logger.info(f"Using keywords: {keywords}")
             
             # Run the marketplace scrapers
             amazon_task = asyncio.create_task(run_amazon_search(subcategories))
             ebay_task = asyncio.create_task(run_ebay_search(subcategories))
-            facebook_task = asyncio.create_task(run_facebook_search(subcategories))
+            
+            # Try to import other scrapers if available
+            try:
+                from facebook_scraper import run_facebook_search
+                facebook_task = asyncio.create_task(run_facebook_search(subcategories))
+                tasks = [amazon_task, ebay_task, facebook_task]
+            except ImportError:
+                tasks = [amazon_task, ebay_task]
+                logger.info("Facebook scraper not available, continuing with Amazon and eBay")
             
             # Wait for all tasks to complete
-            results = await asyncio.gather(amazon_task, ebay_task, facebook_task)
+            results = await asyncio.gather(*tasks)
             
             # Combine all listings
             all_listings = []
@@ -207,12 +212,12 @@ class ScanManager:
             
             logger.info(f"Found {len(all_listings)} total listings")
             
-            # Find arbitrage opportunities
-            opportunities = self.analyzer.find_opportunities(all_listings)
+            # Find arbitrage opportunities using the analyzer
+            analyzer = ArbitrageAnalyzer()
+            opportunities = analyzer.find_opportunities(all_listings)
             
             logger.info(f"Found {len(opportunities)} arbitrage opportunities")
             
-            # For the first implementation, just return the listed opportunities
             return opportunities
             
         except Exception as e:
@@ -221,8 +226,7 @@ class ScanManager:
             logger.error(traceback.format_exc())
             raise
     
-    def execute_scan(self, category: str, subcategories: List[str], 
-                   max_results: int = 100) -> str:
+    def execute_scan(self, category: str, subcategories: List[str], max_results: int = 100) -> str:
         """
         Execute a new scan for arbitrage opportunities.
         
