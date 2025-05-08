@@ -1,3 +1,4 @@
+# marketplace_bridge.py
 """
 FlipHawk Marketplace Bridge
 Connects the frontend API with backend scrapers to perform marketplace scans
@@ -23,6 +24,7 @@ logger = logging.getLogger('marketplace_bridge')
 try:
     from amazon_scraper import run_amazon_search
     amazon_available = True
+    logger.info("Amazon scraper loaded successfully")
 except ImportError:
     amazon_available = False
     logger.warning("Amazon scraper not available")
@@ -30,17 +32,27 @@ except ImportError:
 try:
     from ebay_scraper import run_ebay_search
     ebay_available = True
+    logger.info("eBay scraper loaded successfully")
 except ImportError:
     ebay_available = False
     logger.warning("eBay scraper not available")
 
-# Try to import marketplace_scanner which handles arbitrage calculations
 try:
-    from marketplace_scanner import run_arbitrage_scan
-    scanner_available = True
+    from mercari_scraper import run_mercari_search
+    mercari_available = True
+    logger.info("Mercari scraper loaded successfully")
 except ImportError:
-    scanner_available = False
-    logger.warning("Marketplace scanner not available, arbitrage calculations may be limited")
+    mercari_available = False
+    logger.warning("Mercari scraper not available")
+
+# Try to import comprehensive_keywords
+try:
+    from comprehensive_keywords import get_keywords_for_subcategory, COMPREHENSIVE_KEYWORDS
+    keywords_available = True
+    logger.info("Comprehensive keywords loaded successfully")
+except ImportError:
+    keywords_available = False
+    logger.warning("Comprehensive keywords not available")
 
 class ScanManager:
     """Manages scan requests and tracks their progress."""
@@ -228,18 +240,42 @@ async def _execute_scan_task(scan_id: str, category: str, subcategories: List[st
         # Update progress
         scan_manager.update_scan_progress(scan_id, 5, 'searching marketplaces')
         
-        # Get results using marketplace_scanner if available, otherwise run scrapers directly
-        if scanner_available:
-            # Using the centralized arbitrage scan
-            opportunities = run_arbitrage_scan(subcategories)
-            scan_manager.update_scan_progress(scan_id, 95, 'processing results')
+        # Get all keywords for the selected subcategories
+        keywords = []
+        if keywords_available:
+            for subcategory in subcategories:
+                for cat, subcats in COMPREHENSIVE_KEYWORDS.items():
+                    if subcategory in subcats:
+                        subcat_keywords = subcats[subcategory]
+                        logger.info(f"Adding {len(subcat_keywords)} keywords for {subcategory}")
+                        keywords.extend(subcat_keywords)
             
+            if not keywords:
+                # Fallback to subcategory names as keywords if no keywords found
+                keywords = subcategories
         else:
-            # Run scrapers directly and find opportunities
-            opportunities = await _execute_scan(subcategories)
-            scan_manager.update_scan_progress(scan_id, 95, 'processing results')
+            # If comprehensive_keywords.py is not available, use subcategory names as keywords
+            keywords = subcategories
         
-        # Limit the number of results
+        # Log keywords being used
+        logger.info(f"Using {len(keywords)} keywords for scanning: {keywords[:5]}...")
+        
+        # Update progress
+        scan_manager.update_scan_progress(scan_id, 10, 'searching marketplaces')
+        
+        # Execute the actual scan using the keywords
+        listings = await _execute_marketplace_scan(subcategories, keywords)
+        
+        # Update progress
+        scan_manager.update_scan_progress(scan_id, 50, 'processing results')
+        
+        # Find arbitrage opportunities from listings
+        opportunities = _find_arbitrage_opportunities(listings)
+        
+        # Update progress
+        scan_manager.update_scan_progress(scan_id, 80, 'finalizing results')
+        
+        # Limit the number of results if needed
         if max_results > 0 and len(opportunities) > max_results:
             opportunities = opportunities[:max_results]
         
@@ -251,15 +287,16 @@ async def _execute_scan_task(scan_id: str, category: str, subcategories: List[st
         logger.error(traceback.format_exc())
         scan_manager.update_scan_progress(scan_id, 100, 'failed')
 
-async def _execute_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
+async def _execute_marketplace_scan(subcategories: List[str], keywords: List[str]) -> List[Dict[str, Any]]:
     """
     Execute the marketplace scan using scrapers.
     
     Args:
         subcategories: List of subcategories to scan
+        keywords: List of keywords to search for
         
     Returns:
-        List[Dict[str, Any]]: List of arbitrage opportunities
+        List[Dict[str, Any]]: List of product listings
     """
     try:
         logger.info(f"Executing marketplace scan for subcategories: {subcategories}")
@@ -276,6 +313,11 @@ async def _execute_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
         if ebay_available:
             tasks.append(asyncio.create_task(run_ebay_search(subcategories)))
             logger.info("Added eBay scraper to tasks")
+        
+        # Add Mercari scraper
+        if mercari_available:
+            tasks.append(asyncio.create_task(run_mercari_search(subcategories)))
+            logger.info("Added Mercari scraper to tasks")
         
         # If no tasks were created, use a fallback method
         if not tasks:
@@ -296,19 +338,14 @@ async def _execute_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
         
         logger.info(f"Found {len(all_listings)} total listings")
         
-        # Find arbitrage opportunities using simplified logic
-        opportunities = _find_opportunities(all_listings)
-        
-        logger.info(f"Found {len(opportunities)} arbitrage opportunities")
-        
-        return opportunities
+        return all_listings
             
     except Exception as e:
         logger.error(f"Error executing marketplace scan: {str(e)}")
         logger.error(traceback.format_exc())
         return []
 
-def _find_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Find arbitrage opportunities in listings.
     
@@ -456,66 +493,36 @@ def _calculate_title_similarity(title1: str, title2: str) -> float:
     return combined
 
 def _generate_simulated_data(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """Generate simulated arbitrage opportunities for testing."""
+    """Generate simulated product listings for testing."""
     import random
     from datetime import datetime
     
-    opportunities = []
+    listings = []
     
-    # Generate some opportunities for each subcategory
+    # Generate some listings for each subcategory
     for subcategory in subcategories:
-        # Create 2-4 opportunities per subcategory
-        num_opportunities = random.randint(2, 4)
+        # Create 10-15 listings per subcategory
+        num_listings = random.randint(10, 15)
         
-        for i in range(num_opportunities):
+        for i in range(num_listings):
             # Generate buy and sell prices with a margin
             buy_price = round(random.uniform(20, 200), 2)
-            margin = random.uniform(0.2, 0.5)  # 20-50% margin
-            sell_price = round(buy_price * (1 + margin), 2)
             
-            # Calculate profit
-            marketplace_fee = round(sell_price * 0.1, 2)  # 10% marketplace fee
-            shipping_fee = round(random.uniform(5, 15), 2)  # Random shipping cost
-            profit = sell_price - buy_price - marketplace_fee - shipping_fee
-            profit_percentage = (profit / buy_price) * 100
-            
-            # Choose random marketplaces
-            all_marketplaces = ["Amazon", "eBay", "Etsy", "Facebook Marketplace"]
-            buy_marketplace = random.choice(all_marketplaces)
-            sell_marketplace = random.choice([m for m in all_marketplaces if m != buy_marketplace])
-            
-            # Create an opportunity object
-            opportunity = {
-                'buyTitle': f"{subcategory} Item #{i+1}",
-                'buyPrice': buy_price,
-                'buyLink': f"https://example.com/buy/{subcategory.lower().replace(' ', '-')}-{i}",
-                'buyMarketplace': buy_marketplace,
-                'buyImage': f"https://via.placeholder.com/150?text={subcategory.replace(' ', '+')}",
-                'buyCondition': random.choice(["New", "Like New", "Very Good", "Good"]),
-                
-                'sellTitle': f"{subcategory} Item #{i+1}",
-                'sellPrice': sell_price,
-                'sellLink': f"https://example.com/sell/{subcategory.lower().replace(' ', '-')}-{i}",
-                'sellMarketplace': sell_marketplace,
-                'sellImage': f"https://via.placeholder.com/150?text={subcategory.replace(' ', '+')}",
-                'sellCondition': "New",
-                
-                'profit': round(profit, 2),
-                'profitPercentage': round(profit_percentage, 2),
-                'fees': {
-                    'marketplace': marketplace_fee,
-                    'shipping': shipping_fee
-                },
-                
-                'similarity': round(random.uniform(70, 95)),
-                'confidence': round(random.uniform(70, 95)),
+            # Create a listing object
+            listing = {
+                'title': f"{subcategory} Item #{i+1}",
+                'price': buy_price,
+                'link': f"https://example.com/buy/{subcategory.lower().replace(' ', '-')}-{i}",
+                'source': random.choice(["Amazon", "eBay", "Mercari"]),
+                'image_url': f"https://via.placeholder.com/150?text={subcategory.replace(' ', '+')}",
+                'condition': random.choice(["New", "Like New", "Very Good", "Good"]),
                 'subcategory': subcategory,
                 'timestamp': datetime.now().isoformat()
             }
             
-            opportunities.append(opportunity)
+            listings.append(listing)
     
-    return opportunities
+    return listings
 
 def get_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
     """
@@ -527,18 +534,15 @@ def get_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
     Returns:
         List[str]: List of keywords
     """
-    try:
-        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
-        
-        all_keywords = []
-        
-        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
-            for subcategory, keywords in subcats.items():
-                if subcategory in subcategories:
-                    all_keywords.extend(keywords)
-        
-        return all_keywords
-        
-    except ImportError:
-        logger.warning("comprehensive_keywords.py not found, using subcategories as keywords")
+    if not keywords_available:
+        logger.warning("comprehensive_keywords.py not available, using subcategories as keywords")
         return subcategories
+    
+    all_keywords = []
+    
+    for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+        for subcategory in subcategories:
+            if subcategory in subcats:
+                all_keywords.extend(subcats[subcategory])
+    
+    return all_keywords
