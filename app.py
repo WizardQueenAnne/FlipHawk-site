@@ -162,6 +162,14 @@ async def scan_marketplaces(request: ScanRequest):
         import traceback
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"An error occurred during the scan: {str(e)}")
+        
+        return result
+    
+    except Exception as e:
+        logger.error(f"Error during scan: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"An error occurred during the scan: {str(e)}")
 
 @app.get("/api/v1/scan/{scan_id}")
 async def get_scan_results(scan_id: str):
