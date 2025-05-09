@@ -14,9 +14,17 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus, urlencode
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
+from datetime import datetime
 from functools import wraps
 from json import JSONDecodeError
+
+# Try to import comprehensive_keywords
+try:
+    from comprehensive_keywords import generate_keywords, COMPREHENSIVE_KEYWORDS
+    keywords_available = True
+except ImportError:
+    keywords_available = False
+    print("comprehensive_keywords.py not available")
 
 # Set up logging
 logging.basicConfig(
@@ -184,6 +192,9 @@ class FacebookScraper:
             'longitude': -95.7129,
             'radius': 100  # miles
         }
+        
+        # Keep track of used listings IDs to avoid duplicates
+        self.processed_listings = set()
     
     def _load_proxies(self) -> List[str]:
         """Load proxy servers list. In production, this would load from a service or file."""
@@ -264,41 +275,25 @@ class FacebookScraper:
         """
         logger.info(f"Searching Facebook Marketplace for '{keyword}' with sort={sort}")
         
-        # Since direct scraping of Facebook Marketplace is challenging due to its dynamic nature,
-        # we'll generate synthetic data for demonstration
-        # In a production environment, this would use real web scraping or API calls
-        
-        # Generate a plausible number of listings based on the keyword
-        num_listings = min(random.randint(5, 30), max_pages * 25)
-        
-        listings = []
-        for i in range(num_listings):
-            # Generate realistic listing data based on the keyword
-            listings.append(self._generate_realistic_listing(keyword))
-        
-        # Sort listings according to the requested sort parameter
-        if sort == "price_low_to_high":
-            listings.sort(key=lambda x: x.price)
-        elif sort == "price_high_to_low":
-            listings.sort(key=lambda x: x.price, reverse=True)
-        elif sort == "recent":
-            # Sort by posting date (newest first)
-            listings.sort(key=lambda x: 0 if not x.posting_date else -len(x.posting_date), reverse=True)
-        
-        logger.info(f"Generated {len(listings)} Facebook Marketplace listings for '{keyword}'")
-        return listings
-
-    def _generate_realistic_listing(self, keyword: str) -> FacebookListing:
+        # Generate synthetic data for Facebook Marketplace since direct scraping is challenging
+        return self._generate_realistic_listings(keyword, max_pages)
+    
+    def _generate_realistic_listings(self, keyword: str, max_pages: int) -> List[FacebookListing]:
         """
-        Generate a realistic Facebook Marketplace listing based on the keyword.
+        Generate realistic Facebook Marketplace listings based on the keyword.
         
         Args:
-            keyword (str): Keyword to base the listing on
+            keyword (str): Keyword to base the listings on
+            max_pages (int): Number of pages to simulate, affecting the number of listings
             
         Returns:
-            FacebookListing: A realistic listing object
+            List[FacebookListing]: A list of realistic listing objects
         """
-        # Determine category based on keyword
+        # Number of listings to generate (between 5 and 25 per page)
+        num_listings = min(random.randint(5 * max_pages, 25 * max_pages), 50)
+        listings = []
+        
+        # Determine category and other details based on keyword
         category = None
         condition_options = ["New", "Like New", "Good", "Fair", "Used"]
         
@@ -319,144 +314,123 @@ class FacebookScraper:
             else:
                 models = ["Pro", "Ultra", "Elite", "Gaming", "Premium", "Wireless", "Bluetooth"]
         
-        # Clothing or sneakers
-        elif any(kw in keyword.lower() for kw in ["jordan", "nike", "adidas", "clothing", "shoes", "sneaker", "air force", "dunk"]):
-            category = "Clothing & Shoes"
-            brands = ["Nike", "Jordan", "Adidas", "Puma", "New Balance", "Vans", "Converse"]
-            if "jordan" in keyword.lower() or "jordans" in keyword.lower():
-                models = ["1", "3", "4", "5", "11", "12", "13", "Retro"]
-            elif "nike" in keyword.lower() and "dunk" in keyword.lower():
-                models = ["Dunk Low", "Dunk High", "SB Dunk", "Panda", "University Blue", "Syracuse"]
-            else:
-                models = ["Air Force 1", "Yeezy", "Ultra Boost", "350", "550", "574", "Old Skool"]
-        
         # Collectibles
-        elif any(kw in keyword.lower() for kw in ["card", "pokemon", "magic", "yugioh", "funko", "collectible", "vinyl", "lego"]):
+        elif any(kw in keyword.lower() for kw in ["pokemon", "magic", "yugioh", "funko", "collectible"]):
             category = "Collectibles"
-            condition_options = ["New", "Like New", "Mint", "Near Mint", "Excellent", "Good", "Played"]
+            brands = ["Pokemon", "Magic The Gathering", "Yu-Gi-Oh", "Funko", "Hasbro", "Wizards of the Coast"]
             if "pokemon" in keyword.lower():
-                brands = ["Pokemon"]
-                models = ["Base Set", "Jungle", "Fossil", "Team Rocket", "Hidden Fates", "Evolving Skies", "Charizard", "Pikachu"]
-            elif "magic" in keyword.lower() or "gathering" in keyword.lower():
-                brands = ["Magic: The Gathering", "MTG", "Wizards of the Coast"]
-                models = ["Revised", "Modern Horizons", "Commander Legends", "Innistrad", "Phyrexia", "Mythic Rare", "Rare"]
+                models = ["Booster Box", "Elite Trainer Box", "Single Card", "Charizard", "Pikachu", "Rare Holo"]
+            elif "magic" in keyword.lower():
+                models = ["Booster Box", "Commander Deck", "Modern Horizons", "Mythic Rare", "Foil", "Full Art"]
             elif "funko" in keyword.lower():
-                brands = ["Funko", "Pop"]
-                models = ["Exclusive", "Chase", "Limited Edition", "Convention Exclusive", "Marvel", "DC", "Star Wars"]
+                models = ["Pop", "Exclusive", "Chase", "Limited Edition", "Marvel", "Star Wars"]
             else:
-                brands = ["Collectible", "Limited Edition", "Rare", "Vintage"]
-                models = ["Series 1", "Series 2", "First Edition", "Exclusive", "Promo"]
+                models = ["Rare", "Vintage", "Limited Edition", "Collection", "Complete Set"]
         
-        # Gaming
-        elif any(kw in keyword.lower() for kw in ["console", "playstation", "xbox", "nintendo", "gameboy", "ps5", "ps4", "switch"]):
-            category = "Gaming"
-            brands = ["PlayStation", "Xbox", "Nintendo", "Microsoft", "Sony"]
-            if "playstation" in keyword.lower() or "ps5" in keyword.lower() or "ps4" in keyword.lower():
-                models = ["PlayStation 5", "PS5", "PlayStation 4", "PS4", "Pro", "Slim", "Digital Edition"]
-            elif "xbox" in keyword.lower():
-                models = ["Xbox Series X", "Xbox Series S", "Xbox One", "Elite Controller", "Game Pass"]
-            elif "nintendo" in keyword.lower() or "switch" in keyword.lower():
-                models = ["Nintendo Switch", "Switch OLED", "Switch Lite", "Nintendo DS", "3DS", "Pro Controller"]
+        # Clothing
+        elif any(kw in keyword.lower() for kw in ["jordan", "nike", "dunk", "clothing", "vintage", "tee"]):
+            category = "Clothing"
+            brands = ["Nike", "Jordan", "Adidas", "Vintage", "Supreme", "Champion"]
+            if "jordan" in keyword.lower():
+                models = ["1", "3", "4", "11", "Retro", "Chicago", "Bred"]
+            elif "dunk" in keyword.lower():
+                models = ["Low", "High", "SB", "Panda", "University Blue", "Syracuse"]
+            elif "tee" in keyword.lower() or "shirt" in keyword.lower():
+                models = ["Vintage", "90s", "Band", "Tour", "Graphic", "Original", "Rare"]
+            else:
+                models = ["Limited", "Exclusive", "Deadstock", "OG", "Unworn", "Rare"]
         
-        # Vintage items
-        elif any(kw in keyword.lower() for kw in ["vintage", "antique", "classic", "retro", "old"]):
-            category = "Antiques"
-            brands = ["Vintage", "Antique", "Classic", "Original", "Collectible"]
-            models = ["1920s", "1930s", "1940s", "1950s", "1960s", "1970s", "1980s", "1990s"]
-        
-        # Default generic values if no specific category
-        if not brands:
-            brands = ["Brand", "Premium", "Quality", "Professional", "Signature", "Classic"]
-        if not models:
-            models = ["Standard", "Deluxe", "Pro", "Custom", "Special Edition", "Limited"]
-        if not category:
-            category = "General"
-        
-        # Generate a realistic title
-        brand = random.choice(brands)
-        model = random.choice(models)
-        title_additions = ["for sale", "excellent condition", "must see", "great deal", "barely used", "like new", "moving sale"]
-        
-        title = f"{brand} {model} {keyword} {random.choice(title_additions) if random.random() > 0.5 else ''}".strip()
-        
-        # Generate a realistic price
-        base_price_ranges = {
-            "Electronics": (50, 800),
-            "Clothing & Shoes": (30, 300),
-            "Collectibles": (10, 500),
-            "Gaming": (100, 600),
-            "Antiques": (50, 1000),
-            "General": (20, 200)
-        }
-        
-        price_range = base_price_ranges.get(category, (20, 200))
-        price = round(random.uniform(price_range[0], price_range[1]), 2)
-        
-        # Generate a posting date
-        days_ago = random.randint(0, 30)
-        if days_ago == 0:
-            posting_date = "Today"
-        elif days_ago == 1:
-            posting_date = "Yesterday"
+        # Default for other keywords
         else:
-            posting_date = f"{days_ago} days ago"
+            category = "General"
+            brands = ["Brand", "Quality", "Professional", "Premium", "Original", "Authentic"]
+            models = ["New", "Limited", "Special", "Exclusive", "Rare", "Custom"]
         
-        # Generate a location
-        cities = [
-            "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ",
-            "Philadelphia, PA", "San Antonio, TX", "San Diego, CA", "Dallas, TX", "San Jose, CA",
-            "Austin, TX", "Jacksonville, FL", "San Francisco, CA", "Indianapolis, IN", "Columbus, OH"
-        ]
-        location = random.choice(cities)
+        # For each listing
+        for i in range(num_listings):
+            # Generate a brand and model
+            brand = random.choice(brands)
+            model = random.choice(models)
+            
+            # Generate a title
+            words = [brand, model, keyword]
+            if random.random() > 0.5:
+                words.append(random.choice(["for sale", "great condition", "must go", "pickup only", "shipping available"]))
+            title = " ".join(words)
+            
+            # Generate price between $20 and $500
+            price = round(random.uniform(20, 500), 2)
+            
+            # Generate condition
+            condition = random.choice(condition_options)
+            
+            # Generate a fake listing ID
+            listing_id = f"fb-{random.randint(100000000, 999999999)}"
+            
+            # Skip if we've already processed this ID
+            if listing_id in self.processed_listings:
+                continue
+            
+            self.processed_listings.add(listing_id)
+            
+            # Generate other metadata
+            location = random.choice([
+                "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ",
+                "Philadelphia, PA", "San Antonio, TX", "San Diego, CA", "Dallas, TX", "San Jose, CA"
+            ])
+            
+            seller_name = f"{random.choice(['John', 'Jane', 'Mike', 'Sarah', 'David', 'Emma'])} {random.choice(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'T', 'W'])}."
+            
+            # Generate a posting date (1-30 days ago)
+            days_ago = random.randint(1, 30)
+            if days_ago == 1:
+                posting_date = "Yesterday"
+            else:
+                posting_date = f"{days_ago} days ago"
+            
+            # Create a description
+            description = f"{condition} {brand} {model} {keyword}. " + random.choice([
+                "Local pickup only.",
+                "Can ship or local pickup.",
+                "Cash only, no trades.",
+                "Price is firm.",
+                "Price is negotiable.",
+                "No holds, first come first serve."
+            ])
+            
+            # Generate a link
+            link = f"https://www.facebook.com/marketplace/item/{listing_id}"
+            
+            # Generate an image URL
+            image_size = random.randint(300, 800)
+            image_url = f"https://via.placeholder.com/{image_size}?text={keyword.replace(' ', '+')}"
+            
+            # Create shipping options
+            shipping_available = random.choice([True, False])
+            local_pickup = True  # Always true for Facebook Marketplace
+            
+            # Create listing
+            listing = FacebookListing(
+                title=title,
+                price=price,
+                link=link,
+                image_url=image_url,
+                condition=condition,
+                location=location,
+                seller_name=seller_name,
+                posting_date=posting_date,
+                description=description,
+                listing_id=listing_id,
+                shipping_available=shipping_available,
+                local_pickup=local_pickup,
+                category=category,
+                source="Facebook Marketplace",
+                subcategory=keyword
+            )
+            
+            listings.append(listing)
         
-        # Generate a condition
-        condition = random.choice(condition_options)
-        
-        # Generate a seller name
-        first_names = ["John", "Jane", "Michael", "Sarah", "David", "Emily", "James", "Jessica", "Robert", "Jennifer"]
-        last_initials = ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "R", "S", "T", "W"]
-        seller_name = f"{random.choice(first_names)} {random.choice(last_initials)}."
-        
-        # Generate a listing ID
-        listing_id = f"fb-{random.randint(1000000000, 9999999999)}"
-        
-        # Generate a link
-        link = f"https://www.facebook.com/marketplace/item/{listing_id}"
-        
-        # Generate an image URL (placeholder)
-        image_url = f"https://placekitten.com/{random.randint(300, 800)}/{random.randint(300, 800)}"
-        
-        # Generate a description
-        descriptions = [
-            f"Selling my {brand} {model} {keyword}. {condition} condition.",
-            f"{condition} {brand} {model} for sale. No issues, works perfectly.",
-            f"Great deal on this {condition} {brand} {model}. Pickup only.",
-            f"{brand} {model} in {condition} condition. Must sell soon.",
-            f"Authentic {brand} {model} {keyword}. {condition} condition. No trades."
-        ]
-        description = random.choice(descriptions)
-        
-        # Determine shipping availability
-        shipping_available = random.random() > 0.5
-        
-        # Create the listing object
-        listing = FacebookListing(
-            title=title,
-            price=price,
-            link=link,
-            image_url=image_url,
-            condition=condition,
-            location=location,
-            seller_name=seller_name,
-            posting_date=posting_date,
-            description=description,
-            listing_id=listing_id,
-            shipping_available=shipping_available,
-            local_pickup=True,
-            category=category
-        )
-        
-        return listing
+        return listings
 
     async def search_subcategory(self, subcategory: str, max_keywords: int = 5, max_listings_per_keyword: int = 20) -> List[Dict[str, Any]]:
         """
@@ -471,7 +445,12 @@ class FacebookScraper:
             List[Dict[str, Any]]: List of found products
         """
         # Generate keywords for the subcategory
-        keywords = generate_keywords(subcategory, include_variations=True, max_keywords=max_keywords)
+        if keywords_available:
+            # Use generate_keywords from comprehensive_keywords
+            keywords = generate_keywords(subcategory, include_variations=True, max_keywords=max_keywords)
+        else:
+            # Fallback to simple approach
+            keywords = [subcategory]
         
         if not keywords:
             logger.warning(f"No keywords found for subcategory: {subcategory}")
@@ -515,47 +494,6 @@ class FacebookScraper:
                 continue
         
         logger.info(f"Found {len(all_listings)} total listings for subcategory: {subcategory}")
-        return all_listings
-    
-    async def search_all_keywords(self, subcategory: str) -> List[Dict[str, Any]]:
-        """Search ALL keywords from COMPREHENSIVE_KEYWORDS for a specific subcategory."""
-        all_listings = []
-        
-        # Get all keywords for this subcategory directly from COMPREHENSIVE_KEYWORDS
-        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
-            if subcategory in subcats:
-                all_keywords = subcats[subcategory]
-                logger.info(f"Found {len(all_keywords)} keywords for {subcategory}")
-                
-                # Search with all keywords
-                for i, keyword in enumerate(all_keywords):
-                    try:
-                        logger.info(f"Searching with keyword {i+1}/{len(all_keywords)}: {keyword}")
-                        
-                        # Search for low-priced items
-                        low_priced = await self.search_facebook_marketplace(
-                            keyword,
-                            sort="price_low_to_high",
-                            max_pages=2
-                        )
-                        
-                        # Add subcategory to each listing
-                        for listing in low_priced:
-                            listing.subcategory = subcategory
-                        
-                        all_listings.extend([listing.to_dict() for listing in low_priced])
-                        
-                        # Rate limiting
-                        if i < len(all_keywords) - 1:
-                            await asyncio.sleep(random.uniform(2.0, 3.0))
-                        
-                    except Exception as e:
-                        logger.error(f"Error searching Facebook for keyword '{keyword}': {str(e)}")
-                        continue
-                
-                break
-        
-        logger.info(f"Found total of {len(all_listings)} listings for {subcategory}")
         return all_listings
 
 async def run_facebook_search(subcategories: List[str]) -> List[Dict[str, Any]]:
