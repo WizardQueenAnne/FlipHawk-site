@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedSubcategories = [];
     let scanInProgress = false;
     let scanAborted = false;
+    let currentScanId = null;
+    let pollingInterval = null;
     
     // Initialize
     initEventListeners();
@@ -41,6 +43,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Abort scan if in progress
                 scanAborted = true;
                 searchButton.textContent = 'Cancelling...';
+                
+                // Stop polling
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+                
+                // Reset scan state
+                setTimeout(() => {
+                    scanInProgress = false;
+                    searchButton.textContent = 'Begin Resale Search';
+                    searchButton.classList.remove('loading');
+                    
+                    // Hide loading indicators
+                    loadingSpinner.style.display = 'none';
+                    progressContainer.style.display = 'none';
+                    scanStatus.style.display = 'none';
+                }, 1000);
+                
                 return;
             }
             
@@ -217,6 +238,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('No scan ID returned from server');
             }
             
+            // Store current scan ID
+            currentScanId = scanId;
+            
             // Start polling for progress
             pollScanProgress(scanId);
         })
@@ -247,13 +271,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Poll for scan progress
     function pollScanProgress(scanId) {
-        let pollCount = 0;
-        const maxPolls = 30; // Maximum number of polls (30 polls at 2 second intervals = 1 minute max)
+        // Clear any existing polling interval
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+        }
         
-        const pollInterval = setInterval(() => {
+        let pollCount = 0;
+        const maxPolls = 60; // Maximum number of polls (60 polls at 1 second intervals = 1 minute max)
+        
+        pollingInterval = setInterval(() => {
             // Check if scan has been aborted
             if (scanAborted) {
-                clearInterval(pollInterval);
+                clearInterval(pollingInterval);
+                pollingInterval = null;
                 
                 // Reset scan state
                 scanInProgress = false;
@@ -273,7 +303,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check if maximum polls reached
             if (pollCount > maxPolls) {
-                clearInterval(pollInterval);
+                clearInterval(pollingInterval);
+                pollingInterval = null;
                 
                 // Just get results anyway
                 fetchScanResults(scanId);
@@ -299,7 +330,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Check if scan is complete
                 if (progress >= 100 || ['completed', 'completed_no_results', 'failed'].includes(status)) {
-                    clearInterval(pollInterval);
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
                     
                     // Fetch the results
                     fetchScanResults(scanId);
@@ -330,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     scanStatus.textContent = 'Calculating profit margins...';
                 }
             });
-        }, 2000); // Poll every 2 seconds
+        }, 1000); // Poll every 1 second
     }
     
     // Fetch scan results
@@ -351,6 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reset scan state
             scanInProgress = false;
+            currentScanId = null;
             searchButton.textContent = 'Begin Resale Search';
             searchButton.classList.remove('loading');
             
@@ -369,6 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset scan state after a delay
             setTimeout(() => {
                 scanInProgress = false;
+                currentScanId = null;
                 searchButton.textContent = 'Begin Resale Search';
                 searchButton.classList.remove('loading');
                 
@@ -390,18 +424,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 message = 'Initializing scan...';
                 break;
             case 'searching marketplaces':
-                if (progress < 30) {
-                    message = 'Starting marketplace scrapers...';
-                } else if (progress < 50) {
-                    message = 'Searching Amazon marketplace...';
-                } else if (progress < 70) {
-                    message = 'Searching eBay marketplace...';
-                } else {
-                    message = 'Searching multiple marketplaces...';
-                }
+                message = 'Searching marketplaces...';
+                break;
+            case 'searching amazon':
+                message = 'Searching Amazon marketplace...';
+                break;
+            case 'searching ebay':
+                message = 'Searching eBay marketplace...';
+                break;
+            case 'searching facebook':
+                message = 'Searching Facebook marketplace...';
                 break;
             case 'processing results':
                 message = 'Processing results...';
+                break;
+            case 'finding opportunities':
+                message = 'Finding arbitrage opportunities...';
                 break;
             case 'completed':
                 message = 'Scan completed!';
@@ -465,66 +503,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = document.createElement('div');
             card.className = 'opportunity-card';
             
-            // Get image URL
-            const imageUrl = opportunity.buyImage || opportunity.image_url || '';
+            // Get image URL for the card
+            const imageUrl = opportunity.buyImage || opportunity.sellImage || '';
             
-            // Create image element if available
-            let imageHtml = '';
-            if (imageUrl) {
-                imageHtml = `<img src="${imageUrl}" alt="${opportunity.buyTitle}" style="width: 100%; height: auto; margin-bottom: 10px; border-radius: 4px;">`;
-            }
-            
-            // Format confidence for display
-            const confidence = opportunity.confidence || opportunity.similarity || 80;
-            
-            // Handle fees information
-            let marketplaceFee = 0;
-            let shippingFee = 0;
-            
-            if (opportunity.fees) {
-                marketplaceFee = opportunity.fees.marketplace || 0;
-                shippingFee = opportunity.fees.shipping || 0;
-            }
-            
-            card.innerHTML = `
-                <div class="card-header">
-                    <h3>${opportunity.buyTitle}</h3>
-                </div>
-                <div class="card-content">
-                    ${imageHtml}
-                    <div class="product-comparison">
-                        <div class="buy-info">
-                            <div class="marketplace">Buy on ${opportunity.buyMarketplace}</div>
-                            <div class="price">$${opportunity.buyPrice.toFixed(2)}</div>
-                            <span class="condition-badge condition-${opportunity.buyCondition.toLowerCase().replace(/\s+/g, '-')}">${opportunity.buyCondition}</span>
-                        </div>
-                        <div class="sell-info">
-                            <div class="marketplace">Sell on ${opportunity.sellMarketplace}</div>
-                            <div class="price">$${opportunity.sellPrice.toFixed(2)}</div>
-                            <span class="condition-badge condition-${opportunity.sellCondition.toLowerCase().replace(/\s+/g, '-')}">${opportunity.sellCondition}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="profit-details">
-                        <div class="profit">Profit: ${opportunity.profit.toFixed(2)}</div>
-                        <div class="profit-percentage">ROI: ${opportunity.profitPercentage.toFixed(2)}%</div>
-                        <div class="fees">
-                            Fees: ${marketplaceFee.toFixed(2)} • Shipping: ${shippingFee.toFixed(2)}
-                        </div>
-                    </div>
-                    
-                    <div class="confidence-meter">
-                        <div class="confidence-bar">
-                            <div class="confidence-fill" style="width: ${confidence}%"></div>
-                        </div>
-                        <div class="confidence-text">${confidence}% match</div>
-                    </div>
-                </div>
-                <div class="card-actions">
-                    <a href="${opportunity.buyLink}" target="_blank" class="btn btn-outline">View Buy</a>
-                    <a href="${opportunity.sellLink}" target="_blank" class="btn btn-secondary">View Sell</a>
-                </div>
-            `;
+            // Format the card content
+            card.innerHTML = createOpportunityCardHtml(opportunity, imageUrl);
             
             opportunitiesGrid.appendChild(card);
         });
@@ -533,6 +516,98 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Scroll to results
         resultsHeader.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // Helper function to create opportunity card HTML
+    function createOpportunityCardHtml(opportunity, imageUrl) {
+        // Get all necessary data with fallbacks for missing fields
+        const buyPrice = opportunity.buyPrice || 0;
+        const sellPrice = opportunity.sellPrice || 0;
+        const profit = opportunity.profit || (sellPrice - buyPrice);
+        const profitPercentage = opportunity.profitPercentage || ((profit / buyPrice) * 100);
+        const buyCondition = opportunity.buyCondition || 'Unknown';
+        const sellCondition = opportunity.sellCondition || 'Unknown';
+        const buyMarketplace = opportunity.buyMarketplace || 'Unknown';
+        const sellMarketplace = opportunity.sellMarketplace || 'Unknown';
+        const buyLink = opportunity.buyLink || '#';
+        const sellLink = opportunity.sellLink || '#';
+        const buyTitle = opportunity.buyTitle || 'Unknown Item';
+        const sellTitle = opportunity.sellTitle || 'Unknown Item';
+        
+        // Calculate fees
+        let marketplaceFee = 0;
+        let shippingFee = 0;
+        
+        if (opportunity.fees) {
+            marketplaceFee = opportunity.fees.marketplace || 0;
+            shippingFee = opportunity.fees.shipping || 0;
+        }
+        
+        // Calculate confidence
+        const confidence = opportunity.confidence || opportunity.similarity || 80;
+        
+        // Create image HTML if available
+        let imageHtml = '';
+        if (imageUrl) {
+            imageHtml = `<img src="${imageUrl}" alt="${buyTitle}" style="width: 100%; height: auto; max-height: 200px; object-fit: contain; margin-bottom: 10px; border-radius: 4px;">`;
+        }
+        
+        // Create buy condition and sell condition classes
+        const buyConditionClass = getConditionClass(buyCondition);
+        const sellConditionClass = getConditionClass(sellCondition);
+        
+        // Create the HTML
+        return `
+            <div class="card-header">
+                <h3>${buyTitle}</h3>
+            </div>
+            <div class="card-content">
+                ${imageHtml}
+                <div class="product-comparison">
+                    <div class="buy-info">
+                        <div class="marketplace">Buy on ${buyMarketplace}</div>
+                        <div class="price">$${buyPrice.toFixed(2)}</div>
+                        <span class="condition-badge ${buyConditionClass}">${buyCondition}</span>
+                    </div>
+                    <div class="sell-info">
+                        <div class="marketplace">Sell on ${sellMarketplace}</div>
+                        <div class="price">$${sellPrice.toFixed(2)}</div>
+                        <span class="condition-badge ${sellConditionClass}">${sellCondition}</span>
+                    </div>
+                </div>
+                
+                <div class="profit-details">
+                    <div class="profit">Profit: $${profit.toFixed(2)}</div>
+                    <div class="profit-percentage">ROI: ${profitPercentage.toFixed(2)}%</div>
+                    <div class="fees">
+                        Fees: $${marketplaceFee.toFixed(2)} • Shipping: $${shippingFee.toFixed(2)}
+                    </div>
+                </div>
+                
+                <div class="confidence-meter">
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${confidence}%"></div>
+                    </div>
+                    <div class="confidence-text">${confidence}% match</div>
+                </div>
+            </div>
+            <div class="card-actions">
+                <a href="${buyLink}" target="_blank" class="btn btn-outline">View Buy</a>
+                <a href="${sellLink}" target="_blank" class="btn btn-secondary">View Sell</a>
+            </div>
+        `;
+    }
+    
+    // Helper function to get condition class
+    function getConditionClass(condition) {
+        if (!condition) return '';
+        
+        condition = condition.toLowerCase();
+        if (condition.includes('new') || condition === 'mint' || condition === 'sealed') {
+            return 'condition-new';
+        } else {
+            return 'condition-used';
+        }
     }
     
     // Function to show toast notification
