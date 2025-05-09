@@ -11,7 +11,6 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import os
 from pathlib import Path
-import threading
 
 # Configure logging
 logging.basicConfig(
@@ -65,17 +64,6 @@ class ScanRequest(BaseModel):
 
 class CategoriesRequest(BaseModel):
     category: str = Field(..., description="Category to get subcategories for")
-
-# Global cache of running event loops
-event_loop_cache = {}
-
-# Function to get or create an event loop for a thread
-def get_or_create_eventloop():
-    thread_id = threading.get_ident()
-    if thread_id not in event_loop_cache:
-        loop = asyncio.new_event_loop()
-        event_loop_cache[thread_id] = loop
-    return event_loop_cache[thread_id]
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -246,34 +234,6 @@ async def scan_page(request: Request):
     
     # Return a very simple HTML if nothing else exists
     return HTMLResponse(content="<html><body><h1>Scan Page</h1><p>Please set up the scan.html file.</p></body></html>")
-
-# Serve JS files directly
-@app.get("/script.js")
-async def script_js():
-    """Serve the main script.js file"""
-    if os.path.exists("static/js/script.js"):
-        return FileResponse("static/js/script.js")
-    elif os.path.exists("script.js"):
-        return FileResponse("script.js")
-    return JSONResponse({"error": "script.js not found"}, status_code=404)
-
-@app.get("/scan.js")
-async def scan_js():
-    """Serve the scan.js file"""
-    if os.path.exists("static/js/scan.js"):
-        return FileResponse("static/js/scan.js")
-    elif os.path.exists("scan.js"):
-        return FileResponse("scan.js")
-    return JSONResponse({"error": "scan.js not found"}, status_code=404)
-
-@app.get("/styles.css")
-async def styles_css():
-    """Serve the styles.css file"""
-    if os.path.exists("static/css/styles.css"):
-        return FileResponse("static/css/styles.css")
-    elif os.path.exists("styles.css"):
-        return FileResponse("styles.css")
-    return JSONResponse({"error": "styles.css not found"}, status_code=404)
 
 # Favicon handler
 @app.get("/favicon.ico", include_in_schema=False)
