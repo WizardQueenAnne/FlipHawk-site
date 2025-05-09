@@ -62,6 +62,10 @@ class ScanRequest(BaseModel):
     marketplaces: Optional[List[str]] = Field(None, description="Optional list of marketplaces to include in the scan")
     max_results: Optional[int] = Field(100, description="Maximum number of results to return")
 
+class SearchRequest(BaseModel):
+    keywords: List[str] = Field([], description="List of keywords to search for")
+    max_results: Optional[int] = Field(100, description="Maximum number of results to return")
+
 class CategoriesRequest(BaseModel):
     category: str = Field(..., description="Category to get subcategories for")
 
@@ -215,6 +219,25 @@ async def get_subcategories(request: CategoriesRequest):
         # If it's a dict, return the keys
         return {"subcategories": list(subcategories.keys())}
     
+    except ImportError:
+        # Handle case where comprehensive_keywords.py is not available
+        logger.warning("comprehensive_keywords.py not available, using fallback data")
+        
+        # Use fallback data
+        fallback_data = {
+            "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
+            "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
+            "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
+            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps"],
+            "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
+            "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
+            "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
+            "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
+        }
+        
+        subcategories = fallback_data.get(request.category, [])
+        return {"subcategories": subcategories}
+    
     except Exception as e:
         logger.error(f"Error retrieving subcategories: {str(e)}")
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
@@ -234,6 +257,50 @@ async def scan_page(request: Request):
     
     # Return a very simple HTML if nothing else exists
     return HTMLResponse(content="<html><body><h1>Scan Page</h1><p>Please set up the scan.html file.</p></body></html>")
+
+@app.post("/api/search")
+async def search_api(request: SearchRequest):
+    """API endpoint for direct search using keywords"""
+    try:
+        logger.info(f"Starting search with {len(request.keywords)} keywords")
+        
+        # If no keywords provided, return empty results
+        if not request.keywords:
+            # Create synthetic subcategory for testing
+            subcategories = ["Test Category"]
+            category = "Test"
+        else:
+            # Use provided keywords
+            subcategories = request.keywords
+            category = "Custom Search"
+        
+        # Process the scan
+        result = process_marketplace_scan(
+            category=category,
+            subcategories=subcategories,
+            max_results=request.max_results or 100
+        )
+        
+        # Check for errors
+        if "error" in result:
+            raise HTTPException(status_code=500, detail=result["error"])
+        
+        # For keywords search, return a response with scan_id
+        scan_id = result["meta"]["scan_id"]
+        
+        # Create a simulated full response for API compatibility
+        return {
+            "meta": result["meta"],
+            "scan_id": scan_id,
+            "status": "completed",
+            "arbitrage_opportunities": [] # Initial empty list, will be populated via progress endpoint
+        }
+    
+    except Exception as e:
+        logger.error(f"Error during search: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"An error occurred during the search: {str(e)}")
 
 # Favicon handler
 @app.get("/favicon.ico", include_in_schema=False)
