@@ -1,6 +1,6 @@
 # marketplace_bridge.py
 """
-FlipHawk Marketplace Bridge
+FlipHawk - Marketplace Bridge
 Connects the frontend API with backend scrapers to perform marketplace scans
 """
 
@@ -45,14 +45,13 @@ except ImportError:
     mercari_available = False
     logger.warning("Mercari scraper not available")
 
-# Try to import marketplace_scanner which handles arbitrage calculations
 try:
-    from marketplace_scanner import run_arbitrage_scan
-    scanner_available = True
-    logger.info("Marketplace scanner available")
+    from facebook_scraper import run_facebook_search
+    facebook_available = True
+    logger.info("Facebook scraper available")
 except ImportError:
-    scanner_available = False
-    logger.warning("Marketplace scanner not available, arbitrage calculations may be limited")
+    facebook_available = False
+    logger.warning("Facebook scraper not available")
 
 class ScanManager:
     """Manages scan requests and tracks their progress."""
@@ -63,6 +62,7 @@ class ScanManager:
         self.results = {}
         self.active_scans = 0
         self.loop = None
+        self.scan_tasks = {}
     
     def get_event_loop(self):
         """Get or create an event loop."""
@@ -188,10 +188,27 @@ class ScanManager:
             self.results[scan_id]['meta']['found_subcategories'] = list(subcategories)
             
             logger.info(f"Stored {len(opportunities)} opportunities for scan {scan_id}")
+    
+    def cancel_scan(self, scan_id: str):
+        """
+        Cancel an active scan.
+        
+        Args:
+            scan_id: The scan ID
+        """
+        if scan_id in self.scan_tasks:
+            task = self.scan_tasks[scan_id]
+            if not task.done():
+                task.cancel()
+            del self.scan_tasks[scan_id]
+        
+        if scan_id in self.scans:
+            self.update_scan_progress(scan_id, 100, 'cancelled')
 
 # Create a global scan manager instance
 scan_manager = ScanManager()
 
+# marketplace_bridge.py (continued)
 def process_marketplace_scan(category: str, subcategories: List[str], max_results: int = 100) -> Dict[str, Any]:
     """
     Process a marketplace scan request.
@@ -210,11 +227,14 @@ def process_marketplace_scan(category: str, subcategories: List[str], max_result
         # Initialize the scan
         scan_id = scan_manager.initialize_scan(category, subcategories)
         
+        # Get keywords for subcategories
+        keywords = get_keywords_for_subcategories(subcategories)
+        logger.info(f"Found {len(keywords)} keywords for selected subcategories")
+        
         # Start the scan in a background task
         loop = scan_manager.get_event_loop()
-        
-        # Run in executor to avoid blocking
-        task = loop.run_in_executor(None, lambda: execute_scan_task(scan_id, category, subcategories, max_results))
+        task = loop.create_task(execute_scan_task(scan_id, category, subcategories, max_results))
+        scan_manager.scan_tasks[scan_id] = task
         
         # Return initial response with scan ID
         return {
@@ -235,7 +255,7 @@ def process_marketplace_scan(category: str, subcategories: List[str], max_result
             'details': traceback.format_exc()
         }
 
-def execute_scan_task(scan_id: str, category: str, subcategories: List[str], max_results: int):
+async def execute_scan_task(scan_id: str, category: str, subcategories: List[str], max_results: int):
     """
     Execute the scan task in the background.
     
@@ -249,35 +269,13 @@ def execute_scan_task(scan_id: str, category: str, subcategories: List[str], max
         # Update progress
         scan_manager.update_scan_progress(scan_id, 5, 'searching marketplaces')
         
-        # Get results using marketplace_scanner if available, otherwise run scrapers directly
-        if scanner_available:
-            # Using the centralized arbitrage scan
-            logger.info(f"Running centralized arbitrage scan for subcategories: {subcategories}")
-            
-            # Get event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            # Run the arbitrage scan
-            opportunities = loop.run_until_complete(run_arbitrage_scan(subcategories))
-            
-            scan_manager.update_scan_progress(scan_id, 95, 'processing results')
-            
-        else:
-            # Run scrapers directly and find opportunities
-            logger.info(f"Running individual scrapers for subcategories: {subcategories}")
-            
-            # Get event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            # Run the scan
-            listings = loop.run_until_complete(_execute_scan(subcategories))
-            
-            scan_manager.update_scan_progress(scan_id, 80, 'finding opportunities')
-            
-            # Find opportunities
-            opportunities = _find_opportunities(listings)
+        # Get all listings from marketplaces
+        all_listings = await _execute_scan(subcategories)
+        
+        scan_manager.update_scan_progress(scan_id, 80, 'finding opportunities')
+        
+        # Find opportunities
+        opportunities = _find_opportunities(all_listings)
         
         # Limit the number of results
         if max_results > 0 and len(opportunities) > max_results:
@@ -288,6 +286,9 @@ def execute_scan_task(scan_id: str, category: str, subcategories: List[str], max
         
         logger.info(f"Scan task completed successfully for scan {scan_id}, found {len(opportunities)} opportunities")
         
+    except asyncio.CancelledError:
+        logger.info(f"Scan {scan_id} was cancelled")
+        scan_manager.update_scan_progress(scan_id, 100, 'cancelled')
     except Exception as e:
         logger.error(f"Error executing scan task: {str(e)}")
         logger.error(traceback.format_exc())
@@ -301,7 +302,7 @@ async def _execute_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
         subcategories: List of subcategories to scan
         
     Returns:
-        List[Dict[str, Any]]: List of arbitrage opportunities
+        List[Dict[str, Any]]: List of listings from all marketplaces
     """
     try:
         logger.info(f"Executing marketplace scan for subcategories: {subcategories}")
@@ -323,6 +324,11 @@ async def _execute_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
         if mercari_available:
             logger.info("Adding Mercari scraper to tasks")
             tasks.append(asyncio.ensure_future(run_mercari_search(subcategories)))
+        
+        # Add Facebook scraper
+        if facebook_available:
+            logger.info("Adding Facebook scraper to tasks")
+            tasks.append(asyncio.ensure_future(run_facebook_search(subcategories)))
         
         # If no tasks were created, use a fallback method
         if not tasks:
