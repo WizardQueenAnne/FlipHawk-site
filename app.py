@@ -1,23 +1,22 @@
 # app.py
 """
 FlipHawk - Marketplace Arbitrage Application
-Main application entry point - Simplified for direct scraper execution
+Main application entry point with fixed API endpoints for direct scraper execution
 """
 
 import asyncio
 import logging
 import os
-from typing import List, Dict, Any
+import uuid
+import time
+from typing import List, Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime
 import traceback
-import threading
-import random
-import time
 import json
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -33,30 +32,14 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Try to import scrapers
+# Import bridge to scrapers
 try:
-    from amazon_scraper import run_amazon_search
-    amazon_available = True
-    logger.info("Amazon scraper available")
+    from marketplace_bridge import process_marketplace_scan, scan_manager
+    bridge_available = True
+    logger.info("Marketplace bridge available")
 except ImportError:
-    amazon_available = False
-    logger.warning("Amazon scraper not available")
-
-try:
-    from ebay_scraper import run_ebay_search
-    ebay_available = True
-    logger.info("eBay scraper available")
-except ImportError:
-    ebay_available = False
-    logger.warning("eBay scraper not available")
-
-try:
-    from facebook_scraper import run_facebook_search
-    facebook_available = True
-    logger.info("Facebook scraper available")
-except ImportError:
-    facebook_available = False
-    logger.warning("Facebook scraper not available")
+    bridge_available = False
+    logger.warning("Marketplace bridge not available, using fallback")
 
 # Initialize the app
 app = FastAPI(title="FlipHawk - Marketplace Arbitrage")
@@ -83,9 +66,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Pydantic model for scan request
 class ScanRequest(BaseModel):
     subcategories: List[str] = Field(..., description="Subcategories to scan")
-    category: str = Field("Tech", description="Main category") 
+    category: str = Field(..., description="Main category") 
+    max_results: int = Field(100, description="Maximum number of results to return")
 
-# Active scans storage
+# Active scans storage as a fallback
 active_scans = {}
 
 # Fallback subcategories data
@@ -100,84 +84,334 @@ fallback_categories = {
     "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
 }
 
-# Main scraping function
-async def run_scrapers(scan_id, subcategories):
-    """Run scrapers for subcategories and store results"""
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """Root endpoint - returns index.html or simple HTML"""
+    if os.path.exists("index.html"):
+        with open("index.html", "r") as f:
+            return HTMLResponse(content=f.read())
+    
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>FlipHawk</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    background-color: #F9E8C7;
+                    color: #2D1E0F;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                }
+                h1 {
+                    color: #D16B34;
+                }
+                .cta {
+                    display: inline-block;
+                    background-color: #D16B34;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>FlipHawk - Marketplace Arbitrage</h1>
+                <p>Welcome to FlipHawk! The API is running successfully.</p>
+                <p>To access the scan page, visit <a href="/scan">/scan</a>.</p>
+                <a href="/scan" class="cta">Start Scanning</a>
+            </div>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+@app.get("/scan", response_class=HTMLResponse)
+async def scan_page():
+    """Scan page"""
+    if os.path.exists("scan.html"):
+        with open("scan.html", "r") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<html><body><h1>Scan Page</h1><p>Please create scan.html file</p></body></html>")
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
+@app.get("/api/categories")
+async def get_categories():
+    """Get available categories"""
+    # Try to import comprehensive_keywords
     try:
-        # Initialize results
+        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
+        return {"categories": list(COMPREHENSIVE_KEYWORDS.keys())}
+    except ImportError:
+        # Use fallback
+        return {"categories": list(fallback_categories.keys())}
+
+@app.get("/api/categories/{category}/subcategories")
+async def get_subcategories(category: str):
+    """Get subcategories for a category"""
+    # Try to import comprehensive_keywords
+    try:
+        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
+        if category in COMPREHENSIVE_KEYWORDS:
+            subcats = COMPREHENSIVE_KEYWORDS[category]
+            if isinstance(subcats, dict):
+                return {"subcategories": list(subcats.keys())}
+            return {"subcategories": list(subcats)}
+    except ImportError:
+        pass
+        
+    # Use fallback
+    if category in fallback_categories:
+        return {"subcategories": fallback_categories[category]}
+    return {"subcategories": []}
+
+@app.post("/api/categories/subcategories")
+async def get_subcategories_post(data: dict):
+    """Get subcategories for a category (POST method)"""
+    category = data.get("category", "")
+    if not category:
+        return {"subcategories": []}
+    
+    # Try to import comprehensive_keywords
+    try:
+        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
+        if category in COMPREHENSIVE_KEYWORDS:
+            subcats = COMPREHENSIVE_KEYWORDS[category]
+            if isinstance(subcats, dict):
+                return {"subcategories": list(subcats.keys())}
+            return {"subcategories": list(subcats)}
+    except ImportError:
+        pass
+        
+    # Use fallback
+    if category in fallback_categories:
+        return {"subcategories": fallback_categories[category]}
+    return {"subcategories": []}
+
+@app.post("/api/scan")
+async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):
+    """Start a new scan"""
+    try:
+        # Validate request
+        if not request.subcategories:
+            return JSONResponse(status_code=400, content={"error": "No subcategories provided"})
+            
+        logger.info(f"Starting scan for category: {request.category}, subcategories: {request.subcategories}")
+        
+        # Use marketplace_bridge if available, otherwise use fallback
+        if bridge_available:
+            # Process scan using the bridge
+            result = process_marketplace_scan(
+                request.category, 
+                request.subcategories, 
+                request.max_results
+            )
+            return result
+        else:
+            # Fallback logic for direct method without bridge
+            # Generate scan ID
+            scan_id = f"scan_{uuid.uuid4()}"
+            
+            # Initialize scan info
+            active_scans[scan_id] = {
+                "subcategories": request.subcategories,
+                "category": request.category,
+                "status": "initializing",
+                "progress": 0,
+                "start_time": datetime.now().isoformat(),
+                "results": []
+            }
+            
+            # Start scan in background
+            background_tasks.add_task(run_scan_without_bridge, scan_id, request.subcategories, request.category)
+            
+            # Return scan ID
+            return {
+                "meta": {
+                    "scan_id": scan_id,
+                    "message": "Scan started",
+                    "status": "initializing",
+                    "category": request.category,
+                    "subcategories": request.subcategories
+                }
+            }
+        
+    except Exception as e:
+        logger.error(f"Error starting scan: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/progress/{scan_id}")
+async def get_scan_progress(scan_id: str):
+    """Get the progress of a scan"""
+    try:
+        # Use marketplace_bridge if available
+        if bridge_available:
+            scan_info = scan_manager.get_scan_info(scan_id)
+            if not scan_info:
+                return JSONResponse(status_code=404, content={"error": "Scan not found"})
+            
+            return {
+                "scan_id": scan_id,
+                "status": scan_info.get("status", "unknown"),
+                "progress": scan_info.get("progress", 0)
+            }
+        else:
+            # Fallback to direct method
+            if scan_id not in active_scans:
+                return JSONResponse(status_code=404, content={"error": "Scan not found"})
+                
+            scan_data = active_scans[scan_id]
+            
+            return {
+                "scan_id": scan_id,
+                "status": scan_data.get("status", "unknown"),
+                "progress": scan_data.get("progress", 0)
+            }
+    except Exception as e:
+        logger.error(f"Error getting scan progress: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/scan/{scan_id}")
+async def get_scan_results(scan_id: str):
+    """Get the results of a scan"""
+    try:
+        # Use marketplace_bridge if available
+        if bridge_available:
+            results = scan_manager.get_formatted_results(scan_id)
+            if "error" in results:
+                return JSONResponse(status_code=404, content={"error": results["error"]})
+            
+            return results
+        else:
+            # Fallback to direct method
+            if scan_id not in active_scans:
+                return JSONResponse(status_code=404, content={"error": "Scan not found"})
+                
+            scan_data = active_scans[scan_id]
+            
+            return {
+                "scan_id": scan_id,
+                "status": scan_data.get("status", "unknown"),
+                "progress": scan_data.get("progress", 0),
+                "category": scan_data.get("category", ""),
+                "subcategories": scan_data.get("subcategories", []),
+                "arbitrage_opportunities": scan_data.get("results", [])
+            }
+    except Exception as e:
+        logger.error(f"Error getting scan results: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/scan/{scan_id}/results")
+async def get_scan_results_alt(scan_id: str):
+    """Alternative endpoint for scan results (for compatibility)"""
+    return await get_scan_results(scan_id)
+
+# Fallback function for running scans without bridge
+async def run_scan_without_bridge(scan_id: str, subcategories: List[str], category: str):
+    """Run scan without using marketplace_bridge"""
+    try:
+        # Update progress
         active_scans[scan_id]["status"] = "running"
         active_scans[scan_id]["progress"] = 5
-        active_scans[scan_id]["results"] = []
         
-        # Create event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # Import and run scrapers directly
+        success = False
+        all_listings = []
         
-        # Create tasks for available scrapers
-        tasks = []
-        scrapers_count = 0
-        
-        if amazon_available:
-            tasks.append(run_amazon_search(subcategories))
-            scrapers_count += 1
+        # Import scrapers at runtime to avoid circular imports
+        try:
+            from amazon_scraper import run_amazon_search
+            logger.info("Running Amazon scraper...")
             
-        if ebay_available:
-            tasks.append(run_ebay_search(subcategories))
-            scrapers_count += 1
+            # Create event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             
-        if facebook_available:
-            tasks.append(run_facebook_search(subcategories))
-            scrapers_count += 1
+            # Update progress
+            active_scans[scan_id]["progress"] = 20
+            active_scans[scan_id]["status"] = "searching amazon"
+            
+            # Run Amazon scraper
+            amazon_results = await run_amazon_search(subcategories)
+            all_listings.extend(amazon_results)
+            success = True
+            
+            # Update progress
+            active_scans[scan_id]["progress"] = 40
+        except ImportError:
+            logger.warning("Amazon scraper not available")
+        except Exception as e:
+            logger.error(f"Error running Amazon scraper: {str(e)}")
         
-        # If no scrapers available, use dummy data
-        if not tasks:
-            logger.warning("No scrapers available, using dummy data")
+        try:
+            from ebay_scraper import run_ebay_search
+            logger.info("Running eBay scraper...")
+            
+            # Create event loop if needed
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Update progress
+            active_scans[scan_id]["progress"] = 50
+            active_scans[scan_id]["status"] = "searching ebay"
+            
+            # Run eBay scraper
+            ebay_results = await run_ebay_search(subcategories)
+            all_listings.extend(ebay_results)
+            success = True
+            
+            # Update progress
+            active_scans[scan_id]["progress"] = 70
+        except ImportError:
+            logger.warning("eBay scraper not available")
+        except Exception as e:
+            logger.error(f"Error running eBay scraper: {str(e)}")
+        
+        # If both scrapers failed, generate dummy data
+        if not success:
+            logger.warning("All scrapers failed, generating dummy data")
             active_scans[scan_id]["results"] = generate_dummy_results(subcategories)
             active_scans[scan_id]["status"] = "completed"
             active_scans[scan_id]["progress"] = 100
             return
-            
-        # Update progress
-        active_scans[scan_id]["progress"] = 10
-        
-        # Run tasks
-        all_listings = []
-        
-        # Execute scrapers one by one to show progress
-        for i, task in enumerate(tasks):
-            try:
-                # Update status
-                active_scans[scan_id]["status"] = f"Running scraper {i+1}/{len(tasks)}"
-                
-                # Run scraper
-                scraper_results = await task
-                all_listings.extend(scraper_results)
-                
-                # Update progress after each scraper
-                progress = 10 + ((i + 1) * 60) // len(tasks)
-                active_scans[scan_id]["progress"] = progress
-                
-            except Exception as e:
-                logger.error(f"Error running scraper {i+1}: {str(e)}")
-                traceback.print_exc()
         
         # Find arbitrage opportunities
-        active_scans[scan_id]["status"] = "Finding opportunities"
-        active_scans[scan_id]["progress"] = 80
+        active_scans[scan_id]["status"] = "finding opportunities"
+        active_scans[scan_id]["progress"] = 85
         
-        # Process results
+        # Use helper function to find opportunities
         opportunities = find_arbitrage_opportunities(all_listings)
         
-        # Store results
+        # Update scan results
         active_scans[scan_id]["results"] = opportunities
         active_scans[scan_id]["status"] = "completed"
         active_scans[scan_id]["progress"] = 100
         
         logger.info(f"Scan {scan_id} completed with {len(opportunities)} opportunities")
-        
+    
     except Exception as e:
         logger.error(f"Error in scan {scan_id}: {str(e)}")
-        traceback.print_exc()
+        logger.error(traceback.format_exc())
         active_scans[scan_id]["status"] = "error"
         active_scans[scan_id]["error"] = str(e)
         active_scans[scan_id]["progress"] = 100
@@ -301,6 +535,8 @@ def calculate_title_similarity(title1, title2):
 
 def generate_dummy_results(subcategories):
     """Generate dummy results for testing"""
+    import random
+    
     opportunities = []
     marketplaces = ["Amazon", "eBay", "Facebook Marketplace"]
     
@@ -361,166 +597,6 @@ def generate_dummy_results(subcategories):
             opportunities.append(opportunity)
     
     return opportunities
-
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    """Root endpoint - returns index.html or simple HTML"""
-    if os.path.exists("index.html"):
-        with open("index.html", "r") as f:
-            return HTMLResponse(content=f.read())
-    
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-        <head>
-            <title>FlipHawk</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 20px;
-                    background-color: #F9E8C7;
-                    color: #2D1E0F;
-                }
-                .container {
-                    max-width: 800px;
-                    margin: 0 auto;
-                    background-color: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                }
-                h1 {
-                    color: #D16B34;
-                }
-                .cta {
-                    display: inline-block;
-                    background-color: #D16B34;
-                    color: white;
-                    padding: 10px 20px;
-                    border-radius: 4px;
-                    text-decoration: none;
-                    margin-top: 20px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>FlipHawk - Marketplace Arbitrage</h1>
-                <p>Welcome to FlipHawk! The API is running successfully.</p>
-                <p>To access the scan page, visit <a href="/scan">/scan</a>.</p>
-                <a href="/scan" class="cta">Start Scanning</a>
-            </div>
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
-
-@app.get("/scan", response_class=HTMLResponse)
-async def scan_page():
-    """Scan page"""
-    if os.path.exists("scan.html"):
-        with open("scan.html", "r") as f:
-            return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<html><body><h1>Scan Page</h1><p>Please create scan.html file</p></body></html>")
-
-@app.post("/api/scan")
-async def start_scan(request: ScanRequest):
-    """Start a new scan"""
-    try:
-        # Validate request
-        if not request.subcategories:
-            return {"error": "No subcategories provided"}
-            
-        # Generate scan ID
-        scan_id = f"scan_{int(time.time())}"
-        
-        # Store scan info
-        active_scans[scan_id] = {
-            "subcategories": request.subcategories,
-            "category": request.category,
-            "status": "initializing",
-            "progress": 0,
-            "start_time": datetime.now().isoformat(),
-            "results": []
-        }
-        
-        # Start scrapers in background
-        threading.Thread(
-            target=lambda: asyncio.run(run_scrapers(scan_id, request.subcategories)),
-            daemon=True
-        ).start()
-        
-        # Return scan ID
-        return {
-            "scan_id": scan_id,
-            "status": "started",
-            "message": "Scan started successfully"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error starting scan: {str(e)}")
-        traceback.print_exc()
-        return {"error": str(e)}
-
-@app.get("/api/scan/{scan_id}/progress")
-async def get_scan_progress(scan_id: str):
-    """Get scan progress"""
-    if scan_id not in active_scans:
-        return {"error": "Scan not found"}
-        
-    return {
-        "scan_id": scan_id,
-        "status": active_scans[scan_id]["status"],
-        "progress": active_scans[scan_id]["progress"]
-    }
-
-@app.get("/api/scan/{scan_id}/results")
-async def get_scan_results(scan_id: str):
-    """Get scan results"""
-    if scan_id not in active_scans:
-        return {"error": "Scan not found"}
-        
-    scan_data = active_scans[scan_id]
-    
-    return {
-        "scan_id": scan_id,
-        "status": scan_data["status"],
-        "progress": scan_data["progress"],
-        "category": scan_data["category"],
-        "subcategories": scan_data["subcategories"],
-        "results": scan_data["results"]
-    }
-
-@app.get("/api/categories")
-async def get_categories():
-    """Get available categories"""
-    # Try to import comprehensive_keywords
-    try:
-        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
-        return {"categories": list(COMPREHENSIVE_KEYWORDS.keys())}
-    except ImportError:
-        # Use fallback
-        return {"categories": list(fallback_categories.keys())}
-
-@app.get("/api/categories/{category}/subcategories")
-async def get_subcategories(category: str):
-    """Get subcategories for a category"""
-    # Try to import comprehensive_keywords
-    try:
-        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
-        if category in COMPREHENSIVE_KEYWORDS:
-            subcats = COMPREHENSIVE_KEYWORDS[category]
-            if isinstance(subcats, dict):
-                return {"subcategories": list(subcats.keys())}
-            return {"subcategories": list(subcats)}
-    except ImportError:
-        pass
-        
-    # Use fallback
-    if category in fallback_categories:
-        return {"subcategories": fallback_categories[category]}
-    return {"subcategories": []}
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
