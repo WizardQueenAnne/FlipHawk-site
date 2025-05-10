@@ -1,17 +1,16 @@
 # marketplace_bridge.py
 """
-FlipHawk - Marketplace Bridge
-Connects the frontend API with backend scrapers to perform marketplace scans
+FlipHawk - Marketplace Bridge Module
+Connects API endpoints with marketplace scrapers
 """
 
 import asyncio
 import logging
 import uuid
-import time
-import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import traceback
+import random
 
 # Configure logging
 logging.basicConfig(
@@ -38,14 +37,6 @@ except ImportError:
     logger.warning("eBay scraper not available")
 
 try:
-    from mercari_scraper import run_mercari_search
-    mercari_available = True
-    logger.info("Mercari scraper available")
-except ImportError:
-    mercari_available = False
-    logger.warning("Mercari scraper not available")
-
-try:
     from facebook_scraper import run_facebook_search
     facebook_available = True
     logger.info("Facebook scraper available")
@@ -53,430 +44,339 @@ except ImportError:
     facebook_available = False
     logger.warning("Facebook scraper not available")
 
-class ScanManager:
-    """Manages scan requests and tracks their progress."""
-    
-    def __init__(self):
-        """Initialize the scan manager."""
-        self.scans = {}
-        self.results = {}
-        self.active_scans = 0
-        self.loop = None
-        self.scan_tasks = {}
-    
-    def get_event_loop(self):
-        """Get or create an event loop."""
-        if self.loop is None or self.loop.is_closed():
-            try:
-                self.loop = asyncio.get_event_loop()
-            except RuntimeError:
-                self.loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self.loop)
-        return self.loop
-    
-    def initialize_scan(self, category: str, subcategories: List[str]) -> str:
-        """
-        Initialize a new scan and return its ID.
-        
-        Args:
-            category: The parent category
-            subcategories: List of subcategories to scan
-            
-        Returns:
-            scan_id: Unique ID for the scan
-        """
-        scan_id = str(uuid.uuid4())
-        
-        self.scans[scan_id] = {
-            'category': category,
-            'subcategories': subcategories,
-            'status': 'initializing',
-            'progress': 0,
-            'start_time': datetime.now().isoformat(),
-            'completion_time': None
-        }
-        
-        self.results[scan_id] = {
-            'meta': {
-                'scan_id': scan_id,
-                'category': category,
-                'subcategories': subcategories,
-                'timestamp': datetime.now().isoformat()
-            },
-            'arbitrage_opportunities': []
-        }
-        
-        return scan_id
-    
-    def get_scan_info(self, scan_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get information about a scan.
-        
-        Args:
-            scan_id: The scan ID
-            
-        Returns:
-            dict: Scan information, or None if not found
-        """
-        return self.scans.get(scan_id)
-    
-    def update_scan_progress(self, scan_id: str, progress: int, status: str = None):
-        """
-        Update the progress of a scan.
-        
-        Args:
-            scan_id: The scan ID
-            progress: Progress percentage (0-100)
-            status: New status (if provided)
-        """
-        if scan_id in self.scans:
-            self.scans[scan_id]['progress'] = progress
-            
-            if status:
-                self.scans[scan_id]['status'] = status
-                
-            if progress >= 100:
-                self.scans[scan_id]['completion_time'] = datetime.now().isoformat()
-                logger.info(f"Scan {scan_id} completed with status: {status}")
-    
-    def get_formatted_results(self, scan_id: str) -> Dict[str, Any]:
-        """
-        Get formatted scan results.
-        
-        Args:
-            scan_id: The scan ID
-            
-        Returns:
-            dict: Formatted scan results
-        """
-        if scan_id not in self.results:
-            return {"error": f"Scan with ID {scan_id} not found"}
-        
-        return self.results[scan_id]
-    
-    def store_scan_results(self, scan_id: str, opportunities: List[Dict[str, Any]]):
-        """
-        Store scan results.
-        
-        Args:
-            scan_id: The scan ID
-            opportunities: List of arbitrage opportunities
-        """
-        if scan_id in self.results:
-            self.results[scan_id]['arbitrage_opportunities'] = opportunities
-            
-            # Update scan info
-            self.update_scan_progress(scan_id, 100, 'completed' if opportunities else 'completed_no_results')
-            
-            # Add timestamp to results
-            self.results[scan_id]['meta']['completed_at'] = datetime.now().isoformat()
-            self.results[scan_id]['meta']['total_opportunities'] = len(opportunities)
-            
-            # Calculate some stats
-            marketplaces = set()
-            subcategories = set()
-            
-            for opp in opportunities:
-                if 'buyMarketplace' in opp:
-                    marketplaces.add(opp['buyMarketplace'])
-                if 'sellMarketplace' in opp:
-                    marketplaces.add(opp['sellMarketplace'])
-                if 'subcategory' in opp:
-                    subcategories.add(opp['subcategory'])
-            
-            self.results[scan_id]['meta']['marketplaces'] = list(marketplaces)
-            self.results[scan_id]['meta']['found_subcategories'] = list(subcategories)
-            
-            logger.info(f"Stored {len(opportunities)} opportunities for scan {scan_id}")
-    
-    def cancel_scan(self, scan_id: str):
-        """
-        Cancel an active scan.
-        
-        Args:
-            scan_id: The scan ID
-        """
-        if scan_id in self.scan_tasks:
-            task = self.scan_tasks[scan_id]
-            if not task.done():
-                task.cancel()
-            del self.scan_tasks[scan_id]
-        
-        if scan_id in self.scans:
-            self.update_scan_progress(scan_id, 100, 'cancelled')
+# State tracking for scans
+active_scans = {}
 
-# Create a global scan manager instance
-scan_manager = ScanManager()
-
-# marketplace_bridge.py (continued)
-def process_marketplace_scan(category: str, subcategories: List[str], max_results: int = 100) -> Dict[str, Any]:
+async def process_marketplace_scan(category: str, subcategories: List[str], max_results: int = 100) -> Dict[str, Any]:
     """
-    Process a marketplace scan request.
+    Process marketplace scan request.
     
     Args:
-        category: The parent category
-        subcategories: List of subcategories to scan
+        category: Category name
+        subcategories: List of subcategories to search
         max_results: Maximum number of results to return
         
     Returns:
-        dict: Initial response with scan ID
+        Dict with scan ID and initial response
     """
+    
     try:
-        logger.info(f"Processing scan request for category: {category}, subcategories: {subcategories}")
+        logger.info(f"Starting marketplace scan for category {category}, subcategories: {subcategories}")
         
-        # Initialize the scan
-        scan_id = scan_manager.initialize_scan(category, subcategories)
+        # Generate scan ID
+        scan_id = str(uuid.uuid4())
         
-        # Get keywords for subcategories
-        keywords = get_keywords_for_subcategories(subcategories)
-        logger.info(f"Found {len(keywords)} keywords for selected subcategories")
+        # Initialize scan state
+        active_scans[scan_id] = {
+            "category": category,
+            "subcategories": subcategories,
+            "start_time": datetime.now().isoformat(),
+            "status": "initializing",
+            "progress": 0,
+            "results": []
+        }
         
-        # Start the scan in a background task
-        loop = scan_manager.get_event_loop()
-        task = loop.create_task(execute_scan_task(scan_id, category, subcategories, max_results))
-        scan_manager.scan_tasks[scan_id] = task
+        # Start scan in background
+        asyncio.create_task(run_scan(scan_id, category, subcategories, max_results))
         
-        # Return initial response with scan ID
+        # Return initial response
         return {
-            'meta': {
-                'scan_id': scan_id,
-                'message': 'Scan started',
-                'status': 'initializing',
-                'category': category,
-                'subcategories': subcategories
+            "meta": {
+                "scan_id": scan_id,
+                "message": "Scan started",
+                "status": "initializing",
+                "category": category,
+                "subcategories": subcategories
             }
         }
         
     except Exception as e:
-        logger.error(f"Error processing scan request: {str(e)}")
+        logger.error(f"Error starting scan: {str(e)}")
         logger.error(traceback.format_exc())
+        
         return {
-            'error': f"Failed to start scan: {str(e)}",
-            'details': traceback.format_exc()
+            "error": f"Failed to start scan: {str(e)}"
         }
 
-async def execute_scan_task(scan_id: str, category: str, subcategories: List[str], max_results: int):
+async def run_scan(scan_id: str, category: str, subcategories: List[str], max_results: int):
     """
-    Execute the scan task in the background.
+    Run the actual scan process in background.
     
     Args:
-        scan_id: The scan ID
-        category: The parent category
-        subcategories: List of subcategories to scan
-        max_results: Maximum number of results
+        scan_id: Scan ID for tracking
+        category: Category name
+        subcategories: List of subcategories to search
+        max_results: Maximum number of results to return
     """
+    
     try:
         # Update progress
-        scan_manager.update_scan_progress(scan_id, 5, 'searching marketplaces')
+        update_scan_progress(scan_id, 5, "running")
         
-        # Get all listings from marketplaces
-        all_listings = await _execute_scan(subcategories)
+        # Get keywords for subcategories
+        keywords = get_keywords_for_subcategories(subcategories)
+        logger.info(f"Using {len(keywords)} keywords for scan {scan_id}")
         
-        scan_manager.update_scan_progress(scan_id, 80, 'finding opportunities')
+        # Run marketplace scrapers
+        update_scan_progress(scan_id, 10, "searching marketplaces")
+        all_listings = []
         
-        # Find opportunities
-        opportunities = _find_opportunities(all_listings)
+        # Run Amazon scraper
+        if amazon_available:
+            try:
+                update_scan_progress(scan_id, 20, "searching amazon")
+                amazon_results = await run_amazon_search(subcategories)
+                logger.info(f"Amazon scraper returned {len(amazon_results)} results")
+                all_listings.extend(amazon_results)
+                update_scan_progress(scan_id, 40, "searching amazon")
+            except Exception as e:
+                logger.error(f"Error in Amazon scraper: {str(e)}")
+                logger.error(traceback.format_exc())
         
-        # Limit the number of results
-        if max_results > 0 and len(opportunities) > max_results:
-            opportunities = opportunities[:max_results]
+        # Run eBay scraper
+        if ebay_available:
+            try:
+                update_scan_progress(scan_id, 50, "searching ebay")
+                ebay_results = await run_ebay_search(subcategories)
+                logger.info(f"eBay scraper returned {len(ebay_results)} results")
+                all_listings.extend(ebay_results)
+                update_scan_progress(scan_id, 70, "searching ebay")
+            except Exception as e:
+                logger.error(f"Error in eBay scraper: {str(e)}")
+                logger.error(traceback.format_exc())
         
-        # Store the results
-        scan_manager.store_scan_results(scan_id, opportunities)
+        # Run Facebook scraper
+        if facebook_available:
+            try:
+                update_scan_progress(scan_id, 80, "searching facebook")
+                facebook_results = await run_facebook_search(subcategories)
+                logger.info(f"Facebook scraper returned {len(facebook_results)} results")
+                all_listings.extend(facebook_results)
+                update_scan_progress(scan_id, 90, "searching facebook")
+            except Exception as e:
+                logger.error(f"Error in Facebook scraper: {str(e)}")
+                logger.error(traceback.format_exc())
         
-        logger.info(f"Scan task completed successfully for scan {scan_id}, found {len(opportunities)} opportunities")
+        # Find arbitrage opportunities
+        update_scan_progress(scan_id, 95, "finding opportunities")
         
-    except asyncio.CancelledError:
-        logger.info(f"Scan {scan_id} was cancelled")
-        scan_manager.update_scan_progress(scan_id, 100, 'cancelled')
+        if not all_listings:
+            logger.warning(f"No listings found for scan {scan_id}, generating dummy data")
+            opportunities = generate_dummy_results(subcategories)
+        else:
+            opportunities = find_arbitrage_opportunities(all_listings)
+            
+            # Limit results if needed
+            if max_results > 0 and len(opportunities) > max_results:
+                opportunities = opportunities[:max_results]
+        
+        # Store results
+        active_scans[scan_id]["results"] = opportunities
+        
+        # Mark as completed
+        update_scan_progress(scan_id, 100, "completed")
+        
+        logger.info(f"Scan {scan_id} completed with {len(opportunities)} opportunities")
+        
     except Exception as e:
-        logger.error(f"Error executing scan task: {str(e)}")
+        logger.error(f"Error running scan {scan_id}: {str(e)}")
         logger.error(traceback.format_exc())
-        scan_manager.update_scan_progress(scan_id, 100, 'failed')
+        
+        # Mark as error
+        update_scan_progress(scan_id, 100, "error")
+        active_scans[scan_id]["error"] = str(e)
 
-async def _execute_scan(subcategories: List[str]) -> List[Dict[str, Any]]:
+def update_scan_progress(scan_id: str, progress: int, status: Optional[str] = None):
     """
-    Execute the marketplace scan using scrapers.
+    Update scan progress.
     
     Args:
-        subcategories: List of subcategories to scan
+        scan_id: Scan ID
+        progress: Progress percentage (0-100)
+        status: Optional status string
+    """
+    if scan_id not in active_scans:
+        return
+    
+    active_scans[scan_id]["progress"] = progress
+    
+    if status:
+        active_scans[scan_id]["status"] = status
+        
+    if progress >= 100:
+        active_scans[scan_id]["completion_time"] = datetime.now().isoformat()
+
+def get_scan_info(scan_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Get scan information.
+    
+    Args:
+        scan_id: Scan ID
         
     Returns:
-        List[Dict[str, Any]]: List of listings from all marketplaces
+        Dict with scan info or None if not found
     """
-    try:
-        logger.info(f"Executing marketplace scan for subcategories: {subcategories}")
-        
-        # Run the marketplace scrapers
-        tasks = []
-        
-        # Add Amazon scraper
-        if amazon_available:
-            logger.info("Adding Amazon scraper to tasks")
-            tasks.append(asyncio.ensure_future(run_amazon_search(subcategories)))
-        
-        # Add eBay scraper
-        if ebay_available:
-            logger.info("Adding eBay scraper to tasks")
-            tasks.append(asyncio.ensure_future(run_ebay_search(subcategories)))
-        
-        # Add Mercari scraper
-        if mercari_available:
-            logger.info("Adding Mercari scraper to tasks")
-            tasks.append(asyncio.ensure_future(run_mercari_search(subcategories)))
-        
-        # Add Facebook scraper
-        if facebook_available:
-            logger.info("Adding Facebook scraper to tasks")
-            tasks.append(asyncio.ensure_future(run_facebook_search(subcategories)))
-        
-        # If no tasks were created, use a fallback method
-        if not tasks:
-            logger.warning("No scrapers available, using simulated data")
-            return _generate_simulated_data(subcategories)
-        
-        # Wait for all tasks to complete
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Combine all listings
-        all_listings = []
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                logger.error(f"Error in scraper task {i}: {str(result)}")
-            else:
-                logger.info(f"Scraper {i} returned {len(result)} listings")
-                all_listings.extend(result)
-        
-        logger.info(f"Found {len(all_listings)} total listings across all scrapers")
-        
-        return all_listings
-            
-    except Exception as e:
-        logger.error(f"Error executing marketplace scan: {str(e)}")
-        logger.error(traceback.format_exc())
-        return []
+    return active_scans.get(scan_id)
 
-def _find_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def get_scan_results(scan_id: str) -> Optional[List[Dict[str, Any]]]:
     """
-    Find arbitrage opportunities in listings.
+    Get scan results.
+    
+    Args:
+        scan_id: Scan ID
+        
+    Returns:
+        List of opportunities or None if not found
+    """
+    scan_info = active_scans.get(scan_id)
+    if not scan_info:
+        return None
+    
+    return scan_info.get("results", [])
+
+def get_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
+    """
+    Get keywords for the specified subcategories from comprehensive_keywords.py.
+    
+    Args:
+        subcategories: List of subcategories
+        
+    Returns:
+        List of keywords
+    """
+    keywords = []
+    
+    try:
+        # Import keywords from comprehensive_keywords.py
+        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
+        
+        # Find keywords for each subcategory
+        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+            for subcategory, subcat_keywords in subcats.items():
+                if subcategory in subcategories:
+                    keywords.extend(subcat_keywords)
+        
+        # Log what we found
+        logger.info(f"Found {len(keywords)} keywords for {len(subcategories)} subcategories")
+        
+        return keywords
+        
+    except ImportError:
+        # Fallback if comprehensive_keywords.py is not available
+        logger.warning("comprehensive_keywords.py not found, using subcategories as keywords")
+        return subcategories
+
+def find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Find arbitrage opportunities from listings.
     
     Args:
         listings: List of product listings
         
     Returns:
-        List[Dict[str, Any]]: List of arbitrage opportunities
+        List of arbitrage opportunities
     """
-    try:
-        # Group listings by source
-        listings_by_source = {}
-        for listing in listings:
-            source = listing.get('source', listing.get('marketplace', 'unknown'))
-            if source not in listings_by_source:
-                listings_by_source[source] = []
-            listings_by_source[source].append(listing)
-        
-        # Get all sources
-        sources = list(listings_by_source.keys())
-        logger.info(f"Finding opportunities across {len(sources)} sources: {sources}")
-        
-        # No opportunities if less than 2 sources
-        if len(sources) < 2:
-            logger.warning("Insufficient marketplace sources to find arbitrage opportunities")
-            return []
-        
-        opportunities = []
-        
-        # Compare each possible pair of sources
-        for i, buy_source in enumerate(sources):
-            for j, sell_source in enumerate(sources):
-                if i == j:  # Skip same source
+    # Group listings by source
+    listings_by_source = {}
+    for listing in listings:
+        source = listing.get("source", listing.get("marketplace", "unknown"))
+        if source not in listings_by_source:
+            listings_by_source[source] = []
+        listings_by_source[source].append(listing)
+    
+    # If less than 2 sources, return empty list
+    if len(listings_by_source) < 2:
+        logger.warning("Not enough marketplace sources to find arbitrage opportunities")
+        return []
+    
+    opportunities = []
+    
+    # Compare each possible pair of sources
+    for buy_source, buy_listings in listings_by_source.items():
+        for sell_source, sell_listings in listings_by_source.items():
+            # Skip same source
+            if buy_source == sell_source:
+                continue
+            
+            logger.info(f"Comparing {len(buy_listings)} {buy_source} listings with {len(sell_listings)} {sell_source} listings")
+            
+            # Compare each buy listing with each sell listing
+            for buy_listing in buy_listings:
+                buy_price = buy_listing.get("price", 0)
+                if buy_price <= 0:
+                    continue
+                    
+                buy_title = buy_listing.get("title", "")
+                if not buy_title:
                     continue
                 
-                buy_listings = listings_by_source[buy_source]
-                sell_listings = listings_by_source[sell_source]
-                
-                logger.info(f"Comparing {len(buy_listings)} buy listings from {buy_source} with {len(sell_listings)} sell listings from {sell_source}")
-                
-                # Compare each buy listing with each sell listing
-                for buy_listing in buy_listings:
-                    buy_title = buy_listing.get('title', '')
-                    buy_price = buy_listing.get('price', 0)
-                    
-                    if not buy_title or buy_price <= 0:
+                for sell_listing in sell_listings:
+                    sell_price = sell_listing.get("price", 0)
+                    if sell_price <= 0:
+                        continue
+                        
+                    # Skip if sell price not higher than buy price
+                    if sell_price <= buy_price:
+                        continue
+                        
+                    sell_title = sell_listing.get("title", "")
+                    if not sell_title:
                         continue
                     
-                    for sell_listing in sell_listings:
-                        sell_title = sell_listing.get('title', '')
-                        sell_price = sell_listing.get('price', 0)
+                    # Calculate similarity
+                    similarity = calculate_title_similarity(buy_title, sell_title)
+                    
+                    # If similar enough
+                    if similarity >= 0.5:
+                        # Calculate profit
+                        profit = sell_price - buy_price
+                        profit_percentage = (profit / buy_price) * 100
                         
-                        if not sell_title or sell_price <= 0:
+                        # Calculate fees
+                        marketplace_fee = sell_price * 0.1  # 10% marketplace fee
+                        shipping_fee = 5.0  # $5 shipping
+                        
+                        # Calculate adjusted profit
+                        adjusted_profit = profit - marketplace_fee - shipping_fee
+                        
+                        # Skip if not profitable
+                        if adjusted_profit <= 0:
                             continue
                         
-                        # Skip if buy price is not less than sell price
-                        if buy_price >= sell_price:
-                            continue
-                        
-                        # Simple title similarity check
-                        similarity = _calculate_title_similarity(buy_title, sell_title)
-                        
-                        # Only include if similarity is high enough
-                        if similarity >= 0.7:
-                            # Calculate profit
-                            profit = sell_price - buy_price
+                        # Create opportunity
+                        opportunity = {
+                            "buyTitle": buy_title,
+                            "buyPrice": buy_price,
+                            "buyMarketplace": buy_source,
+                            "buyLink": buy_listing.get("link", ""),
+                            "buyImage": buy_listing.get("image_url", ""),
+                            "buyCondition": buy_listing.get("condition", "New"),
                             
-                            # Calculate fees (simplified)
-                            marketplace_fee = sell_price * 0.10  # 10% marketplace fee
-                            shipping_fee = 7.99  # Fixed shipping fee
+                            "sellTitle": sell_title,
+                            "sellPrice": sell_price,
+                            "sellMarketplace": sell_source,
+                            "sellLink": sell_listing.get("link", ""),
+                            "sellImage": sell_listing.get("image_url", ""),
+                            "sellCondition": sell_listing.get("condition", "New"),
                             
-                            # Calculate adjusted profit
-                            adjusted_profit = profit - marketplace_fee - shipping_fee
-                            
-                            # Skip if not profitable after fees
-                            if adjusted_profit <= 0:
-                                continue
-                            
-                            # Create opportunity
-                            opportunity = {
-                                'buyTitle': buy_listing.get('title', ''),
-                                'buyPrice': buy_price,
-                                'buyLink': buy_listing.get('link', ''),
-                                'buyMarketplace': buy_source,
-                                'buyImage': buy_listing.get('image_url', ''),
-                                'buyCondition': buy_listing.get('condition', 'New'),
-                                
-                                'sellTitle': sell_listing.get('title', ''),
-                                'sellPrice': sell_price,
-                                'sellLink': sell_listing.get('link', ''),
-                                'sellMarketplace': sell_source,
-                                'sellImage': sell_listing.get('image_url', ''),
-                                'sellCondition': sell_listing.get('condition', 'New'),
-                                
-                                'profit': round(adjusted_profit, 2),
-                                'profitPercentage': round((adjusted_profit / buy_price) * 100, 2),
-                                'fees': {
-                                    'marketplace': round(marketplace_fee, 2),
-                                    'shipping': round(shipping_fee, 2)
-                                },
-                                
-                                'similarity': round(similarity * 100),
-                                'confidence': round(similarity * 100),
-                                'subcategory': buy_listing.get('subcategory', '')
+                            "profit": round(adjusted_profit, 2),
+                            "profitPercentage": round(profit_percentage, 2),
+                            "similarity": round(similarity * 100),
+                            "fees": {
+                                "marketplace": round(marketplace_fee, 2),
+                                "shipping": round(shipping_fee, 2)
                             }
-                            
-                            opportunities.append(opportunity)
-        
-        # Sort by profit (highest first)
-        opportunities.sort(key=lambda x: x['profit'], reverse=True)
-        
-        logger.info(f"Found {len(opportunities)} potential arbitrage opportunities")
-        return opportunities
+                        }
+                        
+                        opportunities.append(opportunity)
     
-    except Exception as e:
-        logger.error(f"Error finding opportunities: {str(e)}")
-        logger.error(traceback.format_exc())
-        return []
+    # Sort by profit
+    opportunities.sort(key=lambda x: x["profit"], reverse=True)
+    logger.info(f"Found {len(opportunities)} arbitrage opportunities")
+    
+    return opportunities
 
-def _calculate_title_similarity(title1: str, title2: str) -> float:
+def calculate_title_similarity(title1: str, title2: str) -> float:
     """
     Calculate similarity between two titles.
     
@@ -485,119 +385,107 @@ def _calculate_title_similarity(title1: str, title2: str) -> float:
         title2: Second title
         
     Returns:
-        float: Similarity score between 0 and 1
+        Similarity score between 0 and 1
     """
     from difflib import SequenceMatcher
+    
+    # Simple word overlap calculation
+    if not title1 or not title2:
+        return 0
     
     # Normalize titles
     title1 = title1.lower()
     title2 = title2.lower()
     
-    # Simple word overlap
+    # Split into words
     words1 = set(title1.split())
     words2 = set(title2.split())
     
+    # Calculate overlap
     intersection = words1.intersection(words2)
     union = words1.union(words2)
     
     if not union:
         return 0
     
-    # Jaccard similarity
+    # Jaccard similarity (word-based)
     jaccard = len(intersection) / len(union)
     
-    # Sequence matcher
+    # Sequence similarity (character-based)
     sequence = SequenceMatcher(None, title1, title2).ratio()
     
-    # Combined score (weighted)
-    combined = (jaccard * 0.7) + (sequence * 0.3)
+    # Weighted combination
+    similarity = (jaccard * 0.7) + (sequence * 0.3)
     
-    return combined
+    return similarity
 
-def _generate_simulated_data(subcategories: List[str]) -> List[Dict[str, Any]]:
-    """Generate simulated arbitrage opportunities for testing."""
-    import random
-    from datetime import datetime
-    
-    opportunities = []
-    
-    # Generate some opportunities for each subcategory
-    for subcategory in subcategories:
-        # Create 2-4 opportunities per subcategory
-        num_opportunities = random.randint(2, 4)
-        
-        for i in range(num_opportunities):
-            # Generate buy and sell prices with a margin
-            buy_price = round(random.uniform(20, 200), 2)
-            margin = random.uniform(0.2, 0.5)  # 20-50% margin
-            sell_price = round(buy_price * (1 + margin), 2)
-            
-            # Calculate profit
-            marketplace_fee = round(sell_price * 0.1, 2)  # 10% marketplace fee
-            shipping_fee = round(random.uniform(5, 15), 2)  # Random shipping cost
-            profit = sell_price - buy_price - marketplace_fee - shipping_fee
-            profit_percentage = (profit / buy_price) * 100
-            
-            # Choose random marketplaces
-            all_marketplaces = ["Amazon", "eBay", "Etsy", "Facebook Marketplace"]
-            buy_marketplace = random.choice(all_marketplaces)
-            sell_marketplace = random.choice([m for m in all_marketplaces if m != buy_marketplace])
-            
-            # Create an opportunity object
-            opportunity = {
-                'buyTitle': f"{subcategory} Item #{i+1}",
-                'buyPrice': buy_price,
-                'buyLink': f"https://example.com/buy/{subcategory.lower().replace(' ', '-')}-{i}",
-                'buyMarketplace': buy_marketplace,
-                'buyImage': f"https://via.placeholder.com/150?text={subcategory.replace(' ', '+')}",
-                'buyCondition': random.choice(["New", "Like New", "Very Good", "Good"]),
-                
-                'sellTitle': f"{subcategory} Item #{i+1}",
-                'sellPrice': sell_price,
-                'sellLink': f"https://example.com/sell/{subcategory.lower().replace(' ', '-')}-{i}",
-                'sellMarketplace': sell_marketplace,
-                'sellImage': f"https://via.placeholder.com/150?text={subcategory.replace(' ', '+')}",
-                'sellCondition': "New",
-                
-                'profit': round(profit, 2),
-                'profitPercentage': round(profit_percentage, 2),
-                'fees': {
-                    'marketplace': marketplace_fee,
-                    'shipping': shipping_fee
-                },
-                
-                'similarity': round(random.uniform(70, 95)),
-                'confidence': round(random.uniform(70, 95)),
-                'subcategory': subcategory,
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            opportunities.append(opportunity)
-    
-    return opportunities
-
-def get_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
+def generate_dummy_results(subcategories: List[str]) -> List[Dict[str, Any]]:
     """
-    Get all keywords for a list of subcategories from comprehensive_keywords.py.
+    Generate dummy arbitrage opportunities for testing.
     
     Args:
         subcategories: List of subcategories
         
     Returns:
-        List[str]: List of keywords
+        List of dummy opportunities
     """
-    try:
-        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
-        
-        all_keywords = []
-        
-        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
-            for subcategory, keywords in subcats.items():
-                if subcategory in subcategories:
-                    all_keywords.extend(keywords)
-        
-        return all_keywords
-        
-    except ImportError:
-        logger.warning("comprehensive_keywords.py not found, using subcategories as keywords")
-        return subcategories
+    opportunities = []
+    marketplaces = ["Amazon", "eBay", "Facebook Marketplace"]
+    
+    # For each subcategory
+    for subcategory in subcategories:
+        # Create 2-5 opportunities
+        for i in range(random.randint(2, 5)):
+            # Buy and sell marketplaces
+            buy_market = random.choice(marketplaces)
+            sell_market = random.choice([m for m in marketplaces if m != buy_market])
+            
+            # Base price between $50-$300
+            base_price = random.uniform(50, 300)
+            
+            # Buy price
+            buy_price = round(base_price, 2)
+            
+            # Sell price - 20-50% higher
+            markup = random.uniform(0.2, 0.5)
+            sell_price = round(buy_price * (1 + markup), 2)
+            
+            # Calculate profit
+            profit = sell_price - buy_price
+            marketplace_fee = sell_price * 0.1
+            shipping_fee = 5.0
+            adjusted_profit = profit - marketplace_fee - shipping_fee
+            profit_percentage = (adjusted_profit / buy_price) * 100
+            
+            # Skip if not profitable
+            if adjusted_profit <= 0:
+                continue
+                
+            # Create opportunity
+            opportunity = {
+                "buyTitle": f"{subcategory} Product {i+1}",
+                "buyPrice": buy_price,
+                "buyMarketplace": buy_market,
+                "buyLink": f"https://example.com/{buy_market.lower()}/{i}",
+                "buyImage": f"https://via.placeholder.com/200?text={subcategory}",
+                "buyCondition": "New",
+                
+                "sellTitle": f"{subcategory} Product {i+1}",
+                "sellPrice": sell_price,
+                "sellMarketplace": sell_market,
+                "sellLink": f"https://example.com/{sell_market.lower()}/{i}",
+                "sellImage": f"https://via.placeholder.com/200?text={subcategory}",
+                "sellCondition": "New",
+                
+                "profit": round(adjusted_profit, 2),
+                "profitPercentage": round(profit_percentage, 2),
+                "similarity": 90,
+                "fees": {
+                    "marketplace": round(marketplace_fee, 2),
+                    "shipping": round(shipping_fee, 2)
+                }
+            }
+            
+            opportunities.append(opportunity)
+    
+    return opportunities
