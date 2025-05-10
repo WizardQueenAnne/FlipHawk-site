@@ -1,5 +1,5 @@
 // FlipHawk Scan Page JavaScript
-// Simple, direct implementation for marketplace scanning
+// Enhanced implementation for marketplace scanning with real-time feedback
 
 document.addEventListener('DOMContentLoaded', function() {
     // UI Elements
@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedSubcategories = [];
     let currentScanId = null;
     let scanInterval = null;
+    let scanAborted = false;
 
     // Initialize
     init();
@@ -126,7 +127,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Start scan button
-        startScanButton.addEventListener('click', startScan);
+        startScanButton.addEventListener('click', function() {
+            if (this.textContent === 'Cancel Scan') {
+                // Cancel the scan
+                cancelScan();
+                return;
+            }
+            
+            startScan();
+        });
+    }
+
+    // Cancel the current scan
+    function cancelScan() {
+        scanAborted = true;
+        startScanButton.disabled = true;
+        startScanButton.textContent = 'Cancelling...';
+        
+        // Stop polling
+        if (scanInterval) {
+            clearInterval(scanInterval);
+            scanInterval = null;
+        }
+        
+        // Reset UI after a delay
+        setTimeout(() => {
+            startScanButton.disabled = false;
+            startScanButton.textContent = 'Start Scan';
+            scanStatusContainer.style.display = 'none';
+            scanAborted = false;
+        }, 1000);
     }
 
     // Start the scan process
@@ -153,8 +183,11 @@ document.addEventListener('DOMContentLoaded', function() {
         statusText.textContent = 'Initializing scan...';
         loadingSpinner.style.display = 'inline-block';
         
-        // Disable scan button
-        startScanButton.disabled = true;
+        // Update button to cancel
+        startScanButton.textContent = 'Cancel Scan';
+        
+        // Reset scan state
+        scanAborted = false;
         
         // Send scan request
         fetch('/api/scan', {
@@ -164,7 +197,8 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({
                 category: category,
-                subcategories: selectedSubcategories
+                subcategories: selectedSubcategories,
+                max_results: 100
             })
         })
         .then(response => response.json())
@@ -174,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Store scan ID
-            currentScanId = data.scan_id;
+            currentScanId = data.meta.scan_id;
             
             // Start polling for progress
             startProgressPolling();
@@ -183,11 +217,11 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error starting scan:', error);
             showError('Failed to start scan: ' + error.message);
             
+            // Reset button
+            startScanButton.textContent = 'Start Scan';
+            
             // Hide scan status
             scanStatusContainer.style.display = 'none';
-            
-            // Re-enable scan button
-            startScanButton.disabled = false;
         });
     }
 
@@ -204,12 +238,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check scan progress
     function checkScanProgress() {
-        if (!currentScanId) {
+        if (!currentScanId || scanAborted) {
             clearInterval(scanInterval);
             return;
         }
         
-        fetch(`/api/scan/${currentScanId}/progress`)
+        fetch(`/api/progress/${currentScanId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
@@ -223,17 +257,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusText.textContent = getStatusText(data.status, data.progress);
                 
                 // Check if scan is complete
-                if (data.status === 'completed' || data.status === 'error' || data.progress >= 100) {
+                if (data.status === 'completed' || data.status === 'completed_no_results' || 
+                    data.status === 'error' || data.status === 'cancelled' || data.progress >= 100) {
                     clearInterval(scanInterval);
                     
-                    // Get results
-                    getResults();
+                    // If not cancelled, get results
+                    if (!scanAborted && data.status !== 'cancelled') {
+                        getResults();
+                    } else {
+                        // Reset UI
+                        startScanButton.textContent = 'Start Scan';
+                        loadingSpinner.style.display = 'none';
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error checking progress:', error);
                 
                 // Don't stop polling on error, just continue
+                // If we've had many errors, simulate progress
+                const currentWidth = parseInt(progressBar.style.width) || 0;
+                if (currentWidth < 95) {
+                    progressBar.style.width = `${currentWidth + 2}%`;
+                }
             });
     }
 
@@ -242,19 +288,35 @@ document.addEventListener('DOMContentLoaded', function() {
         switch (status) {
             case 'initializing':
                 return 'Initializing scan...';
-            case 'running':
-                return 'Running scan...';
+            case 'searching marketplaces':
+                return 'Searching marketplaces...';
+            case 'searching amazon':
+                return 'Searching Amazon marketplace...';
+            case 'searching ebay':
+                return 'Searching eBay marketplace...';
+            case 'searching facebook':
+                return 'Searching Facebook marketplace...';
+            case 'finding opportunities':
+                return 'Finding arbitrage opportunities...';
+            case 'processing results':
+                return 'Processing results...';
             case 'completed':
                 return 'Scan completed!';
+            case 'completed_no_results':
+                return 'Scan completed. No opportunities found.';
             case 'error':
-                return 'Scan failed. See console for details.';
+                return 'Scan failed. Please try again.';
+            case 'cancelled':
+                return 'Scan cancelled.';
             default:
                 if (progress < 30) {
-                    return 'Starting scrapers...';
-                } else if (progress < 60) {
-                    return 'Searching marketplaces...';
+                    return 'Starting marketplace scrapers...';
+                } else if (progress < 50) {
+                    return 'Searching products across marketplaces...';
+                } else if (progress < 70) {
+                    return 'Comparing prices between platforms...';
                 } else if (progress < 90) {
-                    return 'Finding arbitrage opportunities...';
+                    return 'Finding profitable opportunities...';
                 } else {
                     return 'Finalizing results...';
                 }
@@ -263,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get scan results
     function getResults() {
-        fetch(`/api/scan/${currentScanId}/results`)
+        fetch(`/api/scan/${currentScanId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
@@ -274,10 +336,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingSpinner.style.display = 'none';
                 
                 // Display results
-                displayResults(data.results);
+                displayResults(data.arbitrage_opportunities || []);
                 
-                // Re-enable scan button
-                startScanButton.disabled = false;
+                // Reset button
+                startScanButton.textContent = 'Start Scan';
             })
             .catch(error => {
                 console.error('Error getting results:', error);
@@ -286,8 +348,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Hide loading spinner
                 loadingSpinner.style.display = 'none';
                 
-                // Re-enable scan button
-                startScanButton.disabled = false;
+                // Reset button
+                startScanButton.textContent = 'Start Scan';
             });
     }
 
@@ -312,6 +374,11 @@ document.addEventListener('DOMContentLoaded', function() {
         header.textContent = `Found ${results.length} Arbitrage Opportunities`;
         resultsContainer.appendChild(header);
         
+        // Add subcategories info
+        const subInfo = document.createElement('p');
+        subInfo.textContent = `Category: ${categorySelect.value} • Subcategories: ${selectedSubcategories.join(', ')}`;
+        resultsContainer.appendChild(subInfo);
+        
         // Create results grid
         const grid = document.createElement('div');
         grid.className = 'results-grid';
@@ -324,6 +391,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add grid to container
         resultsContainer.appendChild(grid);
+        
+        // Scroll to results
+        header.scrollIntoView({ behavior: 'smooth' });
     }
 
     // Create a result card
@@ -338,6 +408,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const buyConditionClass = getConditionClass(result.buyCondition);
         const sellConditionClass = getConditionClass(result.sellCondition);
         
+        // Format fees
+        const marketplaceFee = result.fees?.marketplace || 0;
+        const shippingFee = result.fees?.shipping || 0;
+        
         // Card HTML
         card.innerHTML = `
             <div class="card-header">
@@ -350,30 +424,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="comparison">
                     <div class="buy-info">
                         <div class="marketplace">Buy on ${result.buyMarketplace}</div>
-                        <div class="price">${result.buyPrice.toFixed(2)}</div>
-                        <div class="condition ${buyConditionClass}">${result.buyCondition}</div>
+                        <div class="price">$${result.buyPrice.toFixed(2)}</div>
+                        <div class="condition ${buyConditionClass}">${result.buyCondition || 'New'}</div>
                     </div>
                     <div class="sell-info">
                         <div class="marketplace">Sell on ${result.sellMarketplace}</div>
-                        <div class="price">${result.sellPrice.toFixed(2)}</div>
-                        <div class="condition ${sellConditionClass}">${result.sellCondition}</div>
+                        <div class="price">$${result.sellPrice.toFixed(2)}</div>
+                        <div class="condition ${sellConditionClass}">${result.sellCondition || 'New'}</div>
                     </div>
                 </div>
                 
                 <div class="profit-info">
-                    <div class="profit">Profit: ${result.profit.toFixed(2)}</div>
+                    <div class="profit">Profit: $${result.profit.toFixed(2)}</div>
                     <div class="profit-percentage">ROI: ${result.profitPercentage.toFixed(1)}%</div>
                     <div class="fees">
-                        Fees: ${result.fees?.marketplace?.toFixed(2) || '0.00'} • 
-                        Shipping: ${result.fees?.shipping?.toFixed(2) || '0.00'}
+                        Fees: $${marketplaceFee.toFixed(2)} • 
+                        Shipping: $${shippingFee.toFixed(2)}
                     </div>
                 </div>
                 
                 <div class="confidence">
                     <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${result.similarity}%"></div>
+                        <div class="confidence-fill" style="width: ${result.similarity || 0}%"></div>
                     </div>
-                    <div class="confidence-text">${result.similarity}% match</div>
+                    <div class="confidence-text">${result.similarity || 0}% match</div>
                 </div>
             </div>
             <div class="card-actions">
@@ -413,6 +487,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 toast.style.opacity = '0';
                 
                 // Remove after fade
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(
+// FlipHawk Scan Page JavaScript (continued)
                 setTimeout(() => {
                     if (document.body.contains(toast)) {
                         document.body.removeChild(toast);
