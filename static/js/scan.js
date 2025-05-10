@@ -1,5 +1,5 @@
 // FlipHawk Scan Page JavaScript
-// Enhanced implementation for marketplace scanning with real-time feedback
+// Complete implementation with real-time feedback and error handling
 
 document.addEventListener('DOMContentLoaded', function() {
     // UI Elements
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedSubcategories = [];
     let currentScanId = null;
     let scanInterval = null;
-    let scanAborted = false;
+    let scanInProgress = false;
 
     // Initialize
     init();
@@ -28,12 +28,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Set up event listeners
         setupEventListeners();
+        
+        // For debugging
+        console.log('FlipHawk scan.js loaded successfully');
     }
 
     // Load available categories
     function loadCategories() {
         fetch('/api/categories')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 // Clear select
                 categorySelect.innerHTML = '';
@@ -53,6 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     option.textContent = category;
                     categorySelect.appendChild(option);
                 });
+                
+                console.log(`Loaded ${data.categories.length} categories`);
             })
             .catch(error => {
                 console.error('Error loading categories:', error);
@@ -63,23 +73,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load subcategories for a category
     function loadSubcategories(category) {
         fetch(`/api/categories/${category}/subcategories`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 // Clear container
                 subcategoryContainer.innerHTML = '';
                 
                 // Add subcategories
-                data.subcategories.forEach(subcategory => {
-                    const checkbox = createSubcategoryCheckbox(subcategory);
-                    subcategoryContainer.appendChild(checkbox);
-                });
-                
-                // Show container
-                subcategoryContainer.style.display = 'grid';
+                if (data.subcategories && data.subcategories.length > 0) {
+                    data.subcategories.forEach(subcategory => {
+                        const checkbox = createSubcategoryCheckbox(subcategory);
+                        subcategoryContainer.appendChild(checkbox);
+                    });
+                    
+                    // Show container
+                    subcategoryContainer.style.display = 'grid';
+                    console.log(`Loaded ${data.subcategories.length} subcategories for ${category}`);
+                } else {
+                    // No subcategories found
+                    subcategoryContainer.innerHTML = '<p>No subcategories available for this category.</p>';
+                    subcategoryContainer.style.display = 'block';
+                }
             })
             .catch(error => {
                 console.error('Error loading subcategories:', error);
                 showError('Failed to load subcategories. Please try a different category.');
+                subcategoryContainer.innerHTML = '<p>Error loading subcategories. Please try again.</p>';
+                subcategoryContainer.style.display = 'block';
             });
     }
 
@@ -112,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Enable/disable scan button
         startScanButton.disabled = selectedSubcategories.length === 0;
+        console.log(`Selected subcategories: ${selectedSubcategories.join(', ')}`);
     }
 
     // Set up all event listeners
@@ -128,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Start scan button
         startScanButton.addEventListener('click', function() {
-            if (this.textContent === 'Cancel Scan') {
+            if (scanInProgress) {
                 // Cancel the scan
                 cancelScan();
                 return;
@@ -140,7 +165,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cancel the current scan
     function cancelScan() {
-        scanAborted = true;
+        console.log('Cancelling scan...');
+        
+        scanInProgress = false;
         startScanButton.disabled = true;
         startScanButton.textContent = 'Cancelling...';
         
@@ -155,9 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
             startScanButton.disabled = false;
             startScanButton.textContent = 'Start Scan';
             scanStatusContainer.style.display = 'none';
-            scanAborted = false;
         }, 1000);
-    }
+        // FlipHawk Scan Page JavaScript (continued)
 
     // Start the scan process
     function startScan() {
@@ -185,9 +211,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update button to cancel
         startScanButton.textContent = 'Cancel Scan';
+        scanInProgress = true;
         
-        // Reset scan state
-        scanAborted = false;
+        console.log(`Starting scan for ${category}: ${selectedSubcategories.join(', ')}`);
         
         // Send scan request
         fetch('/api/scan', {
@@ -201,7 +227,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 max_results: 100
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 throw new Error(data.error);
@@ -209,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Store scan ID
             currentScanId = data.meta.scan_id;
+            console.log(`Scan started with ID: ${currentScanId}`);
             
             // Start polling for progress
             startProgressPolling();
@@ -219,9 +251,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reset button
             startScanButton.textContent = 'Start Scan';
+            scanInProgress = false;
             
             // Hide scan status
             scanStatusContainer.style.display = 'none';
+            loadingSpinner.style.display = 'none';
         });
     }
 
@@ -232,55 +266,71 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(scanInterval);
         }
         
-        // Set up polling interval (every 1 second)
-        scanInterval = setInterval(checkScanProgress, 1000);
-    }
-
-    // Check scan progress
-    function checkScanProgress() {
-        if (!currentScanId || scanAborted) {
-            clearInterval(scanInterval);
-            return;
-        }
+        let consecutiveErrors = 0;
+        const maxErrors = 5;
         
-        fetch(`/api/progress/${currentScanId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                // Update progress bar
-                progressBar.style.width = `${data.progress}%`;
-                
-                // Update status text
-                statusText.textContent = getStatusText(data.status, data.progress);
-                
-                // Check if scan is complete
-                if (data.status === 'completed' || data.status === 'completed_no_results' || 
-                    data.status === 'error' || data.status === 'cancelled' || data.progress >= 100) {
-                    clearInterval(scanInterval);
+        // Set up polling interval (every 1 second)
+        scanInterval = setInterval(() => {
+            if (!currentScanId || !scanInProgress) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+                return;
+            }
+            
+            fetch(`/api/progress/${currentScanId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
                     
-                    // If not cancelled, get results
-                    if (!scanAborted && data.status !== 'cancelled') {
-                        getResults();
-                    } else {
+                    // Reset error counter on success
+                    consecutiveErrors = 0;
+                    
+                    // Update progress bar
+                    const progress = data.progress || 0;
+                    progressBar.style.width = `${progress}%`;
+                    
+                    // Update status text
+                    statusText.textContent = getStatusText(data.status, progress);
+                    
+                    // Check if scan is complete
+                    if (progress >= 100 || 
+                        data.status === 'completed' || 
+                        data.status === 'completed_no_results' || 
+                        data.status === 'error' || 
+                        data.status === 'cancelled') {
+                        clearInterval(scanInterval);
+                        scanInterval = null;
+                        
+                        // If not cancelled by user, get results
+                        if (scanInProgress) {
+                            getResults();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking progress:', error);
+                    consecutiveErrors++;
+                    
+                    // If too many consecutive errors, stop polling
+                    if (consecutiveErrors >= maxErrors) {
+                        clearInterval(scanInterval);
+                        scanInterval = null;
+                        showError('Lost connection to server. Please try again.');
+                        
                         // Reset UI
                         startScanButton.textContent = 'Start Scan';
+                        scanInProgress = false;
                         loadingSpinner.style.display = 'none';
                     }
-                }
-            })
-            .catch(error => {
-                console.error('Error checking progress:', error);
-                
-                // Don't stop polling on error, just continue
-                // If we've had many errors, simulate progress
-                const currentWidth = parseInt(progressBar.style.width) || 0;
-                if (currentWidth < 95) {
-                    progressBar.style.width = `${currentWidth + 2}%`;
-                }
-            });
+                });
+        }, 1000);
     }
 
     // Get human-readable status text
@@ -288,6 +338,8 @@ document.addEventListener('DOMContentLoaded', function() {
         switch (status) {
             case 'initializing':
                 return 'Initializing scan...';
+            case 'running':
+                return 'Running scan...';
             case 'searching marketplaces':
                 return 'Searching marketplaces...';
             case 'searching amazon':
@@ -325,8 +377,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get scan results
     function getResults() {
+        console.log(`Fetching results for scan ${currentScanId}`);
+        
         fetch(`/api/scan/${currentScanId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
                     throw new Error(data.error);
@@ -336,10 +395,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingSpinner.style.display = 'none';
                 
                 // Display results
-                displayResults(data.arbitrage_opportunities || []);
+                const opportunities = data.arbitrage_opportunities || [];
+                console.log(`Received ${opportunities.length} opportunities`);
+                displayResults(opportunities);
                 
                 // Reset button
                 startScanButton.textContent = 'Start Scan';
+                scanInProgress = false;
             })
             .catch(error => {
                 console.error('Error getting results:', error);
@@ -350,6 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Reset button
                 startScanButton.textContent = 'Start Scan';
+                scanInProgress = false;
             });
     }
 
@@ -401,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const card = document.createElement('div');
         card.className = 'result-card';
         
-        // Get buy and sell images
+        // Get buy and sell images with fallbacks
         const imageUrl = result.buyImage || result.sellImage || 'https://via.placeholder.com/200';
         
         // Get condition classes
@@ -409,8 +472,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const sellConditionClass = getConditionClass(result.sellCondition);
         
         // Format fees
-        const marketplaceFee = result.fees?.marketplace || 0;
-        const shippingFee = result.fees?.shipping || 0;
+        const marketplaceFee = result.fees ? result.fees.marketplace || 0 : 0;
+        const shippingFee = result.fees ? result.fees.shipping || 0 : 0;
+        
+        // Format numbers
+        const buyPrice = parseFloat(result.buyPrice).toFixed(2);
+        const sellPrice = parseFloat(result.sellPrice).toFixed(2);
+        const profit = parseFloat(result.profit).toFixed(2);
+        const profitPercentage = parseFloat(result.profitPercentage).toFixed(1);
         
         // Card HTML
         card.innerHTML = `
@@ -418,28 +487,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h3>${result.buyTitle}</h3>
             </div>
             <div class="card-image">
-                <img src="${imageUrl}" alt="${result.buyTitle}">
+                <img src="${imageUrl}" alt="${result.buyTitle}" onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
             </div>
             <div class="card-content">
                 <div class="comparison">
                     <div class="buy-info">
                         <div class="marketplace">Buy on ${result.buyMarketplace}</div>
-                        <div class="price">$${result.buyPrice.toFixed(2)}</div>
+                        <div class="price">$${buyPrice}</div>
                         <div class="condition ${buyConditionClass}">${result.buyCondition || 'New'}</div>
                     </div>
                     <div class="sell-info">
                         <div class="marketplace">Sell on ${result.sellMarketplace}</div>
-                        <div class="price">$${result.sellPrice.toFixed(2)}</div>
+                        <div class="price">$${sellPrice}</div>
                         <div class="condition ${sellConditionClass}">${result.sellCondition || 'New'}</div>
                     </div>
                 </div>
                 
                 <div class="profit-info">
-                    <div class="profit">Profit: $${result.profit.toFixed(2)}</div>
-                    <div class="profit-percentage">ROI: ${result.profitPercentage.toFixed(1)}%</div>
+                    <div class="profit">Profit: $${profit}</div>
+                    <div class="profit-percentage">ROI: ${profitPercentage}%</div>
                     <div class="fees">
-                        Fees: $${marketplaceFee.toFixed(2)} • 
-                        Shipping: $${shippingFee.toFixed(2)}
+                        Fees: $${parseFloat(marketplaceFee).toFixed(2)} • 
+                        Shipping: $${parseFloat(shippingFee).toFixed(2)}
                     </div>
                 </div>
                 
@@ -473,6 +542,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show error message
     function showError(message) {
+        console.error(message);
+        
         // Create toast notification
         const toast = document.createElement('div');
         toast.className = 'toast error';
@@ -487,10 +558,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 toast.style.opacity = '0';
                 
                 // Remove after fade
-                setTimeout(() => {
-                    if (document.body.contains(toast)) {
-                        document.body.removeChild(
-// FlipHawk Scan Page JavaScript (continued)
                 setTimeout(() => {
                     if (document.body.contains(toast)) {
                         document.body.removeChild(toast);
