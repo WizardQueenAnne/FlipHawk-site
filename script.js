@@ -16,140 +16,119 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedCategory = '';
     let selectedSubcategories = [];
     let scanInProgress = false;
-    let scanAborted = false;
     let currentScanId = null;
     let pollingInterval = null;
     
     // Initialize
     initEventListeners();
     
+    // Log initialization
+    console.log('FlipHawk script.js loaded successfully');
+    
     // Set up event listeners
     function initEventListeners() {
         // Category selection
-        categoryCards.forEach(card => {
-            card.addEventListener('click', function() {
-                if (scanInProgress) return; // Prevent changing category during scan
-                
-                document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                selectedCategory = this.dataset.category;
-                showSubcategories(selectedCategory);
+        if (categoryCards.length > 0) {
+            categoryCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    if (scanInProgress) return; // Prevent changing category during scan
+                    
+                    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedCategory = this.dataset.category;
+                    showSubcategories(selectedCategory);
+                });
             });
-        });
+        }
         
         // Search button
-        searchButton.addEventListener('click', function() {
-            if (scanInProgress) {
-                // Abort scan if in progress
-                scanAborted = true;
-                searchButton.textContent = 'Cancelling...';
-                
-                // Stop polling
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                    pollingInterval = null;
+        if (searchButton) {
+            searchButton.addEventListener('click', function() {
+                if (scanInProgress) {
+                    // Abort scan if in progress
+                    abortScan();
+                    return;
                 }
                 
-                // Reset scan state
-                setTimeout(() => {
-                    scanInProgress = false;
-                    searchButton.textContent = 'Begin Resale Search';
-                    searchButton.classList.remove('loading');
-                    searchButton.classList.add('active');
-                    
-                    // Hide loading indicators
-                    loadingSpinner.style.display = 'none';
-                    progressContainer.style.display = 'none';
-                    scanStatus.style.display = 'none';
-                }, 1000);
-                
-                return;
-            }
-            
-            startScan();
-        });
+                startScan();
+            });
+        }
     }
     
     // Show subcategories for selected category
     function showSubcategories(category) {
-        // Fetch subcategories from backend
-        fetch('/api/categories/subcategories', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                category: category
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Clear previous subcategories
-            subcategoryGrid.innerHTML = '';
-            
-            // Get subcategories from response
-            const subcategories = data.subcategories || [];
-            
-            // Create subcategory chips
-            subcategories.forEach(subcategory => {
-                const chip = document.createElement('div');
-                chip.className = 'subcategory-chip';
-                chip.textContent = subcategory;
-                chip.addEventListener('click', () => toggleSubcategory(chip, subcategory));
-                subcategoryGrid.appendChild(chip);
-            });
-            
-            // Show subcategory panel
-            subcategoryPanel.style.display = 'block';
-            
-            // Reset selections
-            selectedSubcategories = [];
-            updateSelectedCount();
-            updateSearchButton();
-            
-            // Scroll to subcategories
-            subcategoryPanel.scrollIntoView({ behavior: 'smooth' });
-        })
-        .catch(error => {
-            console.error('Error fetching subcategories:', error);
-            
-            // Fallback to local data if API call fails
-            const fallbackSubcategories = getFallbackSubcategories(category);
-            
-            // Clear and recreate subcategories
-            subcategoryGrid.innerHTML = '';
-            fallbackSubcategories.forEach(subcategory => {
-                const chip = document.createElement('div');
-                chip.className = 'subcategory-chip';
-                chip.textContent = subcategory;
-                chip.addEventListener('click', () => toggleSubcategory(chip, subcategory));
-                subcategoryGrid.appendChild(chip);
-            });
-            
-            // Show subcategory panel
-            subcategoryPanel.style.display = 'block';
-            
-            // Reset selections
-            selectedSubcategories = [];
-            updateSelectedCount();
-            updateSearchButton();
-        });
-    }
-    
-    // Fallback subcategories if API call fails
-    function getFallbackSubcategories(category) {
-        const fallbackData = {
-            "Tech": ["Headphones", "Keyboards", "Graphics Cards", "CPUs", "Laptops", "Monitors", "SSDs", "Routers", "Vintage Tech"],
-            "Collectibles": ["Pokémon", "Magic: The Gathering", "Yu-Gi-Oh", "Funko Pops", "Sports Cards", "Comic Books", "Action Figures", "LEGO Sets"],
-            "Vintage Clothing": ["Jordans", "Nike Dunks", "Vintage Tees", "Band Tees", "Denim Jackets", "Designer Brands", "Carhartt", "Patagonia"],
-            "Antiques": ["Coins", "Watches", "Cameras", "Typewriters", "Vinyl Records", "Vintage Tools", "Old Maps"],
-            "Gaming": ["Consoles", "Game Controllers", "Rare Games", "Arcade Machines", "Handhelds", "Gaming Headsets", "VR Gear"],
-            "Music Gear": ["Electric Guitars", "Guitar Pedals", "Synthesizers", "Vintage Amps", "Microphones", "DJ Equipment"],
-            "Tools & DIY": ["Power Tools", "Hand Tools", "Welding Equipment", "Toolboxes", "Measuring Devices", "Woodworking Tools"],
-            "Outdoors & Sports": ["Bikes", "Skateboards", "Scooters", "Camping Gear", "Hiking Gear", "Fishing Gear", "Snowboards"]
-        };
+        console.log(`Loading subcategories for: ${category}`);
         
-        return fallbackData[category] || [];
+        // Show loading state
+        if (subcategoryGrid) {
+            subcategoryGrid.innerHTML = '<div class="loading">Loading subcategories...</div>';
+        }
+        
+        // Fetch subcategories from backend
+        fetch('/api/categories/' + encodeURIComponent(category) + '/subcategories')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Clear previous subcategories
+                if (subcategoryGrid) {
+                    subcategoryGrid.innerHTML = '';
+                }
+                
+                // Get subcategories from response
+                const subcategories = data.subcategories || [];
+                
+                if (subcategories.length === 0) {
+                    if (subcategoryGrid) {
+                        subcategoryGrid.innerHTML = '<div class="no-subcategories">No subcategories found for this category.</div>';
+                    }
+                    return;
+                }
+                
+                // Create subcategory chips
+                subcategories.forEach(subcategory => {
+                    if (subcategoryGrid) {
+                        const chip = document.createElement('div');
+                        chip.className = 'subcategory-chip';
+                        chip.textContent = subcategory;
+                        chip.addEventListener('click', () => toggleSubcategory(chip, subcategory));
+                        subcategoryGrid.appendChild(chip);
+                    }
+                });
+                
+                // Show subcategory panel
+                if (subcategoryPanel) {
+                    subcategoryPanel.style.display = 'block';
+                }
+                
+                // Reset selections
+                selectedSubcategories = [];
+                updateSelectedCount();
+                updateSearchButton();
+                
+                // Scroll to subcategories
+                if (subcategoryPanel) {
+                    subcategoryPanel.scrollIntoView({ behavior: 'smooth' });
+                }
+                
+                console.log(`Loaded ${subcategories.length} subcategories for ${category}`);
+            })
+            .catch(error => {
+                console.error('Error fetching subcategories:', error);
+                
+                // Show error message
+                if (subcategoryGrid) {
+                    subcategoryGrid.innerHTML = `<div class="error">Error loading subcategories: ${error.message}</div>`;
+                }
+                
+                // Show panel anyway
+                if (subcategoryPanel) {
+                    subcategoryPanel.style.display = 'block';
+                }
+            });
     }
     
     // Toggle subcategory selection
@@ -170,17 +149,51 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update selected count display
     function updateSelectedCount() {
-        selectedCount.textContent = `${selectedSubcategories.length} subcategories selected`;
+        if (selectedCount) {
+            selectedCount.textContent = `${selectedSubcategories.length} subcategories selected`;
+        }
     }
     
     // Update search button state based on selections
     function updateSearchButton() {
-        if (selectedSubcategories.length > 0) {
-            searchButton.classList.add('active');
-            searchButton.disabled = false;
-        } else {
-            searchButton.classList.remove('active');
+        if (searchButton) {
+            if (selectedSubcategories.length > 0) {
+                searchButton.classList.add('active');
+                searchButton.disabled = false;
+            } else {
+                searchButton.classList.remove('active');
+                searchButton.disabled = true;
+            }
+        }
+    }
+    
+    // Abort current scan
+    function abortScan() {
+        console.log('Aborting scan...');
+        
+        // Stop polling
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        
+        // Reset UI
+        if (searchButton) {
+            searchButton.textContent = 'Cancelling...';
             searchButton.disabled = true;
+            
+            // Delay reset to show cancelling state
+            setTimeout(() => {
+                scanInProgress = false;
+                searchButton.textContent = 'Begin Resale Search';
+                searchButton.disabled = false;
+                searchButton.classList.add('active');
+                
+                // Hide loading indicators
+                if (loadingSpinner) loadingSpinner.style.display = 'none';
+                if (progressContainer) progressContainer.style.display = 'none';
+                if (scanStatus) scanStatus.style.display = 'none';
+            }, 1000);
         }
     }
     
@@ -192,25 +205,32 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        console.log(`Starting scan for ${selectedCategory}: ${selectedSubcategories.join(', ')}`);
+        
         // Set scan in progress state
         scanInProgress = true;
-        scanAborted = false;
         
         // Clear previous results
-        resultsContainer.innerHTML = '';
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '';
+        }
         
         // Show loading indicators
-        loadingSpinner.style.display = 'block';
-        progressContainer.style.display = 'block';
-        scanStatus.style.display = 'block';
-        scanStatus.textContent = 'Initializing scan...';
-        progressBar.style.width = '0%';
+        if (loadingSpinner) loadingSpinner.style.display = 'block';
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (scanStatus) {
+            scanStatus.style.display = 'block';
+            scanStatus.textContent = 'Initializing scan...';
+        }
+        if (progressBar) progressBar.style.width = '0%';
         
-        // Update search button to be an abort button
-        searchButton.disabled = false;
-        searchButton.textContent = 'Cancel Scan';
-        searchButton.classList.add('loading');
-        searchButton.classList.remove('active');
+        // Update search button
+        if (searchButton) {
+            searchButton.disabled = false;
+            searchButton.textContent = 'Cancel Scan';
+            searchButton.classList.add('loading');
+            searchButton.classList.remove('active');
+        }
         
         // Prepare the request data
         const requestData = {
@@ -229,17 +249,24 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`Failed to start scan: ${response.status} ${response.statusText}`);
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
+            // Check for error
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
             // Get the scan ID
             const scanId = data.meta?.scan_id;
             
             if (!scanId) {
                 throw new Error('No scan ID returned from server');
             }
+            
+            console.log(`Scan started with ID: ${scanId}`);
             
             // Store current scan ID
             currentScanId = scanId;
@@ -252,24 +279,31 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reset scan state
             scanInProgress = false;
-            searchButton.textContent = 'Begin Resale Search';
-            searchButton.classList.remove('loading');
-            searchButton.classList.add('active');
+            
+            if (searchButton) {
+                searchButton.textContent = 'Begin Resale Search';
+                searchButton.classList.remove('loading');
+                searchButton.classList.add('active');
+            }
             
             // Hide loading indicators
-            loadingSpinner.style.display = 'none';
-            progressContainer.style.display = 'none';
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (progressContainer) progressContainer.style.display = 'none';
             
             // Show error message
-            scanStatus.textContent = `Error: ${error.message}`;
-            scanStatus.style.color = 'var(--primary-color)';
-            scanStatus.style.display = 'block';
-            
-            // Reset after a delay
-            setTimeout(() => {
-                scanStatus.style.display = 'none';
-                scanStatus.style.color = 'var(--text-color)';
-            }, 5000);
+            if (scanStatus) {
+                scanStatus.textContent = `Error: ${error.message}`;
+                scanStatus.style.color = 'var(--primary-color, #ff0000)';
+                scanStatus.style.display = 'block';
+                
+                // Reset after a delay
+                setTimeout(() => {
+                    scanStatus.style.display = 'none';
+                    scanStatus.style.color = '';
+                }, 5000);
+            } else {
+                showToast(`Error: ${error.message}`, 'error');
+            }
         });
     }
     
@@ -280,28 +314,14 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(pollingInterval);
         }
         
-        let lastProgress = 0;
-        let pollCount = 0;
-        const maxPolls = 300; // Maximum number of polls (300 polls at 1 second intervals = 5 minutes max)
+        let consecutiveErrors = 0;
+        const maxErrors = 5;
         
         pollingInterval = setInterval(() => {
-            // Check if scan has been aborted
-            if (scanAborted) {
+            // Check if scan is still in progress
+            if (!scanInProgress) {
                 clearInterval(pollingInterval);
                 pollingInterval = null;
-                return;
-            }
-            
-            // Increment poll count
-            pollCount++;
-            
-            // Check if maximum polls reached
-            if (pollCount > maxPolls) {
-                clearInterval(pollingInterval);
-                pollingInterval = null;
-                
-                // Just get results anyway
-                fetchScanResults(scanId);
                 return;
             }
             
@@ -309,15 +329,17 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/api/progress/${scanId}`)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Failed to get scan progress: ${response.status} ${response.statusText}`);
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(progressData => {
+                // Reset error counter on success
+                consecutiveErrors = 0;
+                
                 // Update progress bar
                 const progress = progressData.progress || 0;
-                progressBar.style.width = `${progress}%`;
-                lastProgress = progress;
+                if (progressBar) progressBar.style.width = `${progress}%`;
                 
                 // Update status message based on status
                 const status = progressData.status || 'processing';
@@ -328,33 +350,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearInterval(pollingInterval);
                     pollingInterval = null;
                     
-                    if (!scanAborted) {
-                        // Fetch the results
-                        fetchScanResults(scanId);
-                    }
+                    // Fetch the results
+                    fetchScanResults(scanId);
                 }
             })
             .catch(error => {
                 console.error('Error polling scan progress:', error);
+                consecutiveErrors++;
                 
-                // Don't stop polling on error, just continue
-                // Increment progress slightly to show activity
-                if (lastProgress < 95) {
-                    lastProgress += 2;
-                    progressBar.style.width = `${lastProgress}%`;
+                // If too many consecutive errors, stop polling
+                if (consecutiveErrors >= maxErrors) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
                     
-                    // Update status message
-                    if (lastProgress < 30) {
-                        scanStatus.textContent = 'Connecting to marketplace scrapers...';
-                    } else if (lastProgress < 50) {
-                        scanStatus.textContent = 'Searching Amazon marketplace...';
-                    } else if (lastProgress < 70) {
-                        scanStatus.textContent = 'Searching eBay marketplace...';
-                    } else if (lastProgress < 85) {
-                        scanStatus.textContent = 'Finding matching products across marketplaces...';
-                    } else {
-                        scanStatus.textContent = 'Calculating profit margins...';
+                    // Show error and reset UI
+                    showToast('Lost connection to server. Please try again.', 'error');
+                    
+                    scanInProgress = false;
+                    
+                    if (searchButton) {
+                        searchButton.textContent = 'Begin Resale Search';
+                        searchButton.classList.remove('loading');
+                        searchButton.classList.add('active');
                     }
+                    
+                    if (loadingSpinner) loadingSpinner.style.display = 'none';
+                    if (progressContainer) progressContainer.style.display = 'none';
+                    if (scanStatus) scanStatus.style.display = 'none';
                 }
             });
         }, 1000); // Poll every 1 second
@@ -362,11 +384,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update status message based on scan status
     function updateStatusMessage(status, progress) {
+        if (!scanStatus) return;
+        
         let message = '';
         
         switch (status) {
             case 'initializing':
                 message = 'Initializing scan...';
+                break;
+            case 'running':
+                message = 'Running scan...';
                 break;
             case 'searching marketplaces':
                 message = 'Searching marketplaces...';
@@ -377,15 +404,14 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'searching ebay':
                 message = 'Searching eBay marketplace...';
                 break;
-// FlipHawk Frontend Script (continued)
             case 'searching facebook':
                 message = 'Searching Facebook marketplace...';
                 break;
-            case 'processing results':
-                message = 'Processing results...';
-                break;
             case 'finding opportunities':
                 message = 'Finding arbitrage opportunities...';
+                break;
+            case 'processing results':
+                message = 'Processing results...';
                 break;
             case 'completed':
                 message = 'Scan completed!';
@@ -422,16 +448,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch the actual scan results
     function fetchScanResults(scanId) {
+        console.log(`Fetching results for scan ${scanId}`);
+        
         fetch(`/api/scan/${scanId}`)
         .then(response => {
             if (!response.ok) {
-                throw new Error(`Failed to get scan results: ${response.status} ${response.statusText}`);
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(resultsData => {
             // Process the results
             const opportunities = resultsData.arbitrage_opportunities || [];
+            console.log(`Received ${opportunities.length} opportunities`);
             
             // Display the results
             displayResults(opportunities);
@@ -439,41 +468,55 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset scan state
             scanInProgress = false;
             currentScanId = null;
-            searchButton.textContent = 'Begin Resale Search';
-            searchButton.classList.remove('loading');
-            searchButton.classList.add('active');
+            
+            if (searchButton) {
+                searchButton.textContent = 'Begin Resale Search';
+                searchButton.classList.remove('loading');
+                searchButton.classList.add('active');
+            }
             
             // Hide loading indicators
-            loadingSpinner.style.display = 'none';
-            progressContainer.style.display = 'none';
-            scanStatus.style.display = 'none';
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (progressContainer) progressContainer.style.display = 'none';
+            if (scanStatus) scanStatus.style.display = 'none';
         })
         .catch(error => {
             console.error('Error fetching scan results:', error);
             
             // Show error message
-            scanStatus.textContent = `Error retrieving results: ${error.message}`;
-            scanStatus.style.color = 'var(--primary-color)';
+            if (scanStatus) {
+                scanStatus.textContent = `Error retrieving results: ${error.message}`;
+                scanStatus.style.color = 'var(--primary-color, #ff0000)';
+            } else {
+                showToast(`Error retrieving results: ${error.message}`, 'error');
+            }
             
             // Reset scan state after a delay
             setTimeout(() => {
                 scanInProgress = false;
                 currentScanId = null;
-                searchButton.textContent = 'Begin Resale Search';
-                searchButton.classList.remove('loading');
-                searchButton.classList.add('active');
+                
+                if (searchButton) {
+                    searchButton.textContent = 'Begin Resale Search';
+                    searchButton.classList.remove('loading');
+                    searchButton.classList.add('active');
+                }
                 
                 // Hide loading indicators
-                loadingSpinner.style.display = 'none';
-                progressContainer.style.display = 'none';
-                scanStatus.style.display = 'none';
-                scanStatus.style.color = 'var(--text-color)';
+                if (loadingSpinner) loadingSpinner.style.display = 'none';
+                if (progressContainer) progressContainer.style.display = 'none';
+                if (scanStatus) {
+                    scanStatus.style.display = 'none';
+                    scanStatus.style.color = '';
+                }
             }, 5000);
         });
     }
     
     // Display scan results
     function displayResults(opportunities) {
+        if (!resultsContainer) return;
+        
         // Clear previous results
         resultsContainer.innerHTML = '';
         
@@ -481,14 +524,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!opportunities || opportunities.length === 0) {
             // Show no results message
             const noResults = document.createElement('div');
-            noResults.style.textAlign = 'center';
-            noResults.style.padding = '40px 20px';
-            noResults.style.background = 'var(--card-bg)';
-            noResults.style.borderRadius = '15px';
-            noResults.style.marginTop = '30px';
-            
+            noResults.className = 'no-results';
             noResults.innerHTML = `
-                <div style="font-size: 3em; margin-bottom: 20px;">😢</div>
                 <h3>No Opportunities Found</h3>
                 <p>Try selecting different subcategories or come back later for new listings.</p>
             `;
@@ -499,10 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Create results header
         const resultsHeader = document.createElement('div');
-        resultsHeader.style.background = 'var(--card-bg)';
-        resultsHeader.style.padding = '20px';
-        resultsHeader.style.borderRadius = '15px';
-        resultsHeader.style.marginBottom = '20px';
+        resultsHeader.className = 'results-header';
         resultsHeader.innerHTML = `
             <h2>Found ${opportunities.length} Opportunities</h2>
             <p>Category: ${selectedCategory} • Subcategories: ${selectedSubcategories.join(', ')}</p>
@@ -510,114 +544,97 @@ document.addEventListener('DOMContentLoaded', function() {
         
         resultsContainer.appendChild(resultsHeader);
         
-        // Create result cards for each opportunity
-        const opportunitiesGrid = document.createElement('div');
-        opportunitiesGrid.className = 'opportunities';
-        opportunitiesGrid.style.display = 'grid';
-        opportunitiesGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))';
-        opportunitiesGrid.style.gap = '20px';
+        // Create results grid
+        const grid = document.createElement('div');
+        grid.className = 'results-grid';
         
+        // Add each result
         opportunities.forEach(opportunity => {
-            const card = document.createElement('div');
-            card.className = 'opportunity-card';
-            card.style.background = 'var(--card-bg)';
-            card.style.borderRadius = '15px';
-            card.style.overflow = 'hidden';
-            card.style.transition = 'transform 0.3s';
-            
-            // Get image URL for the card
-            const imageUrl = opportunity.buyImage || opportunity.sellImage || '';
-            
-            // Format the card content
-            card.innerHTML = createOpportunityCardHtml(opportunity, imageUrl);
-            
-            opportunitiesGrid.appendChild(card);
+// FlipHawk Frontend Script (continued)
+            const card = createResultCard(opportunity);
+            grid.appendChild(card);
         });
         
-        resultsContainer.appendChild(opportunitiesGrid);
+        // Add grid to container
+        resultsContainer.appendChild(grid);
         
         // Scroll to results
         resultsHeader.scrollIntoView({ behavior: 'smooth' });
     }
     
-    // Helper function to create opportunity card HTML
-    function createOpportunityCardHtml(opportunity, imageUrl) {
-        // Get all necessary data with fallbacks for missing fields
-        const buyPrice = opportunity.buyPrice || 0;
-        const sellPrice = opportunity.sellPrice || 0;
-        const profit = opportunity.profit || (sellPrice - buyPrice);
-        const profitPercentage = opportunity.profitPercentage || ((profit / buyPrice) * 100);
-        const buyCondition = opportunity.buyCondition || 'Unknown';
-        const sellCondition = opportunity.sellCondition || 'Unknown';
-        const buyMarketplace = opportunity.buyMarketplace || 'Unknown';
-        const sellMarketplace = opportunity.sellMarketplace || 'Unknown';
-        const buyLink = opportunity.buyLink || '#';
-        const sellLink = opportunity.sellLink || '#';
-        const buyTitle = opportunity.buyTitle || 'Unknown Item';
-        const sellTitle = opportunity.sellTitle || 'Unknown Item';
+    // Create a result card
+    function createResultCard(opportunity) {
+        const card = document.createElement('div');
+        card.className = 'result-card';
         
-        // Calculate fees
-        let marketplaceFee = 0;
-        let shippingFee = 0;
+        // Get image
+        const imageUrl = opportunity.buyImage || opportunity.sellImage || 'https://via.placeholder.com/200';
         
-        if (opportunity.fees) {
-            marketplaceFee = opportunity.fees.marketplace || 0;
-            shippingFee = opportunity.fees.shipping || 0;
-        }
+        // Get condition classes
+        const buyCondition = opportunity.buyCondition || 'New';
+        const sellCondition = opportunity.sellCondition || 'New';
         
-        // Calculate confidence
-        const confidence = opportunity.confidence || opportunity.similarity || 80;
-        
-        // Create image HTML if available
-        let imageHtml = '';
-        if (imageUrl) {
-            imageHtml = `<img src="${imageUrl}" alt="${buyTitle}" style="width: 100%; height: auto; max-height: 200px; object-fit: contain; margin-bottom: 10px; border-radius: 4px;">`;
-        }
-        
-        // Create buy condition and sell condition classes
         const buyConditionClass = getConditionClass(buyCondition);
         const sellConditionClass = getConditionClass(sellCondition);
         
-        // Create the HTML
-        return `
-            <div style="background-color: var(--primary-color); padding: 15px; color: white;">
-                <h3 style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px;">${buyTitle}</h3>
+        // Format fees
+        const marketplaceFee = opportunity.fees?.marketplace || 0;
+        const shippingFee = opportunity.fees?.shipping || 0;
+        
+        // Format numbers
+        const buyPrice = parseFloat(opportunity.buyPrice).toFixed(2);
+        const sellPrice = parseFloat(opportunity.sellPrice).toFixed(2);
+        const profit = parseFloat(opportunity.profit).toFixed(2);
+        const profitPercentage = parseFloat(opportunity.profitPercentage).toFixed(1);
+        
+        // Format similarity/confidence
+        const similarity = opportunity.similarity || opportunity.confidence || 70;
+        
+        // Card HTML
+        card.innerHTML = `
+            <div class="card-header">
+                <h3>${opportunity.buyTitle}</h3>
             </div>
-            <div style="padding: 15px;">
-                ${imageHtml}
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <div style="flex: 1;">
-                        <div style="font-size: 12px; color: #aaa;">Buy on ${buyMarketplace}</div>
-                        <div style="font-size: 18px; font-weight: bold; margin: 5px 0; color: var(--primary-color);">$${buyPrice.toFixed(2)}</div>
-                        <span style="display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; background-color: rgba(78, 205, 196, 0.2); color: var(--secondary-color);">${buyCondition}</span>
+            <div class="card-image">
+                <img src="${imageUrl}" alt="${opportunity.buyTitle}" onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
+            </div>
+            <div class="card-content">
+                <div class="comparison">
+                    <div class="buy-info">
+                        <div class="marketplace">Buy on ${opportunity.buyMarketplace}</div>
+                        <div class="price">$${buyPrice}</div>
+                        <div class="condition ${buyConditionClass}">${buyCondition}</div>
                     </div>
-                    <div style="flex: 1;">
-                        <div style="font-size: 12px; color: #aaa;">Sell on ${sellMarketplace}</div>
-                        <div style="font-size: 18px; font-weight: bold; margin: 5px 0; color: var(--secondary-color);">$${sellPrice.toFixed(2)}</div>
-                        <span style="display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; background-color: rgba(255, 230, 109, 0.2); color: var(--accent-color);">${sellCondition}</span>
+                    <div class="sell-info">
+                        <div class="marketplace">Sell on ${opportunity.sellMarketplace}</div>
+                        <div class="price">$${sellPrice}</div>
+                        <div class="condition ${sellConditionClass}">${sellCondition}</div>
                     </div>
                 </div>
                 
-                <div style="background-color: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                    <div style="font-size: 18px; font-weight: bold; color: #4CAF50;">Profit: $${profit.toFixed(2)}</div>
-                    <div style="color: #4CAF50;">ROI: ${profitPercentage.toFixed(2)}%</div>
-                    <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
-                        Fees: $${marketplaceFee.toFixed(2)} • Shipping: $${shippingFee.toFixed(2)}
+                <div class="profit-info">
+                    <div class="profit">Profit: $${profit}</div>
+                    <div class="profit-percentage">ROI: ${profitPercentage}%</div>
+                    <div class="fees">
+                        Fees: $${parseFloat(marketplaceFee).toFixed(2)} • 
+                        Shipping: $${parseFloat(shippingFee).toFixed(2)}
                     </div>
                 </div>
                 
-                <div style="margin-top: 10px;">
-                    <div style="height: 6px; background-color: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 5px;">
-                        <div style="height: 100%; background-color: var(--primary-color); width: ${confidence}%;"></div>
+                <div class="confidence">
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${similarity}%"></div>
                     </div>
-                    <div style="font-size: 12px; color: #aaa; text-align: right;">${confidence}% match</div>
+                    <div class="confidence-text">${similarity}% match</div>
                 </div>
             </div>
-            <div style="display: flex; justify-content: space-between; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
-                <a href="${buyLink}" target="_blank" style="padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 14px; border: 1px solid var(--primary-color); color: var(--primary-color);">View Buy</a>
-                <a href="${sellLink}" target="_blank" style="padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 14px; background-color: var(--primary-color); color: white;">View Sell</a>
+            <div class="card-actions">
+                <a href="${opportunity.buyLink}" target="_blank" class="btn btn-outline">View Buy</a>
+                <a href="${opportunity.sellLink}" target="_blank" class="btn btn-primary">View Sell</a>
             </div>
         `;
+        
+        return card;
     }
     
     // Helper function to get condition class
@@ -633,7 +650,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Function to show toast notification
-    function showToast(message, type = 'error') {
+    function showToast(message, type = 'info') {
+        console.log(`Toast: ${type} - ${message}`);
+        
         // Remove existing toasts
         document.querySelectorAll('.toast').forEach(toast => {
             document.body.removeChild(toast);
