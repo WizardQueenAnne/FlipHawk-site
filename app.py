@@ -1,4 +1,4 @@
-# app.py
+# app.py - UPDATED VERSION
 """
 FlipHawk - Marketplace Arbitrage Application
 Main application entry point with fixed API endpoints for direct scraper execution
@@ -32,14 +32,15 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Import bridge to scrapers
+# Import bridge to scrapers - with better error handling
 try:
     from marketplace_bridge import process_marketplace_scan, scan_manager
     bridge_available = True
     logger.info("Marketplace bridge available")
-except ImportError:
+except ImportError as e:
     bridge_available = False
-    logger.warning("Marketplace bridge not available, using fallback")
+    logger.warning(f"Marketplace bridge not available, using fallback: {str(e)}")
+    logger.warning(traceback.format_exc())
 
 # Initialize the app
 app = FastAPI(title="FlipHawk - Marketplace Arbitrage")
@@ -174,7 +175,7 @@ async def get_subcategories(category: str):
                 return {"subcategories": list(subcats.keys())}
             return {"subcategories": list(subcats)}
     except ImportError:
-        pass
+        logger.warning("Failed to import comprehensive_keywords, using fallback")
         
     # Use fallback
     if category in fallback_categories:
@@ -341,8 +342,11 @@ async def run_scan_without_bridge(scan_id: str, subcategories: List[str], catego
             logger.info("Running Amazon scraper...")
             
             # Create event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
             
             # Update progress
             active_scans[scan_id]["progress"] = 20
@@ -359,6 +363,7 @@ async def run_scan_without_bridge(scan_id: str, subcategories: List[str], catego
             logger.warning("Amazon scraper not available")
         except Exception as e:
             logger.error(f"Error running Amazon scraper: {str(e)}")
+            logger.error(traceback.format_exc())
         
         try:
             from ebay_scraper import run_ebay_search
@@ -386,6 +391,7 @@ async def run_scan_without_bridge(scan_id: str, subcategories: List[str], catego
             logger.warning("eBay scraper not available")
         except Exception as e:
             logger.error(f"Error running eBay scraper: {str(e)}")
+            logger.error(traceback.format_exc())
         
         # If both scrapers failed, generate dummy data
         if not success:
@@ -416,7 +422,7 @@ async def run_scan_without_bridge(scan_id: str, subcategories: List[str], catego
         active_scans[scan_id]["error"] = str(e)
         active_scans[scan_id]["progress"] = 100
 
-def find_arbitrage_opportunities(listings):
+def find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Find arbitrage opportunities from listings"""
     # Group listings by source
     listings_by_source = {}
@@ -510,7 +516,7 @@ def find_arbitrage_opportunities(listings):
     
     return opportunities
 
-def calculate_title_similarity(title1, title2):
+def calculate_title_similarity(title1: str, title2: str) -> float:
     """Calculate similarity between two titles"""
     # Simple word overlap calculation
     if not title1 or not title2:
@@ -533,7 +539,7 @@ def calculate_title_similarity(title1, title2):
         
     return len(intersection) / len(union)
 
-def generate_dummy_results(subcategories):
+def generate_dummy_results(subcategories: List[str]) -> List[Dict[str, Any]]:
     """Generate dummy results for testing"""
     import random
     
