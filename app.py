@@ -607,7 +607,7 @@ async def favicon():
 
 if __name__ == "__main__":
     # Get port from environment
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 10000))
     
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)
