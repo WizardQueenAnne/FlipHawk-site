@@ -1,8 +1,7 @@
-// FlipHawk Scan Page JavaScript
-// Complete implementation with real-time feedback and error handling
+// static/js/scan.js - New file to place in your static/js directory
 
 document.addEventListener('DOMContentLoaded', function() {
-    // UI Elements
+    // Elements
     const categorySelect = document.getElementById('category-select');
     const subcategoryContainer = document.getElementById('subcategory-container');
     const startScanButton = document.getElementById('start-scan');
@@ -10,560 +9,490 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressBar = document.getElementById('progress-bar');
     const statusText = document.getElementById('status-text');
     const resultsContainer = document.getElementById('results-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
-
-    // State
+    
+    // Global variables
     let selectedSubcategories = [];
-    let currentScanId = null;
-    let scanInterval = null;
     let scanInProgress = false;
-
+    let currentScanId = null;
+    let pollingInterval = null;
+    
     // Initialize
     init();
-
-    // Main initialization function
+    
+    // Set up initial state
     function init() {
         // Load categories
         loadCategories();
         
         // Set up event listeners
         setupEventListeners();
-        
-        // For debugging
-        console.log('FlipHawk scan.js loaded successfully');
     }
-
+    
+    // Set up event listeners
+    function setupEventListeners() {
+        // Category selection change
+        if (categorySelect) {
+            categorySelect.addEventListener('change', function() {
+                loadSubcategories(this.value);
+            });
+        }
+        
+        // Start scan button
+        if (startScanButton) {
+            startScanButton.addEventListener('click', function() {
+                if (scanInProgress) {
+                    // Cancel scan
+                    cancelScan();
+                } else {
+                    // Start scan
+                    startScan();
+                }
+            });
+        }
+    }
+    
     // Load available categories
     function loadCategories() {
         fetch('/api/categories')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                // Clear select
-                categorySelect.innerHTML = '';
-                
-                // Add placeholder
-                const placeholder = document.createElement('option');
-                placeholder.value = '';
-                placeholder.textContent = 'Select a category';
-                placeholder.disabled = true;
-                placeholder.selected = true;
-                categorySelect.appendChild(placeholder);
-                
-                // Add categories
-                data.categories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-                
-                console.log(`Loaded ${data.categories.length} categories`);
+                if (categorySelect) {
+                    // Clear current options except the placeholder
+                    while (categorySelect.options.length > 1) {
+                        categorySelect.remove(1);
+                    }
+                    
+                    // Add new options
+                    data.categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        option.textContent = category;
+                        categorySelect.appendChild(option);
+                    });
+                }
             })
             .catch(error => {
                 console.error('Error loading categories:', error);
-                showError('Failed to load categories. Please refresh the page.');
+                showToast('Failed to load categories', 'error');
             });
     }
-
+    
     // Load subcategories for a category
     function loadSubcategories(category) {
-        fetch(`/api/categories/${category}/subcategories`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
+        if (!category) return;
+        
+        fetch(`/api/categories/${encodeURIComponent(category)}/subcategories`)
+            .then(response => response.json())
             .then(data => {
-                // Clear container
-                subcategoryContainer.innerHTML = '';
-                
-                // Add subcategories
-                if (data.subcategories && data.subcategories.length > 0) {
+                if (subcategoryContainer) {
+                    // Clear current subcategories
+                    subcategoryContainer.innerHTML = '';
+                    
+                    // Add new subcategories
                     data.subcategories.forEach(subcategory => {
-                        const checkbox = createSubcategoryCheckbox(subcategory);
+                        const checkbox = document.createElement('div');
+                        checkbox.className = 'subcategory-checkbox';
+                        checkbox.innerHTML = `
+                            <input type="checkbox" id="subcategory-${subcategory}" value="${subcategory}">
+                            <label for="subcategory-${subcategory}">${subcategory}</label>
+                        `;
+                        
+                        // Add event listener
+                        const input = checkbox.querySelector('input');
+                        input.addEventListener('change', function() {
+                            if (this.checked) {
+                                if (!selectedSubcategories.includes(this.value)) {
+                                    selectedSubcategories.push(this.value);
+                                }
+                            } else {
+                                selectedSubcategories = selectedSubcategories.filter(s => s !== this.value);
+                            }
+                            
+                            updateStartScanButton();
+                        });
+                        
                         subcategoryContainer.appendChild(checkbox);
                     });
                     
-                    // Show container
+                    // Show subcategory container
                     subcategoryContainer.style.display = 'grid';
-                    console.log(`Loaded ${data.subcategories.length} subcategories for ${category}`);
-                } else {
-                    // No subcategories found
-                    subcategoryContainer.innerHTML = '<p>No subcategories available for this category.</p>';
-                    subcategoryContainer.style.display = 'block';
+                    
+                    // Reset selected subcategories
+                    selectedSubcategories = [];
+                    updateStartScanButton();
                 }
             })
             .catch(error => {
                 console.error('Error loading subcategories:', error);
-                showError('Failed to load subcategories. Please try a different category.');
-                subcategoryContainer.innerHTML = '<p>Error loading subcategories. Please try again.</p>';
-                subcategoryContainer.style.display = 'block';
+                showToast('Failed to load subcategories', 'error');
             });
     }
-
-    // Create a subcategory checkbox
-    function createSubcategoryCheckbox(subcategory) {
-        const container = document.createElement('div');
-        container.className = 'subcategory-checkbox';
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `subcategory-${subcategory.toLowerCase().replace(/\s+/g, '-')}`;
-        checkbox.value = subcategory;
-        checkbox.addEventListener('change', updateSelectedSubcategories);
-        
-        const label = document.createElement('label');
-        label.htmlFor = checkbox.id;
-        label.textContent = subcategory;
-        
-        container.appendChild(checkbox);
-        container.appendChild(label);
-        
-        return container;
-    }
-
-    // Update the selected subcategories list
-    function updateSelectedSubcategories() {
-        selectedSubcategories = Array.from(
-            document.querySelectorAll('#subcategory-container input[type="checkbox"]:checked')
-        ).map(checkbox => checkbox.value);
-        
-        // Enable/disable scan button
-        startScanButton.disabled = selectedSubcategories.length === 0;
-        console.log(`Selected subcategories: ${selectedSubcategories.join(', ')}`);
-    }
-
-    // Set up all event listeners
-    function setupEventListeners() {
-        // Category selection change
-        categorySelect.addEventListener('change', function() {
-            const category = this.value;
-            if (category) {
-                loadSubcategories(category);
+    
+    // Update start scan button state
+    function updateStartScanButton() {
+        if (startScanButton) {
+            if (selectedSubcategories.length > 0) {
+                startScanButton.disabled = false;
             } else {
-                subcategoryContainer.style.display = 'none';
+                startScanButton.disabled = true;
             }
-        });
-        
-        // Start scan button
-        startScanButton.addEventListener('click', function() {
-            if (scanInProgress) {
-                // Cancel the scan
-                cancelScan();
-                return;
-            }
-            
-            startScan();
-        });
+        }
     }
-
-    // Cancel the current scan
-    function cancelScan() {
-        console.log('Cancelling scan...');
-        
-        scanInProgress = false;
-        startScanButton.disabled = true;
-        startScanButton.textContent = 'Cancelling...';
-        
-        // Stop polling
-        if (scanInterval) {
-            clearInterval(scanInterval);
-            scanInterval = null;
-        }
-        
-        // Reset UI after a delay
-        setTimeout(() => {
-            startScanButton.disabled = false;
-            startScanButton.textContent = 'Start Scan';
-            scanStatusContainer.style.display = 'none';
-        }, 1000);
-        // FlipHawk Scan Page JavaScript (continued)
-
-    // Start the scan process
+    
+    // Start scan
     function startScan() {
-        // Check if subcategories selected
-        if (selectedSubcategories.length === 0) {
-            showError('Please select at least one subcategory.');
-            return;
-        }
-        
         // Get selected category
         const category = categorySelect.value;
+        
+        // Validate selections
         if (!category) {
-            showError('Please select a category.');
+            showToast('Please select a category', 'error');
             return;
         }
         
-        // Clear previous results
-        resultsContainer.innerHTML = '';
+        if (selectedSubcategories.length === 0) {
+            showToast('Please select at least one subcategory', 'error');
+            return;
+        }
         
-        // Show scan status
-        scanStatusContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        statusText.textContent = 'Initializing scan...';
-        loadingSpinner.style.display = 'inline-block';
-        
-        // Update button to cancel
-        startScanButton.textContent = 'Cancel Scan';
+        // Set scan in progress
         scanInProgress = true;
         
-        console.log(`Starting scan for ${category}: ${selectedSubcategories.join(', ')}`);
+        // Update UI
+        startScanButton.textContent = 'Cancel Scan';
+        scanStatusContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        statusText.textContent = 'Starting scan...';
+        resultsContainer.innerHTML = '';
         
-        // Send scan request
+        // Prepare request data
+        const requestData = {
+            category: category,
+            subcategories: selectedSubcategories,
+            max_results: 100
+        };
+        
+        // Send request
         fetch('/api/scan', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                category: category,
-                subcategories: selectedSubcategories,
-                max_results: 100
-            })
+            body: JSON.stringify(requestData)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
+            // Check for error
             if (data.error) {
                 throw new Error(data.error);
             }
             
-            // Store scan ID
-            currentScanId = data.meta.scan_id;
+            // Get scan ID
+            currentScanId = data.meta?.scan_id;
+            
+            if (!currentScanId) {
+                throw new Error('No scan ID received');
+            }
+            
             console.log(`Scan started with ID: ${currentScanId}`);
             
             // Start polling for progress
-            startProgressPolling();
+            startPolling(currentScanId);
         })
         .catch(error => {
             console.error('Error starting scan:', error);
-            showError('Failed to start scan: ' + error.message);
-            
-            // Reset button
-            startScanButton.textContent = 'Start Scan';
-            scanInProgress = false;
-            
-            // Hide scan status
-            scanStatusContainer.style.display = 'none';
-            loadingSpinner.style.display = 'none';
+            resetScanState();
+            showToast(`Error: ${error.message}`, 'error');
         });
     }
-
+    
     // Start polling for scan progress
-    function startProgressPolling() {
+    function startPolling(scanId) {
         // Clear any existing interval
-        if (scanInterval) {
-            clearInterval(scanInterval);
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
         }
         
-        let consecutiveErrors = 0;
-        const maxErrors = 5;
-        
-        // Set up polling interval (every 1 second)
-        scanInterval = setInterval(() => {
-            if (!currentScanId || !scanInProgress) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-                return;
-            }
-            
-            fetch(`/api/progress/${currentScanId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Error ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
+        pollingInterval = setInterval(() => {
+            fetch(`/api/progress/${scanId}`)
+                .then(response => response.json())
                 .then(data => {
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    // Reset error counter on success
-                    consecutiveErrors = 0;
-                    
-                    // Update progress bar
+                    // Update progress
                     const progress = data.progress || 0;
                     progressBar.style.width = `${progress}%`;
                     
                     // Update status text
-                    statusText.textContent = getStatusText(data.status, progress);
+                    const status = data.status || '';
+                    updateStatusText(status, progress);
                     
                     // Check if scan is complete
-                    if (progress >= 100 || 
-                        data.status === 'completed' || 
-                        data.status === 'completed_no_results' || 
-                        data.status === 'error' || 
-                        data.status === 'cancelled') {
-                        clearInterval(scanInterval);
-                        scanInterval = null;
+                    if (progress >= 100 || ['completed', 'error'].includes(status)) {
+                        // Stop polling
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
                         
-                        // If not cancelled by user, get results
-                        if (scanInProgress) {
-                            getResults();
+                        // Get results
+                        if (status === 'completed') {
+                            fetchResults(scanId);
+                        } else if (status === 'error') {
+                            resetScanState();
+                            showToast('An error occurred during scanning', 'error');
                         }
                     }
                 })
                 .catch(error => {
-                    console.error('Error checking progress:', error);
-                    consecutiveErrors++;
+                    console.error('Error polling scan progress:', error);
                     
-                    // If too many consecutive errors, stop polling
-                    if (consecutiveErrors >= maxErrors) {
-                        clearInterval(scanInterval);
-                        scanInterval = null;
-                        showError('Lost connection to server. Please try again.');
-                        
-                        // Reset UI
-                        startScanButton.textContent = 'Start Scan';
-                        scanInProgress = false;
-                        loadingSpinner.style.display = 'none';
-                    }
+                    // Stop polling on error
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                    resetScanState();
+                    showToast(`Error: ${error.message}`, 'error');
                 });
-        }, 1000);
+        }, 1000); // Poll every second
     }
-
-    // Get human-readable status text
-    function getStatusText(status, progress) {
-        switch (status) {
-            case 'initializing':
-                return 'Initializing scan...';
-            case 'running':
-                return 'Running scan...';
-            case 'searching marketplaces':
-                return 'Searching marketplaces...';
-            case 'searching amazon':
-                return 'Searching Amazon marketplace...';
-            case 'searching ebay':
-                return 'Searching eBay marketplace...';
-            case 'searching facebook':
-                return 'Searching Facebook marketplace...';
-            case 'finding opportunities':
-                return 'Finding arbitrage opportunities...';
-            case 'processing results':
-                return 'Processing results...';
-            case 'completed':
-                return 'Scan completed!';
-            case 'completed_no_results':
-                return 'Scan completed. No opportunities found.';
-            case 'error':
-                return 'Scan failed. Please try again.';
-            case 'cancelled':
-                return 'Scan cancelled.';
-            default:
-                if (progress < 30) {
-                    return 'Starting marketplace scrapers...';
-                } else if (progress < 50) {
-                    return 'Searching products across marketplaces...';
-                } else if (progress < 70) {
-                    return 'Comparing prices between platforms...';
-                } else if (progress < 90) {
-                    return 'Finding profitable opportunities...';
-                } else {
-                    return 'Finalizing results...';
-                }
-        }
-    }
-
-    // Get scan results
-    function getResults() {
-        console.log(`Fetching results for scan ${currentScanId}`);
-        
-        fetch(`/api/scan/${currentScanId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
+    
+    // Fetch scan results
+    function fetchResults(scanId) {
+        fetch(`/api/scan/${scanId}`)
+            .then(response => response.json())
             .then(data => {
+                // Check for error
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
-                // Hide loading spinner
-                loadingSpinner.style.display = 'none';
-                
                 // Display results
-                const opportunities = data.arbitrage_opportunities || [];
-                console.log(`Received ${opportunities.length} opportunities`);
-                displayResults(opportunities);
+                displayResults(data);
                 
-                // Reset button
-                startScanButton.textContent = 'Start Scan';
-                scanInProgress = false;
+                // Reset scan state
+                resetScanState();
             })
             .catch(error => {
-                console.error('Error getting results:', error);
-                showError('Failed to get results: ' + error.message);
-                
-                // Hide loading spinner
-                loadingSpinner.style.display = 'none';
-                
-                // Reset button
-                startScanButton.textContent = 'Start Scan';
-                scanInProgress = false;
+                console.error('Error fetching scan results:', error);
+                resetScanState();
+                showToast(`Error: ${error.message}`, 'error');
             });
     }
-
+    
     // Display scan results
-    function displayResults(results) {
-        // Clear container
+    function displayResults(data) {
+        const opportunities = data.arbitrage_opportunities || [];
+        const category = data.category || '';
+        const subcategories = data.subcategories || [];
+        
+        console.log(`Displaying ${opportunities.length} opportunities`);
+        
+        // Clear results container
         resultsContainer.innerHTML = '';
         
-        // Check if we have results
-        if (!results || results.length === 0) {
-            resultsContainer.innerHTML = `
-                <div class="no-results">
-                    <h3>No arbitrage opportunities found</h3>
-                    <p>Try selecting different subcategories or try again later.</p>
-                </div>
-            `;
+        // Create header
+        const header = document.createElement('h2');
+        header.textContent = `Found ${opportunities.length} Opportunities`;
+        resultsContainer.appendChild(header);
+        
+        const subheader = document.createElement('p');
+        subheader.textContent = `Category: ${category} • Subcategories: ${subcategories.join(', ')}`;
+        resultsContainer.appendChild(subheader);
+        
+        // Display no results message if needed
+        if (opportunities.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'no-results';
+            noResults.innerHTML = '<p>No opportunities found. Try selecting different subcategories.</p>';
+            resultsContainer.appendChild(noResults);
             return;
         }
         
-        // Create results header
-        const header = document.createElement('h2');
-        header.textContent = `Found ${results.length} Arbitrage Opportunities`;
-        resultsContainer.appendChild(header);
-        
-        // Add subcategories info
-        const subInfo = document.createElement('p');
-        subInfo.textContent = `Category: ${categorySelect.value} • Subcategories: ${selectedSubcategories.join(', ')}`;
-        resultsContainer.appendChild(subInfo);
-        
         // Create results grid
-        const grid = document.createElement('div');
-        grid.className = 'results-grid';
+        const resultsGrid = document.createElement('div');
+        resultsGrid.className = 'results-grid';
         
-        // Add each result
-        results.forEach(result => {
-            const card = createResultCard(result);
-            grid.appendChild(card);
+        // Add each opportunity
+        opportunities.forEach(opportunity => {
+            const card = createOpportunityCard(opportunity);
+            resultsGrid.appendChild(card);
         });
         
-        // Add grid to container
-        resultsContainer.appendChild(grid);
-        
-        // Scroll to results
-        header.scrollIntoView({ behavior: 'smooth' });
+        resultsContainer.appendChild(resultsGrid);
     }
-
-    // Create a result card
-    function createResultCard(result) {
+    
+    // Create opportunity card
+    function createOpportunityCard(opportunity) {
         const card = document.createElement('div');
         card.className = 'result-card';
         
-        // Get buy and sell images with fallbacks
-        const imageUrl = result.buyImage || result.sellImage || 'https://via.placeholder.com/200';
-        
         // Get condition classes
-        const buyConditionClass = getConditionClass(result.buyCondition);
-        const sellConditionClass = getConditionClass(result.sellCondition);
+        const buyConditionClass = getConditionClass(opportunity.buyCondition);
+        const sellConditionClass = getConditionClass(opportunity.sellCondition);
         
-        // Format fees
-        const marketplaceFee = result.fees ? result.fees.marketplace || 0 : 0;
-        const shippingFee = result.fees ? result.fees.shipping || 0 : 0;
+        // Format image URLs
+        const buyImage = opportunity.buyImage || 'https://via.placeholder.com/200?text=No+Image';
+        const sellImage = opportunity.sellImage || 'https://via.placeholder.com/200?text=No+Image';
         
-        // Format numbers
-        const buyPrice = parseFloat(result.buyPrice).toFixed(2);
-        const sellPrice = parseFloat(result.sellPrice).toFixed(2);
-        const profit = parseFloat(result.profit).toFixed(2);
-        const profitPercentage = parseFloat(result.profitPercentage).toFixed(1);
-        
-        // Card HTML
+        // Create HTML
         card.innerHTML = `
             <div class="card-header">
-                <h3>${result.buyTitle}</h3>
+                <h3>${opportunity.buyTitle}</h3>
             </div>
             <div class="card-image">
-                <img src="${imageUrl}" alt="${result.buyTitle}" onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
+                <img src="${buyImage}" alt="${opportunity.buyTitle}" onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
             </div>
             <div class="card-content">
                 <div class="comparison">
                     <div class="buy-info">
-                        <div class="marketplace">Buy on ${result.buyMarketplace}</div>
-                        <div class="price">$${buyPrice}</div>
-                        <div class="condition ${buyConditionClass}">${result.buyCondition || 'New'}</div>
+                        <div class="marketplace">Buy on ${opportunity.buyMarketplace}</div>
+                        <div class="price">$${opportunity.buyPrice.toFixed(2)}</div>
+                        <div class="condition ${buyConditionClass}">${opportunity.buyCondition || 'New'}</div>
                     </div>
                     <div class="sell-info">
-                        <div class="marketplace">Sell on ${result.sellMarketplace}</div>
-                        <div class="price">$${sellPrice}</div>
-                        <div class="condition ${sellConditionClass}">${result.sellCondition || 'New'}</div>
+                        <div class="marketplace">Sell on ${opportunity.sellMarketplace}</div>
+                        <div class="price">$${opportunity.sellPrice.toFixed(2)}</div>
+                        <div class="condition ${sellConditionClass}">${opportunity.sellCondition || 'New'}</div>
                     </div>
                 </div>
                 
                 <div class="profit-info">
-                    <div class="profit">Profit: $${profit}</div>
-                    <div class="profit-percentage">ROI: ${profitPercentage}%</div>
+                    <div class="profit">Profit: $${opportunity.profit.toFixed(2)}</div>
+                    <div class="profit-percentage">ROI: ${opportunity.profitPercentage.toFixed(1)}%</div>
                     <div class="fees">
-                        Fees: $${parseFloat(marketplaceFee).toFixed(2)} • 
-                        Shipping: $${parseFloat(shippingFee).toFixed(2)}
+                        Fees: $${(opportunity.fees?.marketplace || 0).toFixed(2)} • 
+                        Shipping: $${(opportunity.fees?.shipping || 0).toFixed(2)}
                     </div>
                 </div>
                 
                 <div class="confidence">
                     <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${result.similarity || 0}%"></div>
+                        <div class="confidence-fill" style="width: ${opportunity.similarity}%"></div>
                     </div>
-                    <div class="confidence-text">${result.similarity || 0}% match</div>
+                    <div class="confidence-text">${opportunity.similarity}% match</div>
                 </div>
             </div>
             <div class="card-actions">
-                <a href="${result.buyLink}" target="_blank" class="btn btn-outline">View Buy</a>
-                <a href="${result.sellLink}" target="_blank" class="btn btn-primary">View Sell</a>
+                <a href="${opportunity.buyLink}" target="_blank" class="btn btn-outline">View Buy</a>
+                <a href="${opportunity.sellLink}" target="_blank" class="btn btn-primary">View Sell</a>
             </div>
         `;
         
         return card;
     }
-
+    
     // Get condition class
     function getConditionClass(condition) {
-        if (!condition) return '';
+        if (!condition) return 'condition-new';
         
-        condition = condition.toLowerCase();
-        if (condition.includes('new') || condition === 'mint' || condition === 'sealed') {
+        const lcCondition = condition.toLowerCase();
+        if (lcCondition.includes('new') || lcCondition.includes('mint') || lcCondition.includes('sealed')) {
             return 'condition-new';
         } else {
             return 'condition-used';
         }
     }
-
-    // Show error message
-    function showError(message) {
-        console.error(message);
+    
+    // Update status text based on scan status
+    function updateStatusText(status, progress) {
+        let message = 'Processing...';
         
-        // Create toast notification
+        switch (status) {
+            case 'initializing':
+                message = 'Initializing scan...';
+                break;
+            case 'running':
+                message = 'Running scan...';
+                break;
+            case 'preparing to scan':
+                message = 'Preparing to scan...';
+                break;
+            case 'searching amazon':
+                message = 'Searching Amazon marketplace...';
+                break;
+            case 'amazon search completed':
+                message = 'Amazon search completed, continuing...';
+                break;
+            case 'searching ebay':
+                message = 'Searching eBay marketplace...';
+                break;
+            case 'ebay search completed':
+                message = 'eBay search completed, continuing...';
+                break;
+            case 'searching facebook':
+                message = 'Searching Facebook marketplace...';
+                break;
+            case 'facebook search completed':
+                message = 'Facebook search completed, continuing...';
+                break;
+            case 'finding opportunities':
+                message = 'Finding arbitrage opportunities...';
+                break;
+            case 'completed':
+                message = 'Scan completed! Loading results...';
+                break;
+            case 'error':
+                message = 'Error occurred during scan.';
+                break;
+            default:
+                // Set dynamic message based on progress
+                if (progress < 10) {
+                    message = 'Starting scan...';
+                } else if (progress < 30) {
+                    message = 'Searching marketplaces...';
+                } else if (progress < 60) {
+                    message = 'Analyzing listings...';
+                } else if (progress < 90) {
+                    message = 'Finding opportunities...';
+                } else {
+                    message = 'Finalizing results...';
+                }
+        }
+        
+        statusText.textContent = message;
+    }
+    
+    // Cancel current scan
+    function cancelScan() {
+        // Stop polling
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        
+        // Reset state
+        resetScanState();
+        
+        // Show message
+        showToast('Scan cancelled', 'info');
+    }
+    
+    // Reset scan state
+    function resetScanState() {
+        scanInProgress = false;
+        currentScanId = null;
+        
+        // Reset UI
+        startScanButton.textContent = 'Start Scan';
+        scanStatusContainer.style.display = 'none';
+    }
+    
+    // Show toast notification
+    function showToast(message, type = 'info') {
+        // Remove existing toasts
+        document.querySelectorAll('.toast').forEach(toast => {
+            document.body.removeChild(toast);
+        });
+        
+        // Create toast
         const toast = document.createElement('div');
-        toast.className = 'toast error';
+        toast.className = `toast ${type}`;
         toast.textContent = message;
         
         // Add to document
         document.body.appendChild(toast);
         
-        // Remove after 5 seconds
+        // Remove after timeout
         setTimeout(() => {
             if (document.body.contains(toast)) {
-                toast.style.opacity = '0';
-                
-                // Remove after fade
-                setTimeout(() => {
-                    if (document.body.contains(toast)) {
-                        document.body.removeChild(toast);
-                    }
-                }, 300);
+                document.body.removeChild(toast);
             }
-        }, 5000);
+        }, 3000);
     }
 });
