@@ -1,4 +1,4 @@
-# marketplace_bridge.py
+# marketplace_bridge.py - UPDATED VERSION
 """
 FlipHawk - Marketplace Bridge Module
 Connects API endpoints with marketplace scrapers
@@ -7,10 +7,12 @@ Connects API endpoints with marketplace scrapers
 import asyncio
 import logging
 import uuid
+import time
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import traceback
 import random
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -19,7 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger('marketplace_bridge')
 
-# Import scrapers
+# Import scrapers - with better error handling
 try:
     from amazon_scraper import run_amazon_search
     amazon_available = True
@@ -44,10 +46,86 @@ except ImportError:
     facebook_available = False
     logger.warning("Facebook scraper not available")
 
-# State tracking for scans
-active_scans = {}
+# Track active scans
+class ScanManager:
+    def __init__(self):
+        self.active_scans = {}
+        self.results_cache = {}
+        self.cache_expiry = {}
+        self.cache_lifetime = 60 * 10  # 10 minutes
 
-async def process_marketplace_scan(category: str, subcategories: List[str], max_results: int = 100) -> Dict[str, Any]:
+    def register_scan(self, scan_id, category, subcategories):
+        self.active_scans[scan_id] = {
+            "category": category,
+            "subcategories": subcategories,
+            "start_time": datetime.now().isoformat(),
+            "status": "initializing",
+            "progress": 0,
+            "results": []
+        }
+        return scan_id
+
+    def update_scan_progress(self, scan_id, progress, status=None):
+        if scan_id not in self.active_scans:
+            return False
+
+        self.active_scans[scan_id]["progress"] = progress
+        if status:
+            self.active_scans[scan_id]["status"] = status
+
+        if progress >= 100:
+            self.active_scans[scan_id]["completion_time"] = datetime.now().isoformat()
+
+        return True
+
+    def save_scan_results(self, scan_id, results):
+        if scan_id not in self.active_scans:
+            return False
+
+        self.active_scans[scan_id]["results"] = results
+        self.results_cache[scan_id] = results
+        self.cache_expiry[scan_id] = time.time() + self.cache_lifetime
+        return True
+
+    def get_scan_info(self, scan_id):
+        return self.active_scans.get(scan_id)
+
+    def get_scan_results(self, scan_id):
+        # First check active scans
+        scan_info = self.active_scans.get(scan_id)
+        if scan_info and "results" in scan_info:
+            return scan_info["results"]
+            
+        # Then check cache
+        if scan_id in self.results_cache:
+            if time.time() < self.cache_expiry.get(scan_id, 0):
+                return self.results_cache[scan_id]
+        
+        return None
+
+    def get_formatted_results(self, scan_id):
+        scan_info = self.active_scans.get(scan_id)
+        if not scan_info:
+            return {"error": "Scan not found"}
+            
+        results = scan_info.get("results", [])
+        category = scan_info.get("category", "")
+        subcategories = scan_info.get("subcategories", [])
+        status = scan_info.get("status", "unknown")
+        
+        return {
+            "scan_id": scan_id,
+            "status": status,
+            "progress": scan_info.get("progress", 0),
+            "category": category,
+            "subcategories": subcategories,
+            "arbitrage_opportunities": results
+        }
+
+# Create a global scan manager
+scan_manager = ScanManager()
+
+def process_marketplace_scan(category: str, subcategories: List[str], max_results: int = 100) -> Dict[str, Any]:
     """
     Process marketplace scan request.
     
@@ -66,18 +144,12 @@ async def process_marketplace_scan(category: str, subcategories: List[str], max_
         # Generate scan ID
         scan_id = str(uuid.uuid4())
         
-        # Initialize scan state
-        active_scans[scan_id] = {
-            "category": category,
-            "subcategories": subcategories,
-            "start_time": datetime.now().isoformat(),
-            "status": "initializing",
-            "progress": 0,
-            "results": []
-        }
+        # Register scan with manager
+        scan_manager.register_scan(scan_id, category, subcategories)
         
         # Start scan in background
-        asyncio.create_task(run_scan(scan_id, category, subcategories, max_results))
+        # Using asyncio.run instead of create_task to ensure it runs
+        asyncio.get_event_loop().create_task(run_scan(scan_id, category, subcategories, max_results))
         
         # Return initial response
         return {
@@ -111,54 +183,114 @@ async def run_scan(scan_id: str, category: str, subcategories: List[str], max_re
     
     try:
         # Update progress
-        update_scan_progress(scan_id, 5, "running")
+        scan_manager.update_scan_progress(scan_id, 5, "running")
         
-        # Get keywords for subcategories
-        keywords = get_keywords_for_subcategories(subcategories)
-        logger.info(f"Using {len(keywords)} keywords for scan {scan_id}")
+        # Import keywords module here to avoid import errors
+        try:
+            from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
+            keywords_available = True
+            logger.info("Comprehensive keywords module available")
+        except ImportError:
+            keywords_available = False
+            logger.warning("Comprehensive keywords module not available, using subcategories as keywords")
+        
+        # Update progress
+        scan_manager.update_scan_progress(scan_id, 10, "preparing to scan")
+        
+        # Get keywords for each subcategory
+        all_keywords = []
+        if keywords_available:
+            for subcat in subcategories:
+                # Find which category contains this subcategory
+                for cat, subcats in COMPREHENSIVE_KEYWORDS.items():
+                    if subcat in subcats:
+                        # Add the keywords for this subcategory
+                        all_keywords.extend(subcats[subcat][:10])  # Use up to 10 keywords per subcategory
+                        break
+        
+        # If no keywords found or module not available, use subcategories as keywords
+        if not all_keywords:
+            all_keywords = subcategories
+        
+        logger.info(f"Using {len(all_keywords)} keywords for scan {scan_id}")
         
         # Run marketplace scrapers
-        update_scan_progress(scan_id, 10, "searching marketplaces")
         all_listings = []
         
         # Run Amazon scraper
         if amazon_available:
             try:
-                update_scan_progress(scan_id, 20, "searching amazon")
+                scan_manager.update_scan_progress(scan_id, 20, "searching amazon")
+                logger.info(f"Starting Amazon search for scan {scan_id}")
+                
+                # Create event loop if needed
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                # Run the search
                 amazon_results = await run_amazon_search(subcategories)
-                logger.info(f"Amazon scraper returned {len(amazon_results)} results")
+                logger.info(f"Amazon search returned {len(amazon_results)} listings")
                 all_listings.extend(amazon_results)
-                update_scan_progress(scan_id, 40, "searching amazon")
+                
+                scan_manager.update_scan_progress(scan_id, 40, "amazon search completed")
             except Exception as e:
                 logger.error(f"Error in Amazon scraper: {str(e)}")
                 logger.error(traceback.format_exc())
+                scan_manager.update_scan_progress(scan_id, 40, "amazon search failed")
         
         # Run eBay scraper
         if ebay_available:
             try:
-                update_scan_progress(scan_id, 50, "searching ebay")
+                scan_manager.update_scan_progress(scan_id, 50, "searching ebay")
+                logger.info(f"Starting eBay search for scan {scan_id}")
+                
+                # Create event loop if needed
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                # Run the search
                 ebay_results = await run_ebay_search(subcategories)
-                logger.info(f"eBay scraper returned {len(ebay_results)} results")
+                logger.info(f"eBay search returned {len(ebay_results)} listings")
                 all_listings.extend(ebay_results)
-                update_scan_progress(scan_id, 70, "searching ebay")
+                
+                scan_manager.update_scan_progress(scan_id, 70, "ebay search completed")
             except Exception as e:
                 logger.error(f"Error in eBay scraper: {str(e)}")
                 logger.error(traceback.format_exc())
+                scan_manager.update_scan_progress(scan_id, 70, "ebay search failed")
         
-        # Run Facebook scraper
+        # Run Facebook scraper if available
         if facebook_available:
             try:
-                update_scan_progress(scan_id, 80, "searching facebook")
+                scan_manager.update_scan_progress(scan_id, 80, "searching facebook")
+                logger.info(f"Starting Facebook search for scan {scan_id}")
+                
+                # Create event loop if needed
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                # Run the search
                 facebook_results = await run_facebook_search(subcategories)
-                logger.info(f"Facebook scraper returned {len(facebook_results)} results")
+                logger.info(f"Facebook search returned {len(facebook_results)} listings")
                 all_listings.extend(facebook_results)
-                update_scan_progress(scan_id, 90, "searching facebook")
+                
+                scan_manager.update_scan_progress(scan_id, 90, "facebook search completed")
             except Exception as e:
                 logger.error(f"Error in Facebook scraper: {str(e)}")
                 logger.error(traceback.format_exc())
+                scan_manager.update_scan_progress(scan_id, 90, "facebook search failed")
         
         # Find arbitrage opportunities
-        update_scan_progress(scan_id, 95, "finding opportunities")
+        scan_manager.update_scan_progress(scan_id, 95, "finding opportunities")
         
         if not all_listings:
             logger.warning(f"No listings found for scan {scan_id}, generating dummy data")
@@ -170,11 +302,11 @@ async def run_scan(scan_id: str, category: str, subcategories: List[str], max_re
             if max_results > 0 and len(opportunities) > max_results:
                 opportunities = opportunities[:max_results]
         
-        # Store results
-        active_scans[scan_id]["results"] = opportunities
+        # Save results
+        scan_manager.save_scan_results(scan_id, opportunities)
         
         # Mark as completed
-        update_scan_progress(scan_id, 100, "completed")
+        scan_manager.update_scan_progress(scan_id, 100, "completed")
         
         logger.info(f"Scan {scan_id} completed with {len(opportunities)} opportunities")
         
@@ -183,88 +315,7 @@ async def run_scan(scan_id: str, category: str, subcategories: List[str], max_re
         logger.error(traceback.format_exc())
         
         # Mark as error
-        update_scan_progress(scan_id, 100, "error")
-        active_scans[scan_id]["error"] = str(e)
-
-def update_scan_progress(scan_id: str, progress: int, status: Optional[str] = None):
-    """
-    Update scan progress.
-    
-    Args:
-        scan_id: Scan ID
-        progress: Progress percentage (0-100)
-        status: Optional status string
-    """
-    if scan_id not in active_scans:
-        return
-    
-    active_scans[scan_id]["progress"] = progress
-    
-    if status:
-        active_scans[scan_id]["status"] = status
-        
-    if progress >= 100:
-        active_scans[scan_id]["completion_time"] = datetime.now().isoformat()
-
-def get_scan_info(scan_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Get scan information.
-    
-    Args:
-        scan_id: Scan ID
-        
-    Returns:
-        Dict with scan info or None if not found
-    """
-    return active_scans.get(scan_id)
-
-def get_scan_results(scan_id: str) -> Optional[List[Dict[str, Any]]]:
-    """
-    Get scan results.
-    
-    Args:
-        scan_id: Scan ID
-        
-    Returns:
-        List of opportunities or None if not found
-    """
-    scan_info = active_scans.get(scan_id)
-    if not scan_info:
-        return None
-    
-    return scan_info.get("results", [])
-
-def get_keywords_for_subcategories(subcategories: List[str]) -> List[str]:
-    """
-    Get keywords for the specified subcategories from comprehensive_keywords.py.
-    
-    Args:
-        subcategories: List of subcategories
-        
-    Returns:
-        List of keywords
-    """
-    keywords = []
-    
-    try:
-        # Import keywords from comprehensive_keywords.py
-        from comprehensive_keywords import COMPREHENSIVE_KEYWORDS
-        
-        # Find keywords for each subcategory
-        for category, subcats in COMPREHENSIVE_KEYWORDS.items():
-            for subcategory, subcat_keywords in subcats.items():
-                if subcategory in subcategories:
-                    keywords.extend(subcat_keywords)
-        
-        # Log what we found
-        logger.info(f"Found {len(keywords)} keywords for {len(subcategories)} subcategories")
-        
-        return keywords
-        
-    except ImportError:
-        # Fallback if comprehensive_keywords.py is not available
-        logger.warning("comprehensive_keywords.py not found, using subcategories as keywords")
-        return subcategories
+        scan_manager.update_scan_progress(scan_id, 100, "error")
 
 def find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -285,23 +336,24 @@ def find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[st
         listings_by_source[source].append(listing)
     
     # If less than 2 sources, return empty list
-    if len(listings_by_source) < 2:
+    valid_sources = [source for source, items in listings_by_source.items() if items]
+    if len(valid_sources) < 2:
         logger.warning("Not enough marketplace sources to find arbitrage opportunities")
         return []
     
     opportunities = []
     
     # Compare each possible pair of sources
-    for buy_source, buy_listings in listings_by_source.items():
-        for sell_source, sell_listings in listings_by_source.items():
+    for buy_source in valid_sources:
+        for sell_source in valid_sources:
             # Skip same source
             if buy_source == sell_source:
                 continue
             
-            logger.info(f"Comparing {len(buy_listings)} {buy_source} listings with {len(sell_listings)} {sell_source} listings")
+            logger.info(f"Comparing {len(listings_by_source[buy_source])} {buy_source} listings with {len(listings_by_source[sell_source])} {sell_source} listings")
             
             # Compare each buy listing with each sell listing
-            for buy_listing in buy_listings:
+            for buy_listing in listings_by_source[buy_source]:
                 buy_price = buy_listing.get("price", 0)
                 if buy_price <= 0:
                     continue
@@ -310,7 +362,10 @@ def find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[st
                 if not buy_title:
                     continue
                 
-                for sell_listing in sell_listings:
+                # Get normalized title if available
+                buy_normalized = buy_listing.get("normalized_title", buy_title.lower())
+                
+                for sell_listing in listings_by_source[sell_source]:
                     sell_price = sell_listing.get("price", 0)
                     if sell_price <= 0:
                         continue
@@ -323,8 +378,11 @@ def find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[st
                     if not sell_title:
                         continue
                     
+                    # Get normalized title if available
+                    sell_normalized = sell_listing.get("normalized_title", sell_title.lower())
+                    
                     # Calculate similarity
-                    similarity = calculate_title_similarity(buy_title, sell_title)
+                    similarity = calculate_title_similarity(buy_normalized, sell_normalized)
                     
                     # If similar enough
                     if similarity >= 0.5:
@@ -365,7 +423,8 @@ def find_arbitrage_opportunities(listings: List[Dict[str, Any]]) -> List[Dict[st
                             "fees": {
                                 "marketplace": round(marketplace_fee, 2),
                                 "shipping": round(shipping_fee, 2)
-                            }
+                            },
+                            "subcategory": buy_listing.get("subcategory", None)
                         }
                         
                         opportunities.append(opportunity)
@@ -387,8 +446,6 @@ def calculate_title_similarity(title1: str, title2: str) -> float:
     Returns:
         Similarity score between 0 and 1
     """
-    from difflib import SequenceMatcher
-    
     # Simple word overlap calculation
     if not title1 or not title2:
         return 0
@@ -407,17 +464,8 @@ def calculate_title_similarity(title1: str, title2: str) -> float:
     
     if not union:
         return 0
-    
-    # Jaccard similarity (word-based)
-    jaccard = len(intersection) / len(union)
-    
-    # Sequence similarity (character-based)
-    sequence = SequenceMatcher(None, title1, title2).ratio()
-    
-    # Weighted combination
-    similarity = (jaccard * 0.7) + (sequence * 0.3)
-    
-    return similarity
+        
+    return len(intersection) / len(union)
 
 def generate_dummy_results(subcategories: List[str]) -> List[Dict[str, Any]]:
     """
@@ -483,7 +531,8 @@ def generate_dummy_results(subcategories: List[str]) -> List[Dict[str, Any]]:
                 "fees": {
                     "marketplace": round(marketplace_fee, 2),
                     "shipping": round(shipping_fee, 2)
-                }
+                },
+                "subcategory": subcategory
             }
             
             opportunities.append(opportunity)
