@@ -1,4 +1,4 @@
-// static/js/scan.js - New file to place in your static/js directory
+// static/js/scan.js - Updated file
 
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Set up event listeners
         setupEventListeners();
+        
+        console.log("FlipHawk scan page initialized");
     }
     
     // Set up event listeners
@@ -54,7 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load available categories
     function loadCategories() {
         fetch('/api/categories')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (categorySelect) {
                     // Clear current options except the placeholder
@@ -73,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error loading categories:', error);
-                showToast('Failed to load categories', 'error');
+                showToast('Failed to load categories: ' + error.message, 'error');
             });
     }
     
@@ -82,7 +89,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!category) return;
         
         fetch(`/api/categories/${encodeURIComponent(category)}/subcategories`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (subcategoryContainer) {
                     // Clear current subcategories
@@ -93,8 +105,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         const checkbox = document.createElement('div');
                         checkbox.className = 'subcategory-checkbox';
                         checkbox.innerHTML = `
-                            <input type="checkbox" id="subcategory-${subcategory}" value="${subcategory}">
-                            <label for="subcategory-${subcategory}">${subcategory}</label>
+                            <input type="checkbox" id="subcategory-${subcategory.replace(/\s+/g, '-').toLowerCase()}" value="${subcategory}">
+                            <label for="subcategory-${subcategory.replace(/\s+/g, '-').toLowerCase()}">${subcategory}</label>
                         `;
                         
                         // Add event listener
@@ -124,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error loading subcategories:', error);
-                showToast('Failed to load subcategories', 'error');
+                showToast('Failed to load subcategories: ' + error.message, 'error');
             });
     }
     
@@ -172,6 +184,8 @@ document.addEventListener('DOMContentLoaded', function() {
             max_results: 100
         };
         
+        console.log('Starting scan with data:', requestData);
+        
         // Send request
         fetch('/api/scan', {
             method: 'POST',
@@ -180,7 +194,12 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify(requestData)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             // Check for error
             if (data.error) {
@@ -213,10 +232,27 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(pollingInterval);
         }
         
+        let consecutiveErrors = 0;
+        const maxErrors = 5;
+        
         pollingInterval = setInterval(() => {
+            if (!scanInProgress) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+                return;
+            }
+            
             fetch(`/api/progress/${scanId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    // Reset consecutive errors counter
+                    consecutiveErrors = 0;
+                    
                     // Update progress
                     const progress = data.progress || 0;
                     progressBar.style.width = `${progress}%`;
@@ -242,12 +278,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('Error polling scan progress:', error);
+                    consecutiveErrors++;
                     
-                    // Stop polling on error
-                    clearInterval(pollingInterval);
-                    pollingInterval = null;
-                    resetScanState();
-                    showToast(`Error: ${error.message}`, 'error');
+                    // If too many consecutive errors, stop polling
+                    if (consecutiveErrors >= maxErrors) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                        resetScanState();
+                        showToast(`Error: ${error.message}`, 'error');
+                    }
                 });
         }, 1000); // Poll every second
     }
@@ -255,7 +294,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch scan results
     function fetchResults(scanId) {
         fetch(`/api/scan/${scanId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 // Check for error
                 if (data.error) {
@@ -328,7 +372,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Format image URLs
         const buyImage = opportunity.buyImage || 'https://via.placeholder.com/200?text=No+Image';
-        const sellImage = opportunity.sellImage || 'https://via.placeholder.com/200?text=No+Image';
+        
+        // Format numbers
+        const buyPrice = typeof opportunity.buyPrice === 'number' ? opportunity.buyPrice.toFixed(2) : parseFloat(opportunity.buyPrice).toFixed(2);
+        const sellPrice = typeof opportunity.sellPrice === 'number' ? opportunity.sellPrice.toFixed(2) : parseFloat(opportunity.sellPrice).toFixed(2);
+        const profit = typeof opportunity.profit === 'number' ? opportunity.profit.toFixed(2) : parseFloat(opportunity.profit).toFixed(2);
+        const profitPercentage = typeof opportunity.profitPercentage === 'number' ? opportunity.profitPercentage.toFixed(1) : parseFloat(opportunity.profitPercentage).toFixed(1);
+        const marketplaceFee = opportunity.fees?.marketplace ? parseFloat(opportunity.fees.marketplace).toFixed(2) : '0.00';
+        const shippingFee = opportunity.fees?.shipping ? parseFloat(opportunity.fees.shipping).toFixed(2) : '0.00';
+        const similarity = opportunity.similarity || 0;
         
         // Create HTML
         card.innerHTML = `
@@ -342,30 +394,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="comparison">
                     <div class="buy-info">
                         <div class="marketplace">Buy on ${opportunity.buyMarketplace}</div>
-                        <div class="price">$${opportunity.buyPrice.toFixed(2)}</div>
+                        <div class="price">$${buyPrice}</div>
                         <div class="condition ${buyConditionClass}">${opportunity.buyCondition || 'New'}</div>
                     </div>
                     <div class="sell-info">
                         <div class="marketplace">Sell on ${opportunity.sellMarketplace}</div>
-                        <div class="price">$${opportunity.sellPrice.toFixed(2)}</div>
+                        <div class="price">$${sellPrice}</div>
                         <div class="condition ${sellConditionClass}">${opportunity.sellCondition || 'New'}</div>
                     </div>
                 </div>
                 
                 <div class="profit-info">
-                    <div class="profit">Profit: $${opportunity.profit.toFixed(2)}</div>
-                    <div class="profit-percentage">ROI: ${opportunity.profitPercentage.toFixed(1)}%</div>
+                    <div class="profit">Profit: $${profit}</div>
+                    <div class="profit-percentage">ROI: ${profitPercentage}%</div>
                     <div class="fees">
-                        Fees: $${(opportunity.fees?.marketplace || 0).toFixed(2)} • 
-                        Shipping: $${(opportunity.fees?.shipping || 0).toFixed(2)}
+                        Fees: $${marketplaceFee} • 
+                        Shipping: $${shippingFee}
                     </div>
                 </div>
                 
                 <div class="confidence">
                     <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${opportunity.similarity}%"></div>
+                        <div class="confidence-fill" style="width: ${similarity}%"></div>
                     </div>
-                    <div class="confidence-text">${opportunity.similarity}% match</div>
+                    <div class="confidence-text">${similarity}% match</div>
                 </div>
             </div>
             <div class="card-actions">
