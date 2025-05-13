@@ -201,6 +201,9 @@ async def get_subcategories_post(data: dict):
         pass
         
     # Use fallback
+# app.py (continued)
+        
+    # Use fallback
     if category in fallback_categories:
         return {"subcategories": fallback_categories[category]}
     return {"subcategories": []}
@@ -338,38 +341,10 @@ async def run_scan_without_bridge(scan_id: str, subcategories: List[str], catego
         
         # Import scrapers at runtime to avoid circular imports
         try:
-            from amazon_scraper import run_amazon_search
-            logger.info("Running Amazon scraper...")
-            
-            # Create event loop
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            
-            # Update progress
-            active_scans[scan_id]["progress"] = 20
-            active_scans[scan_id]["status"] = "searching amazon"
-            
-            # Run Amazon scraper
-            amazon_results = await run_amazon_search(subcategories)
-            all_listings.extend(amazon_results)
-            success = True
-            
-            # Update progress
-            active_scans[scan_id]["progress"] = 40
-        except ImportError:
-            logger.warning("Amazon scraper not available")
-        except Exception as e:
-            logger.error(f"Error running Amazon scraper: {str(e)}")
-            logger.error(traceback.format_exc())
-        
-        try:
             from ebay_scraper import run_ebay_search
             logger.info("Running eBay scraper...")
             
-            # Create event loop if needed
+            # Create event loop
             try:
                 loop = asyncio.get_event_loop()
             except RuntimeError:
@@ -393,6 +368,34 @@ async def run_scan_without_bridge(scan_id: str, subcategories: List[str], catego
             logger.error(f"Error running eBay scraper: {str(e)}")
             logger.error(traceback.format_exc())
         
+        try:
+            from facebook_scraper import run_facebook_search
+            logger.info("Running Facebook scraper...")
+            
+            # Create event loop if needed
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Update progress
+            active_scans[scan_id]["progress"] = 75
+            active_scans[scan_id]["status"] = "searching facebook"
+            
+            # Run Facebook scraper
+            fb_results = await run_facebook_search(subcategories)
+            all_listings.extend(fb_results)
+            success = True
+            
+            # Update progress
+            active_scans[scan_id]["progress"] = 85
+        except ImportError:
+            logger.warning("Facebook scraper not available")
+        except Exception as e:
+            logger.error(f"Error running Facebook scraper: {str(e)}")
+            logger.error(traceback.format_exc())
+        
         # If both scrapers failed, generate dummy data
         if not success:
             logger.warning("All scrapers failed, generating dummy data")
@@ -403,7 +406,7 @@ async def run_scan_without_bridge(scan_id: str, subcategories: List[str], catego
         
         # Find arbitrage opportunities
         active_scans[scan_id]["status"] = "finding opportunities"
-        active_scans[scan_id]["progress"] = 85
+        active_scans[scan_id]["progress"] = 90
         
         # Use helper function to find opportunities
         opportunities = find_arbitrage_opportunities(all_listings)
