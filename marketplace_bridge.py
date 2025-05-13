@@ -23,14 +23,6 @@ logger = logging.getLogger('marketplace_bridge')
 
 # Import scrapers - with better error handling
 try:
-    from amazon_scraper import run_amazon_search
-    amazon_available = True
-    logger.info("Amazon scraper available")
-except ImportError:
-    amazon_available = False
-    logger.warning("Amazon scraper not available")
-
-try:
     from ebay_scraper import run_ebay_search
     ebay_available = True
     logger.info("eBay scraper available")
@@ -148,8 +140,33 @@ def process_marketplace_scan(category: str, subcategories: List[str], max_result
         scan_manager.register_scan(scan_id, category, subcategories)
         
         # Start scan in background
-        # Using asyncio.run instead of create_task to ensure it runs
-        asyncio.get_event_loop().create_task(run_scan(scan_id, category, subcategories, max_results))
+        try:
+            # Get the event loop
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # If we're not in an event loop, create a new one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+            # Create task
+            task = loop.create_task(run_scan(scan_id, category, subcategories, max_results))
+            
+            # Add a callback to handle errors
+            def handle_task_result(task):
+                try:
+                    task.result()
+                except Exception as e:
+                    logger.error(f"Error in scan task: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    scan_manager.update_scan_progress(scan_id, 100, "error")
+                    
+            task.add_done_callback(handle_task_result)
+            
+        except Exception as e:
+            logger.error(f"Error creating scan task: {str(e)}")
+            logger.error(traceback.format_exc())
+            scan_manager.update_scan_progress(scan_id, 100, "error")
         
         # Return initial response
         return {
@@ -217,42 +234,11 @@ async def run_scan(scan_id: str, category: str, subcategories: List[str], max_re
         # Run marketplace scrapers
         all_listings = []
         
-        # Run Amazon scraper
-        if amazon_available:
-            try:
-                scan_manager.update_scan_progress(scan_id, 20, "searching amazon")
-                logger.info(f"Starting Amazon search for scan {scan_id}")
-                
-                # Create event loop if needed
-                try:
-                    loop = asyncio.get_event_loop()
-                except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                
-                # Run the search
-                amazon_results = await run_amazon_search(subcategories)
-                logger.info(f"Amazon search returned {len(amazon_results)} listings")
-                all_listings.extend(amazon_results)
-                
-                scan_manager.update_scan_progress(scan_id, 40, "amazon search completed")
-            except Exception as e:
-                logger.error(f"Error in Amazon scraper: {str(e)}")
-                logger.error(traceback.format_exc())
-                scan_manager.update_scan_progress(scan_id, 40, "amazon search failed")
-        
-        # Run eBay scraper
+        # Run eBay scraper if available
         if ebay_available:
             try:
-                scan_manager.update_scan_progress(scan_id, 50, "searching ebay")
+                scan_manager.update_scan_progress(scan_id, 40, "searching ebay")
                 logger.info(f"Starting eBay search for scan {scan_id}")
-                
-                # Create event loop if needed
-                try:
-                    loop = asyncio.get_event_loop()
-                except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
                 
                 # Run the search
                 ebay_results = await run_ebay_search(subcategories)
@@ -270,13 +256,6 @@ async def run_scan(scan_id: str, category: str, subcategories: List[str], max_re
             try:
                 scan_manager.update_scan_progress(scan_id, 80, "searching facebook")
                 logger.info(f"Starting Facebook search for scan {scan_id}")
-                
-                # Create event loop if needed
-                try:
-                    loop = asyncio.get_event_loop()
-                except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
                 
                 # Run the search
                 facebook_results = await run_facebook_search(subcategories)
