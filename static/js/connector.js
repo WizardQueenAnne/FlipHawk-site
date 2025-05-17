@@ -79,7 +79,7 @@
                     if (progressBar) progressBar.style.width = '0%';
                     
                     // Start the actual scan
-                    fetch('/api/scan', {
+                    fetch('/api/v1/scan', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -227,7 +227,7 @@
                     const resultsContainer = document.getElementById('results-container');
                     if (!resultsContainer) return;
                     
-                    fetch(`/api/scan/${scanId}`)
+                    fetch(`/api/v1/scan/${scanId}`)
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error(`Error ${response.status}: ${response.statusText}`);
