@@ -214,7 +214,7 @@ async def get_subcategories_post(data: dict):
         return {"subcategories": fallback_categories[category]}
     return {"subcategories": []}
 
-@app.post("/api/scan")
+@app.post("/api/v1/scan")
 async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):
     """Start a new scan"""
     try:
@@ -298,7 +298,7 @@ async def get_scan_progress(scan_id: str):
         logger.error(f"Error getting scan progress: {str(e)}")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-@app.get("/api/scan/{scan_id}")
+@app.get("/api/v1/scan/{scan_id}")
 async def get_scan_results(scan_id: str):
     """Get the results of a scan"""
     try:
@@ -328,7 +328,7 @@ async def get_scan_results(scan_id: str):
         logger.error(f"Error getting scan results: {str(e)}")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-@app.get("/api/scan/{scan_id}/results")
+@app.get("/api/v1/scan/{scan_id}/results")
 async def get_scan_results_alt(scan_id: str):
     """Alternative endpoint for scan results (for compatibility)"""
     return await get_scan_results(scan_id)
