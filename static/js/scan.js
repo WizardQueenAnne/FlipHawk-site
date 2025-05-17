@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Starting scan with data:', requestData);
         
         // Send request
-        fetch('/api/scan', {
+        fetch('/api/v1/scan', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch scan results
     function fetchResults(scanId) {
-        fetch(`/api/scan/${scanId}`)
+        fetch(`/api/v1/scan/${scanId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
