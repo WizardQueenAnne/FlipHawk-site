@@ -153,12 +153,12 @@ async def scan_page():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<html><body><h1>Scan Page</h1><p>Please create scan.html file</p></body></html>")
 
-@app.get("/api/health")
+@app.get("/api/v1/health")
 async def health_check():
     """Health check endpoint"""
     return {"status": "ok", "timestamp": datetime.now().isoformat()}
 
-@app.get("/api/categories")
+@app.get("/api/v1/categories")
 async def get_categories():
     """Get available categories"""
     # Try to import comprehensive_keywords
@@ -169,7 +169,7 @@ async def get_categories():
         # Use fallback
         return {"categories": list(fallback_categories.keys())}
 
-@app.get("/api/categories/{category}/subcategories")
+@app.get("/api/v1/categories/{category}/subcategories")
 async def get_subcategories(category: str):
     """Get subcategories for a category"""
     # Try to import comprehensive_keywords
@@ -188,7 +188,7 @@ async def get_subcategories(category: str):
         return {"subcategories": fallback_categories[category]}
     return {"subcategories": []}
 
-@app.post("/api/categories/subcategories")
+@app.post("/api/v1/categories/subcategories")
 async def get_subcategories_post(data: dict):
     """Get subcategories for a category (POST method)"""
     category = data.get("category", "")
@@ -267,7 +267,7 @@ async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):
         logger.error(traceback.format_exc())
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-@app.get("/api/progress/{scan_id}")
+@app.get("/api/v1/progress/{scan_id}")
 async def get_scan_progress(scan_id: str):
     """Get the progress of a scan"""
     try:
