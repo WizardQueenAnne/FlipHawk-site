@@ -305,6 +305,8 @@ async def get_scan_results(scan_id: str):
         # Use marketplace_bridge if available
         if bridge_available:
             results = scan_manager.get_formatted_results(scan_id)
+            logger.info(f"Results for scan {scan_id}: {results.keys()}")  # Log the keys in the response
+            logger.info(f"Number of opportunities: {len(results.get('arbitrage_opportunities', []))}")  # Log opportunity count
             if "error" in results:
                 return JSONResponse(status_code=404, content={"error": results["error"]})
             
