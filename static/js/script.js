@@ -335,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(progressData => {
+                console.log('Raw API response:', resultsData);
                 // Reset error counter on success
                 consecutiveErrors = 0;
                 
