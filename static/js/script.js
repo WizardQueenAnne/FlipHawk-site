@@ -462,45 +462,11 @@ document.addEventListener('DOMContentLoaded', function() {
 .then(resultsData => {
     console.log('Raw API response:', resultsData);
     
-    // Process the results - ensure we always have an array, even if missing from response
-    let opportunities = [];
+    // Always have a valid array
+    const opportunities = [];
     
-    if (resultsData && resultsData.arbitrage_opportunities) {
-        opportunities = resultsData.arbitrage_opportunities;
-    } else if (resultsData && resultsData.results) {
-        // Try alternate field name that might be used
-        opportunities = resultsData.results;
-    } else {
-        // Create dummy data if nothing in response
-        console.log('No opportunities found in response, creating dummy data');
-        opportunities = [{
-            buyTitle: "Dummy Test Product",
-            buyPrice: 100.00,
-            buyMarketplace: "Amazon",
-            buyLink: "https://example.com/test",
-            buyImage: "https://via.placeholder.com/200?text=Test",
-            buyCondition: "New",
-            sellTitle: "Dummy Test Product",
-            sellPrice: 150.00,
-            sellMarketplace: "eBay",
-            sellLink: "https://example.com/test",
-            sellImage: "https://via.placeholder.com/200?text=Test",
-            sellCondition: "New",
-            profit: 35.00,
-            profitPercentage: 35.00,
-            similarity: 90,
-            fees: {
-                marketplace: 15.00,
-                shipping: 5.00
-            }
-        }];
-    }
-    
-    console.log(`Using ${opportunities.length} opportunities`);
-    
-    // Display the results
+    // Display the results (empty array is fine)
     displayResults(opportunities);
-            
             // Reset scan state
             scanInProgress = false;
             currentScanId = null;
