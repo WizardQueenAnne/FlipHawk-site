@@ -515,5 +515,35 @@ def generate_dummy_results(subcategories: List[str]) -> List[Dict[str, Any]]:
             }
             
             opportunities.append(opportunity)
-    
+    # Ensure we always have at least one result
+    if not opportunities and subcategories:
+        # Force one opportunity with the first subcategory
+        buy_market = "Amazon"
+        sell_market = "eBay"
+        subcategory = subcategories[0]
+        
+        opportunities.append({
+            "buyTitle": f"{subcategory} Test Product",
+            "buyPrice": 100.00,
+            "buyMarketplace": buy_market,
+            "buyLink": f"https://example.com/{buy_market.lower()}/test",
+            "buyImage": f"https://via.placeholder.com/200?text={subcategory}",
+            "buyCondition": "New",
+            
+            "sellTitle": f"{subcategory} Test Product",
+            "sellPrice": 150.00,
+            "sellMarketplace": sell_market,
+            "sellLink": f"https://example.com/{sell_market.lower()}/test",
+            "sellImage": f"https://via.placeholder.com/200?text={subcategory}",
+            "sellCondition": "New",
+            
+            "profit": 35.00,
+            "profitPercentage": 35.00,
+            "similarity": 90,
+            "fees": {
+                "marketplace": 15.00,
+                "shipping": 5.00
+            },
+            "subcategory": subcategory
+        })
     return opportunities
