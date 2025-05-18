@@ -515,44 +515,5 @@ def generate_dummy_results(subcategories: List[str]) -> List[Dict[str, Any]]:
             }
             
             opportunities.append(opportunity)
-    # If less than 2 sources, return empty list
-valid_sources = [source for source, items in listings_by_source.items() if items]
-if len(valid_sources) < 2:
-    logger.warning("Not enough marketplace sources to find arbitrage opportunities")
     
-    # Add this to ensure at least one result is always returned
-    if True:  # Always execute this block when we'd return an empty list
-        opportunities = []
-        subcategories = ["Test Category"]  # Default subcategory if none available
-        
-        # Create a guaranteed fallback result
-        opportunity = {
-            "buyTitle": "Guaranteed Test Product",
-            "buyPrice": 100.00,
-            "buyMarketplace": "Amazon",
-            "buyLink": "https://example.com/amazon/test",
-            "buyImage": "https://via.placeholder.com/200?text=Test",
-            "buyCondition": "New",
-            
-            "sellTitle": "Guaranteed Test Product",
-            "sellPrice": 150.00,
-            "sellMarketplace": "eBay",
-            "sellLink": "https://example.com/ebay/test",
-            "sellImage": "https://via.placeholder.com/200?text=Test",
-            "sellCondition": "New",
-            
-            "profit": 35.00,
-            "profitPercentage": 35.00,
-            "similarity": 90,
-            "fees": {
-                "marketplace": 15.00,
-                "shipping": 5.00
-            },
-            "subcategory": subcategories[0] if subcategories else "Test"
-        }
-        opportunities.append(opportunity)
-        
-        return opportunities
-    
-    return []
     return opportunities
