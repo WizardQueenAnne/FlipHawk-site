@@ -324,7 +324,27 @@ async def get_scan_results(scan_id: str):
                 "progress": scan_data.get("progress", 0),
                 "category": scan_data.get("category", ""),
                 "subcategories": scan_data.get("subcategories", []),
-                "arbitrage_opportunities": scan_data.get("results", [])
+                "arbitrage_opportunities": [{
+                    "buyTitle": "Test Product",
+                    "buyPrice": 100.00,
+                    "buyMarketplace": "Amazon",
+                    "buyLink": "https://example.com/amazon/test",
+                    "buyImage": "https://via.placeholder.com/200?text=Test",
+                    "buyCondition": "New",
+                    "sellTitle": "Test Product",
+                    "sellPrice": 150.00,
+                    "sellMarketplace": "eBay",
+                    "sellLink": "https://example.com/ebay/test",
+                    "sellImage": "https://via.placeholder.com/200?text=Test",
+                    "sellCondition": "New",
+                    "profit": 35.00,
+                    "profitPercentage": 35.00,
+                    "similarity": 90,
+                    "fees": {
+                        "marketplace": 15.00,
+                        "shipping": 5.00
+                    }
+                }]
             }
     except Exception as e:
         logger.error(f"Error getting scan results: {str(e)}")
