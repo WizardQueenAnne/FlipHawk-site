@@ -305,49 +305,12 @@ async def get_scan_results(scan_id: str):
         # Use marketplace_bridge if available
         if bridge_available:
             results = scan_manager.get_formatted_results(scan_id)
-    
-    # Log what's in the results
-        logger.info(f"Results keys: {list(results.keys() if results else [])}")
-    
-    if "error" in results:
-        return JSONResponse(status_code=404, content={"error": results["error"]})
-    
-    # Make sure arbitrage_opportunities is always present
-    if "arbitrage_opportunities" not in results or not results["arbitrage_opportunities"]:
-        # Add dummy data if missing or empty
-        logger.info("No arbitrage_opportunities found, adding dummy data")
-        
-        # Get category and subcategories from results if available
-        category = results.get("category", "Unknown")
-        subcategories = results.get("subcategories", ["Unknown"])
-        
-        # Add dummy opportunity
-        results["arbitrage_opportunities"] = [{
-            "buyTitle": f"{subcategories[0]} Test Product",
-            "buyPrice": 100.00,
-            "buyMarketplace": "Amazon",
-            "buyLink": "https://example.com/amazon/test",
-            "buyImage": f"https://via.placeholder.com/200?text={subcategories[0]}",
-            "buyCondition": "New",
+            logger.info(f"Results for scan {scan_id}: {results.keys()}")  # Log the keys in the response
+            logger.info(f"Number of opportunities: {len(results.get('arbitrage_opportunities', []))}")  # Log opportunity count
+            if "error" in results:
+                return JSONResponse(status_code=404, content={"error": results["error"]})
             
-            "sellTitle": f"{subcategories[0]} Test Product",
-            "sellPrice": 150.00,
-            "sellMarketplace": "eBay",
-            "sellLink": "https://example.com/ebay/test",
-            "sellImage": f"https://via.placeholder.com/200?text={subcategories[0]}",
-            "sellCondition": "New",
-            
-            "profit": 35.00,
-            "profitPercentage": 35.00,
-            "similarity": 90,
-            "fees": {
-                "marketplace": 15.00,
-                "shipping": 5.00
-            },
-            "subcategory": subcategories[0]
-        }]
-    
-    return results
+            return results
         else:
             # Fallback to direct method
             if scan_id not in active_scans:
