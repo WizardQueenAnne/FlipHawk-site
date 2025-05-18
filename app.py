@@ -303,11 +303,11 @@ async def get_scan_results(scan_id: str):
     """Get the results of a scan"""
     try:
         # Use marketplace_bridge if available
-if bridge_available:
-    results = scan_manager.get_formatted_results(scan_id)
+        if bridge_available:
+        results = scan_manager.get_formatted_results(scan_id)
     
     # Log what's in the results
-    logger.info(f"Results keys: {list(results.keys() if results else [])}")
+        logger.info(f"Results keys: {list(results.keys() if results else [])}")
     
     if "error" in results:
         return JSONResponse(status_code=404, content={"error": results["error"]})
