@@ -1923,13 +1923,10 @@ def generate_keywords(subcategory, include_variations=True, max_keywords=20):
     Returns:
         list: A list of keywords for the subcategory
     """
-    if not subcategory:
-        return []
-        
     keywords = get_keywords_for_subcategory(subcategory)
     
-    # If subcategory not found, return the subcategory itself as a keyword
     if not keywords:
+        # If subcategory not found, return the subcategory itself as a keyword
         return [subcategory.lower()]
     
     # If variations not needed, return original keywords up to max_keywords
