@@ -3,6 +3,26 @@ Comprehensive keywords database for FlipHawk marketplace scrapers.
 Includes variations, misspellings, and specific model identifiers to improve matching.
 """
 
+def get_keywords_for_subcategory(subcategory, fallback_to_direct=True):
+    """
+    Get a list of keywords for a specific subcategory.
+    
+    Args:
+        subcategory (str): The subcategory to get keywords for
+        fallback_to_direct (bool): If True, return the subcategory as a keyword when not found
+        
+    Returns:
+        list: A list of keywords for the subcategory, or [subcategory] if not found and fallback enabled
+    """
+    for category, subcats in COMPREHENSIVE_KEYWORDS.items():
+        if subcategory in subcats:
+            return subcats[subcategory]
+    
+    # If not found and fallback is enabled, return the subcategory itself as a keyword
+    if fallback_to_direct:
+        return [subcategory.lower()]
+    return []
+
 COMPREHENSIVE_KEYWORDS = {
     "Tech": {
         "Headphones": [
